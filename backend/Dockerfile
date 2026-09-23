@@ -1,6 +1,8 @@
 # GDAL/OGR, GEOS and PROJ come from the official OSGeo image so GeoDjango and
 # the import/export pipeline use one consistent, well-tested GIS stack.
-FROM ghcr.io/osgeo/gdal:ubuntu-small-3.10.3
+# The "full" variant is needed: "small" lacks libkml, and the LIBKML driver is the
+# only one that reads KML attributes (ExtendedData) back.
+FROM ghcr.io/osgeo/gdal:ubuntu-full-3.10.3
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

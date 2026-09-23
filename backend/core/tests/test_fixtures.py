@@ -75,7 +75,8 @@ def test_seeded_community_overlap(fixtures_dir, fixture_manifest):
 def test_seeded_building_in_flood_zone(fixtures_dir, fixture_manifest):
     seed = fixture_manifest["seeded"]["building_in_flood_zone"]
     gpkg = fixtures_dir / "generated" / "sample.gpkg"
-    zone = by(features(gpkg, "flood_zones"), "zone_id", seed["zone_id"]).GetGeometryRef()
+    # Clone: GetGeometryRef() is owned by the feature, which is freed right away.
+    zone = by(features(gpkg, "flood_zones"), "zone_id", seed["zone_id"]).GetGeometryRef().Clone()
     hits = [
         b.GetField("property_id")
         for b in features(gpkg, "buildings")

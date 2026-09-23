@@ -101,25 +101,26 @@ services:
       - media:/media:ro
 
   web:
-    image: node:24-alpine
-    working_dir: /repo
-    command: ["sh", "-c", "corepack enable && pnpm install --frozen-lockfile=false && pnpm --filter @spatial/web dev --host 0.0.0.0"]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
     environment:
       VITE_API_PROXY: http://backend:8000
-      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
     ports:
       - "${WEB_PORT:-5173}:5173"
+    # Source only: edits hot-reload, and nothing is written back to the host.
     volumes:
-      - ./:/repo
-      - web-node-modules:/repo/node_modules
+      - ./apps/web/src:/repo/apps/web/src
+      - ./apps/web/index.html:/repo/apps/web/index.html
+      - ./packages/map-core/src:/repo/packages/map-core/src
     healthcheck:
       # 127.0.0.1, not localhost: Alpine resolves localhost to ::1 first and Vite
       # listens on IPv4 only.
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ > /dev/null"]
       interval: 5s
       timeout: 3s
-      retries: 60
-      start_period: 120s
+      retries: 30
+      start_period: 30s
     depends_on:
       backend:
         condition: service_healthy
@@ -127,4 +128,3 @@ services:
 volumes:
   db-data:
   media:
-  web-node-modules:

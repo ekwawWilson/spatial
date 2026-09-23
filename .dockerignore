@@ -1,0 +1,9 @@
+# Build context for apps/web/Dockerfile (the backend has its own).
+**/node_modules
+**/dist
+.git
+backend
+fixtures
+media
+docs
+.env

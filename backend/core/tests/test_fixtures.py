@@ -129,3 +129,12 @@ def test_control_points_file_has_expected_columns(fixtures_dir):
         rows = list(reader)
     if not rows:
         pytest.skip("Official control points not provided yet (see fixtures/README.md)")
+
+
+def test_shapefile_truncates_long_field_names(fixtures_dir):
+    # Phase 5 must map these back to the layer schema on import.
+    ds = ogr.Open(str(fixtures_dir / "generated" / "shp" / "buildings.shp"))
+    defn = ds.GetLayer(0).GetLayerDefn()
+    names = [defn.GetFieldDefn(i).GetName() for i in range(defn.GetFieldCount())]
+    assert "property_i" in names
+    assert "property_id" not in names

@@ -234,13 +234,16 @@ class Command(BaseCommand):
             lyr = ds.CreateLayer(name, ref, gtype, options=options or [])
             for fname, ftype in fields:
                 lyr.CreateField(ogr.FieldDefn(fname, ftype))
+            # Set attributes by position: drivers may rename fields (Shapefile
+            # truncates names to 10 characters, e.g. property_id -> property_i).
+            index = {fname: i for i, (fname, _ftype) in enumerate(fields)}
             for wkt, attrs in feats:
                 geom = ogr.CreateGeometryFromWkt(wkt)
                 geom.Transform(ct)
                 feat = ogr.Feature(lyr.GetLayerDefn())
                 feat.SetGeometry(geom)
                 for key, value in attrs.items():
-                    feat.SetField(key, value)
+                    feat.SetField(index[key], value)
                 lyr.CreateFeature(feat)
         ds.Close()
 

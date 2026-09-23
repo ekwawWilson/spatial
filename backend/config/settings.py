@@ -1,6 +1,12 @@
+from datetime import timedelta
 from pathlib import Path
 
+import django_stubs_ext
 import environ
+
+# Lets Django classes such as ModelAdmin take type parameters at runtime
+# (ModelAdmin[Region]), as the type stubs expect.
+django_stubs_ext.monkeypatch()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 REPO_DIR = BASE_DIR.parent
@@ -21,12 +27,14 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.gis",
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "corsheaders",
     "core",
 ]
 
 MIDDLEWARE = [
+    "core.tenancy.ResetDbContextMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -68,10 +76,18 @@ DATABASES = {
         "PASSWORD": env("DB_PASSWORD", default=env("APP_DB_PASSWORD", default="")),
         "HOST": env("DB_HOST", default="db"),
         "PORT": env("DB_PORT", default="5432"),
+        # Required by tenancy: the district context is SET LOCAL per transaction.
+        "ATOMIC_REQUESTS": True,
     }
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+AUTH_USER_MODEL = "core.User"
+
+# Failed sign-ins allowed before the account is locked, and for how long.
+AUTH_LOCKOUT_THRESHOLD = env.int("AUTH_LOCKOUT_THRESHOLD", default=5)
+AUTH_LOCKOUT_MINUTES = env.int("AUTH_LOCKOUT_MINUTES", default=15)
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -94,10 +110,28 @@ CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": ["core.auth.TenantJWTAuthentication"],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 50,
 }
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env.int("JWT_ACCESS_MINUTES", default=15)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=env.int("JWT_REFRESH_DAYS", default=7)),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": False,  # core.auth.attempt_login records it
+}
+
+# Links in password-reset and invitation emails point at the web app.
+WEB_APP_URL = env("WEB_APP_URL", default="http://localhost:5173").rstrip("/")
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@spatial.local")
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Spatial Planning Platform API",
+    "COMPONENT_SPLIT_REQUEST": True,
     "DESCRIPTION": "Community planning GIS platform for Ghanaian MMDAs.",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
@@ -114,6 +148,9 @@ INITIAL_DEFAULT_CRS: str = env("INITIAL_DEFAULT_CRS", default="EPSG:2136")
 # Phase 8: organisation keys for .spp files. Parsed there; reserved here so the
 # setting exists in every environment from the start.
 SPP_ORG_KEYS: str = env("SPP_ORG_KEYS", default="")
+
+# Documentation; tests check some docs against the code (e.g. permissions).
+DOCS_DIR = Path(env("DOCS_DIR", default=str(REPO_DIR / "docs")))
 
 # Shared test datasets (see fixtures/README.md).
 FIXTURES_DIR = Path(env("FIXTURES_DIR", default=str(REPO_DIR / "fixtures")))

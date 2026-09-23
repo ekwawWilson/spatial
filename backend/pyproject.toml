@@ -23,8 +23,10 @@ ignore_missing_imports = true
 exclude = ["migrations/"]
 
 [[tool.mypy.overrides]]
-module = ["*.tests.*"]
+module = ["*.tests.*", "conftest"]
 disallow_untyped_defs = false
+disallow_untyped_calls = false
+disallow_incomplete_defs = false
 
 [tool.django-stubs]
 django_settings_module = "config.settings"

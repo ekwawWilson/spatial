@@ -4,6 +4,7 @@ x-backend-env: &backend-env
   env_file: .env
   environment:
     FIXTURES_DIR: /fixtures
+    DOCS_DIR: /docs
     MEDIA_ROOT: /media
 
 services:
@@ -52,6 +53,7 @@ services:
     volumes:
       - ./backend:/app
       - ./fixtures:/fixtures
+      - ./docs:/docs:ro
       - media:/media
     depends_on:
       migrate:

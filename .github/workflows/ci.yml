@@ -12,19 +12,19 @@ jobs:
       - name: Create .env
         run: cp .env.example .env
       - name: Build images
-        run: docker compose build backend
+        run: scripts/ci-step.sh docker compose build --progress=plain backend
       - name: Lint
         run: |
-          docker compose run --rm --no-deps backend ruff check .
-          docker compose run --rm --no-deps backend ruff format --check .
+          scripts/ci-step.sh docker compose run --rm --no-deps backend ruff check .
+          scripts/ci-step.sh docker compose run --rm --no-deps backend ruff format --check .
       - name: Type-check
-        run: docker compose run --rm --no-deps backend mypy .
+        run: scripts/ci-step.sh docker compose run --rm --no-deps backend mypy .
+      - name: Build fixtures
+        run: scripts/ci-step.sh make fixtures
       - name: Fixtures are up to date
-        run: |
-          make fixtures
-          git diff --exit-code -- fixtures/generated/manifest.json
+        run: scripts/ci-step.sh git diff --exit-code -- fixtures/generated/manifest.json
       - name: Tests
-        run: make test-backend
+        run: scripts/ci-step.sh make test-backend
 
   web:
     runs-on: ubuntu-latest
@@ -49,10 +49,10 @@ jobs:
           node-version: 24
       - run: cp .env.example .env
       - name: Start stack
-        run: docker compose up -d --build --wait
+        run: scripts/ci-step.sh docker compose up -d --build --wait
       - run: corepack enable && pnpm install --frozen-lockfile
       - run: pnpm --filter @spatial/web exec playwright install --with-deps chromium
-      - run: pnpm --filter @spatial/web e2e
+      - run: scripts/ci-step.sh pnpm --filter @spatial/web e2e
       - name: Logs on failure
         if: failure()
         run: docker compose logs --tail=200

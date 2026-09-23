@@ -20,6 +20,7 @@ from .permissions import (
     request_user,
     require_district_id,
 )
+from .schema import DISTRICT_HEADER
 from .serializers import (
     AuditLogSerializer,
     DistrictSerializer,
@@ -50,6 +51,7 @@ class DistrictViewSet(ReadAnyWriteSystemAdmin):
     belong to. Districts are deactivated, never deleted."""
 
     serializer_class = DistrictSerializer
+    queryset = District.objects.none()  # schema hint; get_queryset() is used
     http_method_names = ["get", "post", "patch", "head", "options"]
     pagination_class = None
 
@@ -69,6 +71,7 @@ class UserViewSet(viewsets.ModelViewSet[User]):
     so their audit history stays attributable."""
 
     serializer_class = UserSerializer
+    queryset = User.objects.none()  # schema hint; get_queryset() is used
     permission_classes = [IsAuthenticated, IsSystemAdmin]
     http_method_names = ["get", "post", "patch", "head", "options"]
 
@@ -114,6 +117,7 @@ class UserViewSet(viewsets.ModelViewSet[User]):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema(parameters=[DISTRICT_HEADER])
 class MembershipViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -128,6 +132,7 @@ class MembershipViewSet(
     """
 
     serializer_class = MembershipSerializer
+    queryset = Membership.objects.none()  # schema hint; get_queryset() is used
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_permissions(self) -> list[BasePermission]:
@@ -214,6 +219,7 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet[AuditLog]):
     everything, or one district when X-District-ID is sent."""
 
     serializer_class = AuditLogSerializer
+    queryset = AuditLog.objects.none()  # schema hint; get_queryset() is used
     permission_classes = [IsAuthenticated, CanViewAudit]
 
     @extend_schema(

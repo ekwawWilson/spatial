@@ -33,7 +33,7 @@ export function makeMe(overrides: Partial<Me> = {}): Me {
       {
         district: { id: 10, name: "Sample Municipal Assembly", code: "SMA" },
         role: "district_admin",
-        permissions: ["audit.view", "district.view", "membership.manage", "membership.view"],
+        permissions: ["audit.view", "crs.manage", "district.view", "membership.manage", "membership.view"],
       },
       {
         district: { id: 20, name: "Other District Assembly", code: "ODA" },

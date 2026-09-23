@@ -4,6 +4,7 @@ import { Layout } from "./components/Layout";
 import { RequireAuth, RequirePermission, RequireSystemAdmin } from "./components/guards";
 import { AccountPage } from "./pages/AccountPage";
 import { AuditPage } from "./pages/AuditPage";
+import { CrsPage } from "./pages/CrsPage";
 import { DistrictsPage } from "./pages/DistrictsPage";
 import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPages";
 import { HomePage } from "./pages/HomePage";
@@ -28,6 +29,7 @@ export function App() {
       >
         <Route index element={<HomePage />} />
         <Route path="account" element={<AccountPage />} />
+        <Route path="crs" element={<CrsPage />} />
         <Route
           path="members"
           element={

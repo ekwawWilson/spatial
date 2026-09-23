@@ -63,6 +63,8 @@ a { color: var(--accent); }
   border-radius: 8px;
 }
 .card.narrow { margin-top: 1rem; }
+.card.wide { width: 100%; max-width: 60rem; margin: 1rem 0; }
+textarea { font: inherit; font-family: ui-monospace, monospace; padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: 4px; }
 label { display: flex; flex-direction: column; gap: 0.25rem; }
 label.checkbox { flex-direction: row; align-items: center; }
 input, select, button { font: inherit; padding: 0.4rem 0.6rem; }

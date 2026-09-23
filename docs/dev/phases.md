@@ -19,7 +19,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 |---|---|---|
 | 0 | Engineering foundation | **complete**: gate passed in CI on 2026-09-23 (`f24f940`) |
 | 1 | Identity, tenancy, administration | in progress on branch `phase-1` |
-| 2 | Coordinate reference systems | not started, **needs official control points** (fixtures/README.md) |
+| 2 | Coordinate reference systems | in progress on branch `phase-2`; **gate needs official control points** (fixtures/README.md) |
 | 3 | Projects, layer engine, web map shell | not started |
 | 4 | Basemaps | not started |
 | 5 | Import and export | not started |
@@ -36,3 +36,9 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 - **Phase 3:** Martin (vector tiles) connects as the app role, so row-level security hides tenant tables from it until tile requests carry a district context (e.g. per-district function sources, or tiles served through the API). Design this in Phase 3; don't grant Martin BYPASSRLS.
 - **Management commands and Celery tasks** that touch tenant tables must run inside `core.tenancy.tenant_context()`; `seed_demo` shows the pattern.
 - Official survey control points for the Phase 2 gate.
+
+## Phase 2 notes
+- **Datum-shift accuracy:** the best published Accra → WGS 84 transformation is ±6 m (others ±25 m). Conversions state their accuracy; better parameters can be pinned when the Survey and Mapping Division supplies them.
+- **Exact round trips:** PROJ's inverse of a 2D datum shift leaves up to ~3 mm error across Ghana. The platform uses one operation per pair of systems and inverts it numerically, so round trips are exact (< 1e-6 mm). Tested in `crs/tests/test_crs.py`.
+- **Web map definitions:** pyproj's PROJ strings omit the datum shift, which would place Accra-datum data about 313 m from the server's position. The API sends proj4 strings with `+towgs84` from the server's operation; tests check that proj4js agrees within 1 cm.
+- **Gate item "changing a default doesn't change existing projects":** projects arrive in Phase 3. Phase 2 tests that a default change touches nothing but the setting; Phase 3 adds the project-level test.

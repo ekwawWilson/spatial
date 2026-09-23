@@ -5,4 +5,5 @@ Written for physical planners, district administrators and field officers. Secti
 - [Signing in and your account](signing-in.md)
 - [Managing district members (district administrators)](members.md)
 - [The audit log](audit-log.md)
+- [Coordinate systems](coordinate-systems.md)
 - [System administration](system-admin.md)

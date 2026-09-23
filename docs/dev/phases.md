@@ -17,8 +17,8 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 ## Status
 | Phase | Title | Status |
 |---|---|---|
-| 0 | Engineering foundation | code written; exit gate pending (needs Docker on the dev machine) |
-| 1 | Identity, tenancy, administration | not started |
+| 0 | Engineering foundation | **complete**: gate passed in CI on 2026-09-23 (`f24f940`) |
+| 1 | Identity, tenancy, administration | in progress on branch `phase-1` |
 | 2 | Coordinate reference systems | not started, **needs official control points** (fixtures/README.md) |
 | 3 | Projects, layer engine, web map shell | not started |
 | 4 | Basemaps | not started |

@@ -50,6 +50,8 @@ jobs:
       - run: cp .env.example .env
       - name: Start stack
         run: scripts/ci-step.sh docker compose up -d --build --wait
+      - name: Seed demo accounts
+        run: scripts/ci-step.sh docker compose exec -T backend python manage.py seed_demo
       - run: corepack enable && pnpm install --frozen-lockfile
       - run: pnpm --filter @spatial/web exec playwright install --with-deps chromium
       - run: scripts/ci-step.sh pnpm --filter @spatial/web e2e

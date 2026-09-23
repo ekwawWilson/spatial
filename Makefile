@@ -11,7 +11,7 @@ AS_OWNER := -e DB_USER=$(POSTGRES_USER) -e DB_PASSWORD=$(POSTGRES_PASSWORD)
 BACKEND_RUN := $(COMPOSE) run --rm --no-deps $(AS_OWNER) backend
 
 .PHONY: help env up down build logs ps migrate fixtures seed shell \
-        test test-backend test-web e2e lint typecheck check demo-phase-0 web-install
+        test test-backend test-web e2e lint typecheck check demo-phase-0 demo-phase-1 web-install
 
 help:
 	@grep -E '^[a-z0-9-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-16s %s\n",$$1,$$2}'
@@ -40,7 +40,8 @@ migrate: ## Apply database migrations
 fixtures: ## Rebuild shared test datasets in fixtures/generated
 	$(COMPOSE) run --rm --no-deps backend python manage.py build_fixtures
 
-seed: migrate fixtures ## Migrate and build sample data (loads into the DB from Phase 3)
+seed: migrate fixtures ## Migrate, build fixtures, create demo districts and users
+	$(COMPOSE) run --rm backend python manage.py seed_demo
 
 shell: ## Django shell
 	$(COMPOSE) exec backend python manage.py shell
@@ -74,3 +75,6 @@ check: lint typecheck test ## Everything CI runs
 
 demo-phase-0: ## Walk through the Phase 0 deliverable
 	./scripts/demo-phase-0.sh
+
+demo-phase-1: ## Walk through the Phase 1 deliverable (needs `make up seed`)
+	./scripts/demo-phase-1.sh

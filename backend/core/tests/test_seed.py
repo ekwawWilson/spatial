@@ -8,6 +8,13 @@ pytestmark = pytest.mark.django_db
 
 
 @override_settings(DEBUG=True)
+def test_seed_demo_works_under_row_level_security():
+    # Runs as the app role via tenant_context, like the API.
+    call_command("seed_demo", verbosity=0)
+    assert Membership.objects.filter(district__code="SMA").count() == len(Role)
+
+
+@override_settings(DEBUG=True)
 def test_seed_demo_is_idempotent():
     call_command("seed_demo", verbosity=0)
     call_command("seed_demo", verbosity=0)

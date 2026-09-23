@@ -8,9 +8,9 @@ from typing import Any
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
-from django.db import transaction
 
 from core.models import District, Membership, Region, Role, User
+from core.tenancy import tenant_context
 
 DEFAULT_PASSWORD = "Demo-Pass-2026!"  # noqa: S105 - demo accounts only, refused without DEBUG
 
@@ -38,11 +38,17 @@ class Command(BaseCommand):
         parser.add_argument("--force", action="store_true", help="Run even if DEBUG is off.")
         parser.add_argument("--password", default=DEFAULT_PASSWORD)
 
-    @transaction.atomic
     def handle(self, *args: Any, **options: Any) -> None:
         if not settings.DEBUG and not options["force"]:
             raise CommandError("Refusing to create demo accounts with DEBUG off (use --force).")
+        # Runs as the app role with system-admin context, so row-level security
+        # applies exactly as it does to the API, whichever role the command
+        # connects as.
+        with tenant_context(None, is_system_admin=True):
+            self._seed(options["password"])
+        self.stdout.write(self.style.SUCCESS("Demo data ready. Password: " + options["password"]))
 
+    def _seed(self, password: str) -> None:
         region, _ = Region.objects.update_or_create(code="GA", defaults={"name": "Greater Accra"})
         districts = {}
         for code, name, kind in DISTRICTS:
@@ -57,7 +63,7 @@ class Command(BaseCommand):
             user.is_staff = user.is_superuser = sysadmin
             user.is_active = True
             user.failed_login_count, user.locked_until = 0, None
-            user.set_password(options["password"])
+            user.set_password(password)
             user.save()
             if district_code and role:
                 Membership.objects.update_or_create(
@@ -66,5 +72,3 @@ class Command(BaseCommand):
                     defaults={"role": role, "is_active": True},
                 )
             self.stdout.write(f"  {email:28} {role or 'system admin'}")
-
-        self.stdout.write(self.style.SUCCESS("Demo data ready. Password: " + options["password"]))

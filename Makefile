@@ -41,7 +41,7 @@ fixtures: ## Rebuild shared test datasets in fixtures/generated
 	$(COMPOSE) run --rm --no-deps backend python manage.py build_fixtures
 
 seed: migrate fixtures ## Migrate, build fixtures, create demo districts and users
-	$(COMPOSE) run --rm backend python manage.py seed_demo
+	$(BACKEND_RUN) python manage.py seed_demo
 
 shell: ## Django shell
 	$(COMPOSE) exec backend python manage.py shell

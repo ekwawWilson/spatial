@@ -33,4 +33,6 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 13 | Hardening and release | not started |
 
 ## Open items carried forward
+- **Phase 3:** Martin (vector tiles) connects as the app role, so row-level security hides tenant tables from it until tile requests carry a district context (e.g. per-district function sources, or tiles served through the API). Design this in Phase 3; don't grant Martin BYPASSRLS.
+- **Management commands and Celery tasks** that touch tenant tables must run inside `core.tenancy.tenant_context()`; `seed_demo` shows the pattern.
 - Official survey control points for the Phase 2 gate.

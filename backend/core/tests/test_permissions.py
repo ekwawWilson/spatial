@@ -45,7 +45,8 @@ ALLOWED = {
 
 def call(client, method, url_name, body, region=None):
     if body and body.get("region") == "<region>":
-        body = {**body, "region": region.id}
+        # Anonymous calls are refused before the body is read; any id will do.
+        body = {**body, "region": region.id if region else 1}
     return getattr(client, method)(reverse(url_name), body, format="json")
 
 
@@ -84,6 +85,8 @@ def test_anonymous_is_refused(api, endpoint):
 def test_permissions_doc_matches_code():
     """docs/dev/permissions.md must list exactly the matrix in core/permissions.py."""
     text = (settings.DOCS_DIR / "dev" / "permissions.md").read_text()
+    # Only the matrix section: the roles table above it has the same row shape.
+    text = text.split("## Permission matrix", 1)[1].split("\n## ", 1)[0]
     documented = {}
     for code, roles in re.findall(r"^\| `([a-z.]+)` \| ([^|]*)\|", text, flags=re.M):
         documented[code] = {r.strip() for r in roles.split(",") if r.strip()}

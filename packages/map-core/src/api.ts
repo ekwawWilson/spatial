@@ -3,6 +3,11 @@
 import { memoryTokenStore, type TokenStore } from "./tokens";
 import type {
   AuditEntry,
+  CoordinateSystem,
+  CrsDefaults,
+  CrsOperation,
+  DefinitionPreview,
+  Position,
   AuditFilters,
   District,
   DistrictKind,
@@ -50,7 +55,7 @@ export interface ApiClientOptions {
   onSessionExpired?: () => void;
 }
 
-type Method = "GET" | "POST" | "PATCH" | "DELETE";
+type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 function toMessages(value: unknown): string[] {
   if (Array.isArray(value)) return value.map(String);
@@ -202,6 +207,34 @@ export function createApiClient(options: ApiClientOptions = {}) {
     updateMember: (id: number, data: Partial<Pick<Member, "role" | "is_active">>) =>
       request<Member>("PATCH", `/api/memberships/${id}/`, data),
     removeMember: (id: number) => request<void>("DELETE", `/api/memberships/${id}/`),
+
+    // --- Coordinate reference systems ---------------------------------------------
+    listCrs: (params: { search?: string; include_inactive?: boolean } = {}) =>
+      request<CoordinateSystem[]>("GET", `/api/crs/systems/${query(params)}`),
+    addCrs: (data: { definition: string; name?: string; notes?: string; scope?: "district" | "global" }) =>
+      request<CoordinateSystem>("POST", "/api/crs/systems/", data),
+    updateCrs: (id: number, data: Partial<Pick<CoordinateSystem, "name" | "notes" | "is_active">>) =>
+      request<CoordinateSystem>("PATCH", `/api/crs/systems/${id}/`, data),
+    validateCrs: (definition: string) => request<DefinitionPreview>("POST", "/api/crs/validate/", { definition }),
+    crsDefaults: () => request<CrsDefaults>("GET", "/api/crs/defaults/"),
+    setSystemDefaultCrs: (crs: number) => request<void>("PUT", "/api/crs/defaults/system/", { crs }),
+    setDistrictDefaultCrs: (crs: number | null) => request<void>("PUT", "/api/crs/defaults/district/", { crs }),
+    setMyDefaultCrs: (crs: number | null) => request<void>("PUT", "/api/crs/defaults/me/", { crs }),
+    transformPoints: (from_crs: string, to_crs: string, points: Position[]) =>
+      request<{ points: Position[]; operation: CrsOperation }>("POST", "/api/crs/transform/", {
+        from_crs,
+        to_crs,
+        points,
+      }),
+    crsOperations: (from_crs: string, to_crs: string) =>
+      request<{ current: CrsOperation; candidates: CrsOperation[] }>(
+        "GET",
+        `/api/crs/operations/${query({ from_crs, to_crs })}`,
+      ),
+    pinCrsOperation: (from_crs: string, to_crs: string, pipeline: string) =>
+      request<void>("PUT", "/api/crs/operations/", { from_crs, to_crs, pipeline }),
+    unpinCrsOperation: (from_crs: string, to_crs: string) =>
+      request<void>("DELETE", `/api/crs/operations/${query({ from_crs, to_crs })}`),
 
     // --- Audit log ---------------------------------------------------------------
     listAudit: (filters: AuditFilters = {}) =>

@@ -20,8 +20,10 @@ A person can hold a different role in each district they belong to. System admin
 | `membership.view` | district_admin |
 | `membership.manage` | district_admin |
 | `audit.view` | district_admin |
+| `crs.manage` | district_admin |
 
 ## System administrator only
+- Set the system default coordinate system, add coordinate systems for every district, and pin the transformation used between two systems.
 - Create and edit regions and districts (districts are deactivated, never deleted).
 - Manage user accounts: create, deactivate, unlock, send password reset, grant system admin.
 - View the audit log across all districts.
@@ -34,7 +36,6 @@ A person can hold a different role in each district they belong to. System admin
 ## Planned permissions (added in later phases)
 | Phase | Permissions |
 |---|---|
-| 2 | `crs.manage` (district default CRS) |
 | 3 | `project.view`, `project.edit`, `layer.edit` |
 | 5 | `data.import`, `data.export` |
 | 7 | `checklist.edit` |

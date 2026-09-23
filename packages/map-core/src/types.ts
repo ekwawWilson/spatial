@@ -9,7 +9,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   viewer: "Viewer",
 };
 
-export type Permission = "district.view" | "membership.view" | "membership.manage" | "audit.view";
+export type Permission = "district.view" | "membership.view" | "membership.manage" | "audit.view" | "crs.manage";
 
 export interface DistrictBrief {
   id: number;
@@ -110,3 +110,53 @@ export interface AuditFilters {
   until?: string;
   page?: number;
 }
+
+// --- Coordinate reference systems (Phase 2) ---------------------------------------
+
+export interface CoordinateSystem {
+  id: number;
+  code: string;
+  name: string;
+  srid: number;
+  kind: "projected" | "geographic";
+  units: string;
+  unit_to_metre: number | null;
+  area_of_use: string;
+  bounds: [number, number, number, number] | null;
+  notes: string;
+  is_builtin: boolean;
+  scope: "builtin" | "global" | "district";
+  is_active: boolean;
+  /** For web maps: includes the server's datum shift (+towgs84). */
+  proj4: string;
+  wkt: string;
+}
+
+export type DefaultSource = "user" | "district" | "system";
+
+export interface CrsDefaults {
+  system: CoordinateSystem;
+  district: CoordinateSystem | null;
+  user: CoordinateSystem | null;
+  effective: { crs: CoordinateSystem; source: DefaultSource };
+}
+
+export interface CrsOperation {
+  name: string;
+  pipeline: string;
+  /** Stated accuracy in metres; null when PROJ doesn't know it. */
+  accuracy_m: number | null;
+  pinned: boolean;
+}
+
+export interface DefinitionPreview {
+  name: string;
+  kind: string;
+  units: string;
+  area_of_use: string;
+  bounds: number[] | null;
+  proj4: string;
+  epsg: number | null;
+}
+
+export type Position = [number, number];

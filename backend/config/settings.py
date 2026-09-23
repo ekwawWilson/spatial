@@ -58,7 +58,7 @@ TEMPLATES = [
 # The running app connects as the non-superuser app role so row-level security
 # applies (Phase 1). Migrations and tests override DB_USER/DB_PASSWORD with the
 # owner role (see docker-compose.yml and the Makefile).
-APP_DB_USER = env("APP_DB_USER", default="spatial_app")
+APP_DB_USER: str = env("APP_DB_USER", default="spatial_app")
 
 DATABASES = {
     "default": {
@@ -88,7 +88,7 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
-MEDIA_ROOT = env.path("MEDIA_ROOT", default=REPO_DIR / "media")
+MEDIA_ROOT = Path(env("MEDIA_ROOT", default=str(REPO_DIR / "media")))
 
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
@@ -103,17 +103,17 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
 }
 
-REDIS_URL = env("REDIS_URL", default="redis://redis:6379/0")
+REDIS_URL: str = env("REDIS_URL", default="redis://redis:6379/0")
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TASK_TRACK_STARTED = True
 
 # Phase 2 seeds the system default CRS from this on a new installation only.
-INITIAL_DEFAULT_CRS = env("INITIAL_DEFAULT_CRS", default="EPSG:2136")
+INITIAL_DEFAULT_CRS: str = env("INITIAL_DEFAULT_CRS", default="EPSG:2136")
 
 # Phase 8: organisation keys for .spp files. Parsed there; reserved here so the
 # setting exists in every environment from the start.
-SPP_ORG_KEYS = env("SPP_ORG_KEYS", default="")
+SPP_ORG_KEYS: str = env("SPP_ORG_KEYS", default="")
 
 # Shared test datasets (see fixtures/README.md).
-FIXTURES_DIR = env.path("FIXTURES_DIR", default=REPO_DIR / "fixtures")
+FIXTURES_DIR = Path(env("FIXTURES_DIR", default=str(REPO_DIR / "fixtures")))

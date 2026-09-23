@@ -95,7 +95,6 @@ services:
     image: ghcr.io/developmentseed/titiler:0.22.4
     environment:
       PORT: 8000
-      WORKERS_PER_CORE: 1
     ports:
       - "${TITILER_PORT:-8001}:8000"
     volumes:
@@ -112,6 +111,12 @@ services:
     volumes:
       - ./:/repo
       - web-node-modules:/repo/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5173/ > /dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 120s
     depends_on:
       backend:
         condition: service_healthy

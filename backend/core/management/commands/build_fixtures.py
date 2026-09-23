@@ -77,50 +77,96 @@ def design_layers() -> dict[str, LayerSpec]:
             n += 1
             x0 = 520.0 + 30.0 * k
             x1 = x0 + 30.0
-            parcels.append((
-                rect(x0, y0, x1, y1),
-                {"parcel_id": f"P-{n:03d}", "land_use": "residential",
-                 "tenure": "customary", "area_m2": 900.0},
-            ))
+            parcels.append(
+                (
+                    rect(x0, y0, x1, y1),
+                    {
+                        "parcel_id": f"P-{n:03d}",
+                        "land_use": "residential",
+                        "tenure": "customary",
+                        "area_m2": 900.0,
+                    },
+                )
+            )
             # Normal setback is 3 m on every side. B-003 is built 0.5 m from
             # its eastern boundary (seeded setback breach).
             east_setback = 0.5 if n == 3 else 3.0
-            buildings.append((
-                rect(x0 + 3.0, y0 + 3.0, x1 - east_setback, y1 - 3.0),
-                {"property_id": f"B-{n:03d}", "use": "residential",
-                 "floors": 2 if n % 2 else 1, "condition": "good"},
-            ))
+            buildings.append(
+                (
+                    rect(x0 + 3.0, y0 + 3.0, x1 - east_setback, y1 - 3.0),
+                    {
+                        "property_id": f"B-{n:03d}",
+                        "use": "residential",
+                        "floors": 2 if n % 2 else 1,
+                        "condition": "good",
+                    },
+                )
+            )
 
     return {
-        "district": (ogr.wkbPolygon, [("name", s), ("code", s)], [
-            (rect(0, 0, 2000, 2000), {"name": "Sample Municipal Assembly", "code": "SMA"}),
-        ]),
-        "communities": (ogr.wkbPolygon, [("name", s), ("code", s)], [
-            # 10 m overlap strip between x = 990 and x = 1000 (seeded).
-            (rect(0, 0, 1000, 2000), {"name": "Community A", "code": "SMA-A"}),
-            (rect(990, 0, 2000, 2000), {"name": "Community B", "code": "SMA-B"}),
-        ]),
-        "parcels": (ogr.wkbPolygon, [("parcel_id", s), ("land_use", s), ("tenure", s),
-                                      ("area_m2", r)], parcels),
-        "buildings": (ogr.wkbPolygon, [("property_id", s), ("use", s), ("floors", i),
-                                        ("condition", s)], buildings),
-        "streets": (ogr.wkbLineString, [("name", s), ("street_code", s), ("hierarchy", s)], [
-            (line((0, 1000), (2000, 1000)),
-             {"name": "Main Street", "street_code": "SMA-001", "hierarchy": "collector"}),
-            (line((500, 0), (500, 2000)),
-             {"name": "Asafo Road", "street_code": "SMA-002", "hierarchy": "local"}),
-            (line((1500, 0), (1500, 2000)),
-             {"name": "Market Road", "street_code": "SMA-003", "hierarchy": "local"}),
-        ]),
-        "drains": (ogr.wkbLineString, [("drain_id", s), ("type", s), ("condition", s)], [
-            # Roadside drain on the north side of Main Street, flowing east.
-            (line((500, 1006), (700, 1006)),
-             {"drain_id": "D-001", "type": "open_concrete", "condition": "silted"}),
-        ]),
-        "flood_zones": (ogr.wkbPolygon, [("zone_id", s), ("risk", s)], [
-            # Covers the eastern part of the southern parcel row: hits B-006.
-            (rect(590, 940, 700, 1000), {"zone_id": "F-001", "risk": "high"}),
-        ]),
+        "district": (
+            ogr.wkbPolygon,
+            [("name", s), ("code", s)],
+            [
+                (rect(0, 0, 2000, 2000), {"name": "Sample Municipal Assembly", "code": "SMA"}),
+            ],
+        ),
+        "communities": (
+            ogr.wkbPolygon,
+            [("name", s), ("code", s)],
+            [
+                # 10 m overlap strip between x = 990 and x = 1000 (seeded).
+                (rect(0, 0, 1000, 2000), {"name": "Community A", "code": "SMA-A"}),
+                (rect(990, 0, 2000, 2000), {"name": "Community B", "code": "SMA-B"}),
+            ],
+        ),
+        "parcels": (
+            ogr.wkbPolygon,
+            [("parcel_id", s), ("land_use", s), ("tenure", s), ("area_m2", r)],
+            parcels,
+        ),
+        "buildings": (
+            ogr.wkbPolygon,
+            [("property_id", s), ("use", s), ("floors", i), ("condition", s)],
+            buildings,
+        ),
+        "streets": (
+            ogr.wkbLineString,
+            [("name", s), ("street_code", s), ("hierarchy", s)],
+            [
+                (
+                    line((0, 1000), (2000, 1000)),
+                    {"name": "Main Street", "street_code": "SMA-001", "hierarchy": "collector"},
+                ),
+                (
+                    line((500, 0), (500, 2000)),
+                    {"name": "Asafo Road", "street_code": "SMA-002", "hierarchy": "local"},
+                ),
+                (
+                    line((1500, 0), (1500, 2000)),
+                    {"name": "Market Road", "street_code": "SMA-003", "hierarchy": "local"},
+                ),
+            ],
+        ),
+        "drains": (
+            ogr.wkbLineString,
+            [("drain_id", s), ("type", s), ("condition", s)],
+            [
+                # Roadside drain on the north side of Main Street, flowing east.
+                (
+                    line((500, 1006), (700, 1006)),
+                    {"drain_id": "D-001", "type": "open_concrete", "condition": "silted"},
+                ),
+            ],
+        ),
+        "flood_zones": (
+            ogr.wkbPolygon,
+            [("zone_id", s), ("risk", s)],
+            [
+                # Covers the eastern part of the southern parcel row: hits B-006.
+                (rect(590, 940, 700, 1000), {"zone_id": "F-001", "risk": "high"}),
+            ],
+        ),
     }
 
 
@@ -148,13 +194,24 @@ class Command(BaseCommand):
         ):
             (out / sub).mkdir()
             for name in layers:
-                self._write(out / sub / f"{name}.{ext}", driver, {name: layers[name]}, ref, ct,
-                            options=["ENCODING=UTF-8"] if driver == "ESRI Shapefile" else [])
+                self._write(
+                    out / sub / f"{name}.{ext}",
+                    driver,
+                    {name: layers[name]},
+                    ref,
+                    ct,
+                    options=["ENCODING=UTF-8"] if driver == "ESRI Shapefile" else [],
+                )
         self._zip_shapefiles(out / "shp")
 
         (out / "shp_no_crs").mkdir()
-        self._write(out / "shp_no_crs" / "parcels.shp", "ESRI Shapefile",
-                    {"parcels": layers["parcels"]}, native, to_native)
+        self._write(
+            out / "shp_no_crs" / "parcels.shp",
+            "ESRI Shapefile",
+            {"parcels": layers["parcels"]},
+            native,
+            to_native,
+        )
         (out / "shp_no_crs" / "parcels.prj").unlink()
 
         self._write_dxf(out / "sample.dxf", layers, to_native)
@@ -162,9 +219,16 @@ class Command(BaseCommand):
         self._write_manifest(out / "manifest.json", layers)
         self.stdout.write(self.style.SUCCESS(f"Fixtures written to {out}"))
 
-    def _write(self, path: Path, driver_name: str, layers: dict[str, LayerSpec],
-               ref: osr.SpatialReference, ct: osr.CoordinateTransformation,
-               multi_layer: bool = False, options: list[str] | None = None) -> None:
+    def _write(
+        self,
+        path: Path,
+        driver_name: str,
+        layers: dict[str, LayerSpec],
+        ref: osr.SpatialReference,
+        ct: osr.CoordinateTransformation,
+        multi_layer: bool = False,
+        options: list[str] | None = None,
+    ) -> None:
         ds = gdal.GetDriverByName(driver_name).Create(str(path), 0, 0, 0, gdal.GDT_Unknown)
         for name, (gtype, fields, feats) in layers.items():
             lyr = ds.CreateLayer(name, ref, gtype, options=options or [])
@@ -187,8 +251,9 @@ class Command(BaseCommand):
                     if part.suffix != ".zip":
                         zf.write(part, part.name)
 
-    def _write_dxf(self, path: Path, layers: dict[str, LayerSpec],
-                   ct: osr.CoordinateTransformation) -> None:
+    def _write_dxf(
+        self, path: Path, layers: dict[str, LayerSpec], ct: osr.CoordinateTransformation
+    ) -> None:
         # DXF keeps only the CAD layer name, so each source layer becomes a DXF layer.
         ds = gdal.GetDriverByName("DXF").Create(str(path), 0, 0, 0, gdal.GDT_Unknown)
         lyr = ds.CreateLayer("entities")
@@ -223,8 +288,9 @@ class Command(BaseCommand):
                     value = (110, 140, 90)
                 for b in range(3):
                     bands[b][idx] = value[b]
-        ds = gdal.GetDriverByName("GTiff").Create(str(path), size, size, 3, gdal.GDT_Byte,
-                                                   options=["COMPRESS=DEFLATE"])
+        ds = gdal.GetDriverByName("GTiff").Create(
+            str(path), size, size, 3, gdal.GDT_Byte, options=["COMPRESS=DEFLATE"]
+        )
         ds.SetGeoTransform((x0, 1.0, 0.0, y_top, 0.0, -1.0))
         ds.SetProjection(design.ExportToWkt())
         for b in range(3):
@@ -238,10 +304,20 @@ class Command(BaseCommand):
             "design_crs": f"EPSG:{DESIGN_EPSG}",
             "layers": {name: len(spec[2]) for name, spec in layers.items()},
             "seeded": {
-                "community_overlap": {"a": "SMA-A", "b": "SMA-B", "width_m": 10.0},
+                "community_overlap": {
+                    "a": "SMA-A",
+                    "b": "SMA-B",
+                    "width_m": 10.0,
+                    "length_m": 2000.0,
+                },
                 "building_in_flood_zone": {"property_id": "B-006", "zone_id": "F-001"},
-                "setback_breach": {"property_id": "B-003", "parcel_id": "P-003",
-                                   "side": "east", "setback_m": 0.5, "normal_setback_m": 3.0},
+                "setback_breach": {
+                    "property_id": "B-003",
+                    "parcel_id": "P-003",
+                    "side": "east",
+                    "setback_m": 0.5,
+                    "normal_setback_m": 3.0,
+                },
             },
         }
         path.write_text(json.dumps(manifest, indent=2) + "\n")

@@ -15,5 +15,6 @@ def test_core_migrations_reverse_cleanly_and_reapply():
         assert cursor.fetchone() == (True,)
 
 
+@pytest.mark.django_db
 def test_no_model_changes_without_migrations():
     call_command("makemigrations", "--check", "--dry-run", verbosity=0)

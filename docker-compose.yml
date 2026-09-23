@@ -106,13 +106,16 @@ services:
     command: ["sh", "-c", "corepack enable && pnpm install --frozen-lockfile=false && pnpm --filter @spatial/web dev --host 0.0.0.0"]
     environment:
       VITE_API_PROXY: http://backend:8000
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
     ports:
       - "${WEB_PORT:-5173}:5173"
     volumes:
       - ./:/repo
       - web-node-modules:/repo/node_modules
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:5173/ > /dev/null"]
+      # 127.0.0.1, not localhost: Alpine resolves localhost to ::1 first and Vite
+      # listens on IPv4 only.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ > /dev/null"]
       interval: 5s
       timeout: 3s
       retries: 60

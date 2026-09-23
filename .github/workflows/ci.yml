@@ -55,4 +55,6 @@ jobs:
       - run: scripts/ci-step.sh pnpm --filter @spatial/web e2e
       - name: Logs on failure
         if: failure()
-        run: docker compose logs --tail=200
+        run: |
+          docker compose logs --tail=200
+          scripts/ci-service-logs.sh

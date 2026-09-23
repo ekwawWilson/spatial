@@ -1,0 +1,29 @@
+# env / secrets
+.env
+*.key
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# node
+node_modules/
+dist/
+.vite/
+coverage/
+playwright-report/
+test-results/
+
+# app data
+media/
+backend/staticfiles/
+
+# editors
+.idea/
+.vscode/

@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create .env
+        run: cp .env.example .env
+      - name: Build images
+        run: docker compose build backend
+      - name: Lint
+        run: |
+          docker compose run --rm --no-deps backend ruff check .
+          docker compose run --rm --no-deps backend ruff format --check .
+      - name: Type-check
+        run: docker compose run --rm --no-deps backend mypy .
+      - name: Fixtures are up to date
+        run: |
+          make fixtures
+          git diff --exit-code -- fixtures/generated/manifest.json
+      - name: Tests
+        run: make test-backend
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: corepack enable && pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm --filter @spatial/web build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [backend, web]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: cp .env.example .env
+      - name: Start stack
+        run: docker compose up -d --build --wait
+      - run: corepack enable && pnpm install --frozen-lockfile
+      - run: pnpm --filter @spatial/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @spatial/web e2e
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail=200

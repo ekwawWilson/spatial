@@ -1,0 +1,8 @@
+-r requirements.txt
+pytest>=8.4,<9
+pytest-django>=4.11,<5
+pytest-cov>=7.0,<8
+ruff>=0.13,<0.14
+mypy>=1.18,<1.19
+django-stubs[compatible-mypy]>=5.2,<5.3
+djangorestframework-stubs[compatible-mypy]>=3.16,<3.17

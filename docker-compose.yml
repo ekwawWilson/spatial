@@ -1,0 +1,122 @@
+name: spatial
+
+x-backend-env: &backend-env
+  env_file: .env
+  environment:
+    FIXTURES_DIR: /fixtures
+    MEDIA_ROOT: /media
+
+services:
+  db:
+    image: postgis/postgis:16-3.5
+    env_file: .env
+    ports:
+      - "${DB_HOST_PORT:-5433}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # One-shot: applies migrations as the owner role, then exits.
+  migrate:
+    build: ./backend
+    <<: *backend-env
+    environment:
+      FIXTURES_DIR: /fixtures
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    command: ["python", "manage.py", "migrate", "--noinput"]
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build: ./backend
+    <<: *backend-env
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app
+      - ./fixtures:/fixtures
+      - media:/media
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health/').status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  worker:
+    build: ./backend
+    <<: *backend-env
+    command: ["celery", "-A", "config", "worker", "--loglevel=info"]
+    volumes:
+      - ./backend:/app
+      - ./fixtures:/fixtures
+      - media:/media
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  # Vector tiles straight from PostGIS (Phase 3). Read-only use of the app role.
+  martin:
+    image: ghcr.io/maplibre/martin:v0.18.1
+    command: ["--listen-addresses", "0.0.0.0:3000"]
+    environment:
+      DATABASE_URL: postgresql://${APP_DB_USER}:${APP_DB_PASSWORD}@db:5432/${POSTGRES_DB}
+    ports:
+      - "${MARTIN_PORT:-3000}:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # Raster tiles for drone orthophotos (Phase 11).
+  titiler:
+    image: ghcr.io/developmentseed/titiler:0.22.4
+    environment:
+      PORT: 8000
+      WORKERS_PER_CORE: 1
+    ports:
+      - "${TITILER_PORT:-8001}:8000"
+    volumes:
+      - media:/media:ro
+
+  web:
+    image: node:24-alpine
+    working_dir: /repo
+    command: ["sh", "-c", "corepack enable && pnpm install --frozen-lockfile=false && pnpm --filter @spatial/web dev --host 0.0.0.0"]
+    environment:
+      VITE_API_PROXY: http://backend:8000
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      - ./:/repo
+      - web-node-modules:/repo/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  media:
+  web-node-modules:

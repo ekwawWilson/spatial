@@ -24,7 +24,7 @@ test("planner imports a zipped shapefile, then exports the layer as GeoPackage",
   // Import: the file declares EPSG:2136, so it's preselected and needs no extra confirmation.
   await page.getByRole("button", { name: "Import data" }).click();
   const dialog = page.getByRole("dialog", { name: "Import data" });
-  await dialog.getByLabel("File").setInputFiles(path.join(FIXTURES, "shp", "buildings.zip"));
+  await dialog.getByLabel("File", { exact: true }).setInputFiles(path.join(FIXTURES, "shp", "buildings.zip"));
   await dialog.getByRole("button", { name: "Upload and inspect" }).click();
   await expect(dialog.getByLabel("Coordinate system of buildings")).toHaveValue("EPSG:2136");
   // Shapefile truncated "property_id" to "property_i"; map it back.

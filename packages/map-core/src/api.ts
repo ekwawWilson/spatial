@@ -410,7 +410,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     deleteChecklistAttachment: (id: number) => request<void>("DELETE", `/api/checklist-attachments/${id}/`),
     downloadChecklistAttachment: (id: number) => blob(`/api/checklist-attachments/${id}/download/`),
     exportChecklist: (projectId: number, format: "csv" | "pdf") =>
-      blob(`/api/projects/${projectId}/checklist/export/${query({ format })}`),
+      blob(`/api/projects/${projectId}/checklist/export/${query({ type: format })}`),
     readinessDashboard: () => request<ReadinessDashboard>("GET", "/api/readiness/"),
     getChecklistTemplate: () => request<ChecklistTemplate>("GET", "/api/readiness/template/"),
     customiseChecklistTemplate: () => request<ChecklistTemplate>("POST", "/api/readiness/template/"),

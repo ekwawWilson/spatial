@@ -146,7 +146,7 @@ class ChecklistView(APIView):
 
 
 @extend_schema(
-    parameters=[DISTRICT_HEADER, OpenApiParameter("format", str, enum=["csv", "pdf"])],
+    parameters=[DISTRICT_HEADER, OpenApiParameter("type", str, enum=["csv", "pdf"])],
     responses={200: OpenApiTypes.BINARY},
 )
 class ChecklistExportView(APIView):
@@ -157,7 +157,8 @@ class ChecklistExportView(APIView):
 
     def get(self, request: Request, project_id: int) -> HttpResponse:
         data = services.checklist(_project(request, project_id))
-        fmt = request.query_params.get("format", "csv")
+        # "type", not "format": DRF reserves ?format= for its own renderers.
+        fmt = request.query_params.get("type", "csv")
         stem = f"checklist-{project_id}-{timezone.localdate().isoformat()}"
         if fmt == "csv":
             response = HttpResponse(csv_bytes(data), content_type="text/csv; charset=utf-8")
@@ -167,7 +168,7 @@ class ChecklistExportView(APIView):
             response = HttpResponse(pdf_bytes(data), content_type="application/pdf")
             response["Content-Disposition"] = f'attachment; filename="{stem}.pdf"'
             return response
-        raise serializers.ValidationError({"format": "Use csv or pdf."})
+        raise serializers.ValidationError({"type": "Use csv or pdf."})
 
 
 STATUS_LABELS = dict(Item.Status.choices)

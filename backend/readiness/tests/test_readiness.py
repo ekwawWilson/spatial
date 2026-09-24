@@ -107,7 +107,7 @@ def patch_item(client, item_id, **values):
 def test_a_new_project_gets_the_default_checklist(planner):
     project = new_project(planner)
     data = checklist(planner, project["id"])
-    assert data["total"] == len(DEFAULT_ITEMS) == 21
+    assert data["total"] == len(DEFAULT_ITEMS) == 22
     assert [g["group"] for g in data["groups"]] == [
         "authority",
         "planning_area",
@@ -145,14 +145,14 @@ def test_district_template_is_used_for_new_projects_only(admin, planner, distric
     assert bad.status_code == 400
 
     after = new_project(planner, "After")
-    assert checklist(planner, after["id"])["total"] == 22
-    assert checklist(planner, before["id"])["total"] == 21  # unchanged...
+    assert checklist(planner, after["id"])["total"] == 23
+    assert checklist(planner, before["id"])["total"] == 22  # unchanged...
     refreshed = planner.post(reverse("project-checklist", args=[before["id"]])).json()
-    assert refreshed["added"] == 1 and refreshed["total"] == 22  # ...until asked
+    assert refreshed["added"] == 1 and refreshed["total"] == 23  # ...until asked
 
     # The platform default is untouched, and the district can go back to it.
     default = Template.objects.get(district__isnull=True)
-    assert default.items.count() == 21
+    assert default.items.count() == 22
     assert admin.delete(template_url).status_code == 204
     assert admin.get(template_url).json()["own"] is False
 
@@ -285,7 +285,7 @@ def test_score_updates_after_an_import(planner, tmp_path, django_capture_on_comm
     assert item["metrics"]["feature_count"] == 1
     assert item["rules_met"] is True
     assert patch_item(planner, item["id"], status="ready").status_code == 200
-    assert checklist(planner, project["id"])["score"] == round(100 / 21)
+    assert checklist(planner, project["id"])["score"] == round(100 / 22)
 
 
 def test_only_district_admins_verify(planner, admin):
@@ -370,16 +370,16 @@ def test_attachments(planner, viewer):
 def test_export_csv_and_pdf(planner):
     project = new_project(planner)
     url = reverse("project-checklist-export", args=[project["id"]])
-    response = planner.get(url, {"format": "csv"})
+    response = planner.get(url, {"type": "csv"})
     assert response.status_code == 200
     rows = list(csv.reader(io.StringIO(response.content.decode("utf-8-sig"))))
     assert rows[0][:3] == ["Group", "Item", "Status"]
     assert "Agreed planning-area boundary" in [r[1] for r in rows if len(r) > 1]
     assert rows[-1][:2] == ["Score", "0%"]
 
-    pdf = planner.get(url, {"format": "pdf"})
+    pdf = planner.get(url, {"type": "pdf"})
     assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
-    assert planner.get(url, {"format": "xls"}).status_code == 400
+    assert planner.get(url, {"type": "xls"}).status_code == 400
 
 
 def test_district_dashboard(planner):
@@ -388,7 +388,7 @@ def test_district_dashboard(planner):
     data = planner.get(reverse("readiness-dashboard")).json()
     assert [p["name"] for p in data["projects"]] == ["Alpha", "Beta"]
     assert data["score"] == 0
-    assert all(p["total"] == 21 for p in data["projects"])
+    assert all(p["total"] == 22 for p in data["projects"])
 
 
 # --- Tenancy, roles, audit -----------------------------------------------------------------

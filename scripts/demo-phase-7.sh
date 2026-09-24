@@ -33,4 +33,4 @@ step "3. Marking it ready is refused until the rules are met"
 curl -sS -X PATCH "$API/checklist-items/$I/" "${H[@]}" -d '{"status":"ready"}' -w '\n  HTTP %{http_code}\n'
 
 step "4. The CSV export"
-curl -fsS "$API/projects/$P/checklist/export/?format=csv" -H "Authorization: Bearer $T" -H "X-District-ID: $D" | head -5
+curl -fsS "$API/projects/$P/checklist/export/?type=csv" -H "Authorization: Bearer $T" -H "X-District-ID: $D" | head -5

@@ -3,6 +3,7 @@
 import io
 import json
 import urllib.error
+from email.message import Message
 from unittest import mock
 
 import pytest
@@ -47,7 +48,7 @@ def google_ok(request, timeout):
 
 def google_rejects(request, timeout):
     body = io.BytesIO(json.dumps({"error": {"message": "API key not valid."}}).encode())
-    raise urllib.error.HTTPError(request.full_url, 400, "Bad Request", {}, body)
+    raise urllib.error.HTTPError(request.full_url, 400, "Bad Request", Message(), body)
 
 
 # --- Presets and offline rules --------------------------------------------------------

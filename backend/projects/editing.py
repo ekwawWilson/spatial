@@ -15,36 +15,54 @@ from .models import ACCEPTED_GEOJSON_TYPES, Feature, Layer
 
 def history(feature: Feature) -> list[dict[str, Any]]:
     """Every recorded version of a feature, newest first, with its geometry
-    (native CRS) and properties as they were, and who changed it when."""
-    entries = list(
+    (native CRS) and properties as they were, and who changed it when.
+
+    A save writes the row and then its exact geometry (two audit records with
+    the same version number); they are one version here, shown with the
+    complete state after the geometry write and restored from it."""
+    records = list(
         AuditLog.objects.filter(table_name="projects_feature", row_id=str(feature.pk)).order_by(
-            "-id"
+            "id"
         )
     )
+    versions: list[tuple[AuditLog, AuditLog, set[str]]] = []  # (first, last, changed)
+    for record in records:
+        number = (record.after or record.before or {}).get("version")
+        previous = versions[-1] if versions else None
+        if (
+            previous is not None
+            and record.action == "UPDATE"
+            and previous[1].action != "DELETE"
+            and (previous[1].after or {}).get("version") == number
+        ):
+            versions[-1] = (previous[0], record, previous[2] | set(record.changed_fields()))
+        else:
+            versions.append((record, record, set(record.changed_fields())))
+    versions.reverse()
     emails = dict(
-        User.objects.filter(id__in={e.user_id for e in entries if e.user_id}).values_list(
-            "id", "email"
-        )
+        User.objects.filter(
+            id__in={first.user_id for first, _, _ in versions if first.user_id}
+        ).values_list("id", "email")
     )
-    hexes = {e.pk: (e.after or {}).get("geom_native") for e in entries}
     geometries: dict[int, Any] = {}
     with connection.cursor() as cursor:
-        for entry_id, hexwkb in hexes.items():
+        for _, last, _ in versions:
+            hexwkb = (last.after or {}).get("geom_native")
             if hexwkb:
                 cursor.execute("SELECT ST_AsGeoJSON(%s::geometry, 17)", [hexwkb])
-                geometries[entry_id] = json.loads(cursor.fetchone()[0])
+                geometries[last.pk] = json.loads(cursor.fetchone()[0])
     return [
         {
-            "audit_id": e.pk,
-            "version": (e.after or e.before or {}).get("version"),
-            "action": e.action,
-            "at": e.occurred_at.isoformat(),
-            "user_email": emails.get(e.user_id) if e.user_id else None,
-            "changed_fields": [f for f in e.changed_fields() if f not in ("updated_at", "version")],
-            "properties": (e.after or {}).get("properties"),
-            "geometry": geometries.get(e.pk),
+            "audit_id": last.pk,
+            "version": (last.after or last.before or {}).get("version"),
+            "action": first.action,
+            "at": first.occurred_at.isoformat(),
+            "user_email": emails.get(first.user_id) if first.user_id else None,
+            "changed_fields": sorted(f for f in changed if f not in ("updated_at", "version")),
+            "properties": (last.after or {}).get("properties"),
+            "geometry": geometries.get(last.pk),
         }
-        for e in entries
+        for first, last, changed in versions
     ]
 
 

@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 ('kind', models.CharField(choices=[('projected', 'Projected'), ('geographic', 'Geographic')], max_length=12)),
                 ('units', models.CharField(help_text="Axis unit, e.g. 'metre', 'Gold Coast foot'", max_length=40)),
                 ('unit_to_metre', models.FloatField(help_text='Linear unit in metres; null for degrees', null=True)),
-                ('area_of_use', models.CharField(blank=True, max_length=200)),
+                ('area_of_use', models.TextField(blank=True)),
                 ('bounds', models.JSONField(help_text='[west, south, east, north] in degrees', null=True)),
                 ('notes', models.TextField(blank=True)),
                 ('is_builtin', models.BooleanField(default=False)),

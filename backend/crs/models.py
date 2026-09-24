@@ -30,7 +30,8 @@ class CoordinateSystem(models.Model):
     unit_to_metre = models.FloatField(
         null=True, help_text="Linear unit in metres; null for degrees"
     )
-    area_of_use = models.CharField(max_length=200, blank=True)
+    # EPSG area descriptions can be long (UTM 31N: ~300 characters).
+    area_of_use = models.TextField(blank=True)
     bounds = models.JSONField(null=True, help_text="[west, south, east, north] in degrees")
     notes = models.TextField(blank=True)
     is_builtin = models.BooleanField(default=False)

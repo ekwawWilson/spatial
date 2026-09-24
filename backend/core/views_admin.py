@@ -86,7 +86,8 @@ class DistrictViewSet(ReadAnyWriteSystemAdmin):
 
     serializer_class = DistrictSerializer
     queryset = District.objects.none()  # schema hint; get_queryset() is used
-    http_method_names = ["get", "post", "patch", "head", "options"]
+    # PUT only for the boundary action; districts themselves use PATCH.
+    http_method_names = ["get", "post", "put", "patch", "head", "options"]
     pagination_class = None
 
     @extend_schema(
@@ -97,6 +98,14 @@ class DistrictViewSet(ReadAnyWriteSystemAdmin):
     def boundary(self, request: Request, pk: str | None = None) -> Response:
         """The district's official boundary (WGS 84), used to check planning areas."""
         return _district_boundary(self.get_object(), request)
+
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        if not kwargs.get("partial"):
+            return Response(
+                {"detail": "Use PATCH to change a district."},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
+        return super().update(request, *args, **kwargs)
 
     def get_queryset(self) -> QuerySet[District]:
         qs = District.objects.select_related("region")

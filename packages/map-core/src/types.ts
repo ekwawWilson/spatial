@@ -22,7 +22,10 @@ export type Permission =
   | "basemap.manage"
   | "data.import"
   | "data.export"
-  | "boundary.approve";
+  | "boundary.approve"
+  | "checklist.edit"
+  | "checklist.verify"
+  | "checklist.template";
 
 export interface DistrictBrief {
   id: number;

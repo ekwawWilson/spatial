@@ -1,0 +1,188 @@
+# ruff: noqa: E501 - long descriptive strings read better unwrapped
+"""The platform's default checklist, from what a Ghanaian Local Plan needs
+before preparation starts (LUPA 2016 / L.I. 2384 practice). Districts can
+adapt it; projects copy it when they start."""
+
+from typing import Any
+
+DEFAULT_ITEMS: list[dict[str, Any]] = [
+    # 1. Authority and set-up
+    {
+        "group": "authority",
+        "key": "assembly-resolution",
+        "kind": "document",
+        "title": "Assembly decision to prepare the plan",
+        "description": "Resolution of the District Assembly (through its Spatial Planning Committee) to prepare this local plan, and why.",
+    },
+    {
+        "group": "authority",
+        "key": "higher-level-plan",
+        "kind": "layer",
+        "domain": "J",
+        "geometry_type": "polygon",
+        "title": "Approved Structure Plan or District SDF",
+        "description": "The higher-level plan this local plan must conform to.",
+        "rules": {"min_features": 1},
+    },
+    {
+        "group": "authority",
+        "key": "planning-team",
+        "kind": "document",
+        "title": "Planning team named",
+        "description": "Physical Planning (lead), Works, a licensed surveyor, the DPCU, and LUSPA regional office contacts.",
+    },
+    {
+        "group": "authority",
+        "key": "budget-timeline",
+        "kind": "document",
+        "title": "Budget and timeline",
+        "description": "Including surveys and consultation.",
+    },
+    {
+        "group": "authority",
+        "key": "public-notice",
+        "kind": "document",
+        "title": "Public notice of intention to prepare the plan",
+    },
+    # 2. Planning area
+    {
+        "group": "planning_area",
+        "key": "boundary",
+        "kind": "boundary",
+        "title": "Agreed planning-area boundary",
+        "description": "Georeferenced, agreed with neighbouring plans, inside the district.",
+        "rules": {"boundary_status": "agreed", "no_overlaps": True},
+    },
+    {
+        "group": "planning_area",
+        "key": "plan-period",
+        "kind": "document",
+        "title": "Plan period set",
+        "description": "Typically 10 years, with review points.",
+    },
+    # 3. Base map
+    {
+        "group": "base_map",
+        "key": "imagery",
+        "kind": "document",
+        "title": "Recent imagery (under 12 months old)",
+        "description": "Drone or high-resolution satellite imagery of the planning area (loaded as a basemap).",
+    },
+    {
+        "group": "base_map",
+        "key": "topography",
+        "kind": "layer",
+        "domain": "F",
+        "geometry_type": "line",
+        "title": "Topography (contours)",
+        "rules": {"min_features": 1, "min_coverage": 80},
+    },
+    {
+        "group": "base_map",
+        "key": "cadastre",
+        "kind": "layer",
+        "domain": "B",
+        "geometry_type": "polygon",
+        "title": "Parcels (cadastre and customary allocations)",
+        "rules": {"min_features": 1, "min_coverage": 80, "min_attributes": 80},
+    },
+    {
+        "group": "base_map",
+        "key": "approved-layouts",
+        "kind": "layer",
+        "domain": "J",
+        "geometry_type": "polygon",
+        "title": "Existing approved layout schemes",
+        "rules": {"min_features": 1},
+    },
+    # 4. Existing situation
+    {
+        "group": "existing",
+        "key": "buildings",
+        "kind": "layer",
+        "domain": "C",
+        "geometry_type": "polygon",
+        "title": "Buildings and land use",
+        "rules": {"min_features": 1, "min_coverage": 90, "min_attributes": 80, "max_age_days": 365},
+    },
+    {
+        "group": "existing",
+        "key": "streets",
+        "kind": "layer",
+        "domain": "D",
+        "geometry_type": "line",
+        "title": "Streets and access",
+        "rules": {"min_features": 1, "min_coverage": 80},
+    },
+    {
+        "group": "existing",
+        "key": "infrastructure",
+        "kind": "layer",
+        "domain": "E",
+        "geometry_type": "point",
+        "title": "Infrastructure and services",
+        "description": "Drains, water, electricity, schools, clinics, markets, sanitation.",
+        "rules": {"min_features": 1},
+    },
+    {
+        "group": "existing",
+        "key": "environment",
+        "kind": "layer",
+        "domain": "F",
+        "geometry_type": "polygon",
+        "title": "Environment and hazards",
+        "description": "Rivers and buffers, wetlands, flood-prone areas, slopes.",
+        "rules": {"min_features": 1},
+    },
+    {
+        "group": "existing",
+        "key": "development",
+        "kind": "layer",
+        "domain": "G",
+        "geometry_type": "point",
+        "title": "Permits, applications and unauthorised development",
+        "rules": {"min_features": 1},
+    },
+    {
+        "group": "existing",
+        "key": "socioeconomic",
+        "kind": "document",
+        "title": "Population, households and livelihoods",
+        "description": "Census data plus a sample survey.",
+    },
+    # 5. People and standards
+    {
+        "group": "people",
+        "key": "traditional-authorities",
+        "kind": "document",
+        "title": "Traditional authorities and landowners consulted",
+        "description": "Their consent matters most, because most land is customary.",
+    },
+    {
+        "group": "people",
+        "key": "community-consultation",
+        "kind": "document",
+        "title": "Community consultation held",
+        "description": "Assembly Member, Unit Committee, community meetings; women, youth, traders.",
+    },
+    {
+        "group": "people",
+        "key": "agencies",
+        "kind": "document",
+        "title": "Utilities and agencies consulted",
+        "description": "ECG, GWCL, GHA / Department of Urban Roads, EPA, NADMO.",
+    },
+    {
+        "group": "people",
+        "key": "standards",
+        "kind": "document",
+        "title": "Planning standards adopted",
+        "description": "Zoning guidelines and planning standards: plot sizes, road reserves, facility thresholds, open space, setbacks.",
+    },
+    {
+        "group": "people",
+        "key": "population-projection",
+        "kind": "document",
+        "title": "Population projection for the plan period",
+    },
+]

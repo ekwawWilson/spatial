@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "projects",
     "basemaps",
     "transfer",
+    "readiness",
 ]
 
 MIDDLEWARE = [

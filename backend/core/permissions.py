@@ -30,6 +30,9 @@ PERMISSIONS: dict[str, frozenset[Role]] = {
     "data.import": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
     "data.export": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
     "boundary.approve": frozenset({Role.DISTRICT_ADMIN}),
+    "checklist.edit": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
+    "checklist.verify": frozenset({Role.DISTRICT_ADMIN}),
+    "checklist.template": frozenset({Role.DISTRICT_ADMIN}),
 }
 
 

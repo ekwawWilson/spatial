@@ -221,10 +221,13 @@ def test_history_and_restore(planner):
         format="json",
     ).json()
     history = planner.get(reverse("feature-history", args=[created["id"]])).json()
-    original = next(
-        h for h in history if h["geometry"] and h["geometry"]["coordinates"] == [SQUARE]
-    )
-    assert history[0]["geometry"]["coordinates"] == [moved]  # newest first
+    # One entry per version (a save's row and geometry writes are one version),
+    # each with its complete state, newest first.
+    assert [(h["version"], h["action"]) for h in history] == [(2, "UPDATE"), (1, "INSERT")]
+    assert history[0]["geometry"]["coordinates"] == [moved]
+    original = history[-1]
+    assert original["geometry"]["coordinates"] == [SQUARE]
+    assert original["properties"] == {"pid": "P"}
 
     restored = planner.post(
         reverse("feature-restore", args=[created["id"]]),

@@ -52,6 +52,8 @@ jobs:
         run: scripts/ci-step.sh docker compose up -d --build --wait
       - name: Seed demo accounts
         run: scripts/ci-step.sh docker compose exec -T backend python manage.py seed_demo
+      - name: Build test fixtures (used by the import tests)
+        run: scripts/ci-step.sh docker compose exec -T backend python manage.py build_fixtures
       - run: corepack enable && pnpm install --frozen-lockfile
       - run: pnpm --filter @spatial/web exec playwright install --with-deps chromium
       - run: scripts/ci-step.sh pnpm --filter @spatial/web e2e

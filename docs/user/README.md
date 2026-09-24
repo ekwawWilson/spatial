@@ -9,4 +9,5 @@ Written for physical planners, district administrators and field officers. Secti
 - [Projects, layers and the map](projects-and-layers.md)
 - [Basemaps](basemaps.md)
 - [Importing and exporting data](import-export.md)
+- [Editing features and making the planning area](editing-and-boundaries.md)
 - [System administration](system-admin.md)

@@ -112,6 +112,9 @@ export function MapView(props: MapViewProps) {
     });
     target.current.addEventListener("mouseleave", () => latest.current.onPointer(null));
     map.current = olMap;
+    // Development builds expose the map so browser tests can find a vertex's
+    // pixel position (e.g. to check snapping precision).
+    if (import.meta.env.DEV) (window as unknown as { __spatialMap?: OlMap }).__spatialMap = olMap;
     return () => {
       olMap.setTarget(undefined);
       map.current = null;

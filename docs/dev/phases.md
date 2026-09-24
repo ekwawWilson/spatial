@@ -23,7 +23,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 3 | Projects, layer engine, web map shell | **complete except manual panning QA** (decision 2026-09-24): gate passed in CI (`2d702d9`); open item in `docs/qa/phase-3-map-performance.md` |
 | 4 | Basemaps | **complete except live-key QA** (decision 2026-09-24): gate passed in CI (`e17bc7b`); open item in `docs/qa/phase-4-basemap-keys.md` |
 | 5 | Import and export | **complete except manual QGIS check and DWG verification** (decision 2026-09-24): gate passed in CI (`37e8604`); open items in `docs/qa/phase-5-qgis-exports.md` and the Phase 5 notes |
-| 6 | Editing and boundary creation | not started |
+| 6 | Editing and boundary creation | in progress on branch `phase-6` |
 | 7 | Readiness checklist | not started |
 | 8 | `.spp` project files | not started |
 | 9 | Android field app (offline) | not started |
@@ -59,3 +59,11 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 - **DWG** needs LibreDWG, which isn't packaged for Ubuntu 24.04. The backend image builds it from source only with `--build-arg WITH_LIBREDWG=true`; that build is **not yet verified**. Without it, DWG import/export says so plainly and the DWG test is skipped.
 - **One transaction per import:** a failure or "abort" adds nothing. Progress goes through the cache (Redis db 1), so it's visible while the transaction is open.
 - **Gate item "exports open correctly in QGIS"** is manual: `docs/qa/phase-5-qgis-exports.md`.
+
+## Phase 6 notes
+- **Map edits** leave the map in EPSG:3857 and are converted server-side (`geometry_crs`), so coordinates of record never depend on the browser's maths.
+- **Editing is limited to layers loaded as GeoJSON** (≤ 2,000 features); very large tiled layers are view-only on the map.
+- **Undo/redo** replays saves through the API; each step is a new version, so history is complete.
+- **GPS-walk boundaries** (method `gps`) are accepted by the API; the field capture that produces them comes in Phase 10.
+- **Traverses** use grid bearings; ground distances can be reduced with a scale factor. The known-survey gate test is `projects/tests/test_traverse.py`.
+- **Development builds** expose the OpenLayers map as `window.__spatialMap` for browser tests (snapping precision). Production builds don't.

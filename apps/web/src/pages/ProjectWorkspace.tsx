@@ -1,9 +1,11 @@
 import {
+  ApiError,
   convert,
   formatArea,
   formatLength,
   formatPosition,
   registerSystems,
+  type BasemapConfig,
   type CoordinateSystem,
   type Layer,
 } from "@spatial/map-core";
@@ -14,6 +16,7 @@ import { ErrorMessage } from "../components/ErrorMessage";
 import { MapView, type Measurement, type Tool } from "../components/map/MapView";
 import { useLoad } from "../components/useLoad";
 import { AttributeTable, IdentifyPanel } from "../components/workspace/AttributeTable";
+import { BasemapPicker } from "../components/workspace/BasemapPicker";
 import { SchemaEditor, StyleEditor } from "../components/workspace/LayerEditors";
 import { LayerTree } from "../components/workspace/LayerTree";
 import { useSession } from "../session";
@@ -38,6 +41,49 @@ export function ProjectWorkspace() {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [error, setError] = useState<unknown>(null);
   const canEditLayers = can("layer.edit");
+  const basemaps = useLoad(() => api.listBasemaps(), [api, districtId]);
+  const basemapKey = `spatial.basemap.${id}`;
+  const [basemapId, setBasemapId] = useState<number | null | undefined>(() => {
+    try {
+      const stored = localStorage.getItem(basemapKey);
+      return stored === null ? undefined : stored === "" ? null : Number(stored);
+    } catch {
+      return undefined;
+    }
+  });
+  const [basemapConfig, setBasemapConfig] = useState<BasemapConfig | null>(null);
+  const [basemapOpacity, setBasemapOpacity] = useState(1);
+  const [basemapProblem, setBasemapProblem] = useState<string | null>(null);
+
+  // Default to the first available basemap until the user picks one.
+  const effectiveBasemapId = basemapId === undefined ? (basemaps.data?.[0]?.id ?? null) : basemapId;
+
+  useEffect(() => {
+    setBasemapConfig(null);
+    setBasemapProblem(null);
+    if (effectiveBasemapId === null) return;
+    let current = true;
+    api
+      .basemapConfig(effectiveBasemapId)
+      .then((config) => current && setBasemapConfig(config))
+      .catch((err: unknown) => {
+        if (!current) return;
+        const detail = err instanceof ApiError ? err.message : String(err);
+        setBasemapProblem(detail);
+      });
+    return () => {
+      current = false;
+    };
+  }, [api, effectiveBasemapId]);
+
+  function chooseBasemap(value: number | null) {
+    setBasemapId(value);
+    try {
+      localStorage.setItem(basemapKey, value === null ? "" : String(value));
+    } catch {
+      // storage unavailable: choice lasts for this visit
+    }
+  }
 
   useEffect(() => {
     if (layersLoad.data) setLayers(layersLoad.data);
@@ -128,6 +174,14 @@ export function ProjectWorkspace() {
       </header>
       <ErrorMessage error={error ?? layersLoad.error} />
       <aside className="workspace-side">
+        <BasemapPicker
+          basemaps={basemaps.data ?? []}
+          selectedId={effectiveBasemapId}
+          opacity={basemapOpacity}
+          problem={basemapProblem}
+          onSelect={chooseBasemap}
+          onOpacity={setBasemapOpacity}
+        />
         <LayerTree
           layers={layers}
           selectedLayerId={selectedLayerId}
@@ -168,6 +222,9 @@ export function ProjectWorkspace() {
           onMeasure={setMeasurement}
           onPointer={setPointer}
           zoomTo={zoomTo}
+          basemap={basemapConfig}
+          basemapOpacity={basemapOpacity}
+          onBasemapError={setBasemapProblem}
         />
         <div className="map-status" aria-live="polite">
           <span aria-label="Pointer position">{pointerText}</span>

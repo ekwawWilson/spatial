@@ -18,7 +18,8 @@ export type Permission =
   | "project.view"
   | "project.edit"
   | "layer.edit"
-  | "feature.edit";
+  | "feature.edit"
+  | "basemap.manage";
 
 export interface DistrictBrief {
   id: number;
@@ -278,4 +279,41 @@ export interface FeaturePage {
   numberReturned: number;
   next_offset: number | null;
   features: MapFeature[];
+}
+
+// --- Basemaps (Phase 4) ------------------------------------------------------------------
+
+export type BasemapKind = "xyz" | "wms" | "wmts" | "google" | "bing";
+export type BasemapPreset = "osm" | "esri_imagery" | "google_roadmap" | "google_satellite" | "bing_aerial";
+
+export interface Basemap {
+  id: number;
+  name: string;
+  kind: BasemapKind;
+  preset: string;
+  url: string;
+  layers: string;
+  attribution: string;
+  min_zoom: number;
+  max_zoom: number;
+  requires_key: boolean;
+  has_key: boolean;
+  offline_cache_allowed: boolean;
+  notes: string;
+  is_active: boolean;
+  order: number;
+  scope: "global" | "district";
+}
+
+/** What the map needs to draw a basemap (Google comes back as ready-made XYZ). */
+export interface BasemapConfig {
+  id: number;
+  name: string;
+  kind: Exclude<BasemapKind, "google">;
+  url: string;
+  layers: string;
+  attribution: string;
+  min_zoom: number;
+  max_zoom: number;
+  key?: string;
 }

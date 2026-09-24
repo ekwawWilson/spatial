@@ -4,6 +4,7 @@ import { Layout } from "./components/Layout";
 import { RequireAuth, RequirePermission, RequireSystemAdmin } from "./components/guards";
 import { AccountPage } from "./pages/AccountPage";
 import { AuditPage } from "./pages/AuditPage";
+import { BasemapsPage } from "./pages/BasemapsPage";
 import { CrsPage } from "./pages/CrsPage";
 import { DistrictsPage } from "./pages/DistrictsPage";
 import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPages";
@@ -32,6 +33,7 @@ export function App() {
         <Route index element={<HomePage />} />
         <Route path="account" element={<AccountPage />} />
         <Route path="crs" element={<CrsPage />} />
+        <Route path="basemaps" element={<BasemapsPage />} />
         <Route
           path="projects"
           element={

@@ -7,4 +7,5 @@ Written for physical planners, district administrators and field officers. Secti
 - [The audit log](audit-log.md)
 - [Coordinate systems](coordinate-systems.md)
 - [Projects, layers and the map](projects-and-layers.md)
+- [Basemaps](basemaps.md)
 - [System administration](system-admin.md)

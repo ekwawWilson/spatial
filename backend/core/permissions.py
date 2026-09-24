@@ -26,6 +26,7 @@ PERMISSIONS: dict[str, frozenset[Role]] = {
     "project.edit": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
     "layer.edit": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
     "feature.edit": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
+    "basemap.manage": frozenset({Role.DISTRICT_ADMIN}),
 }
 
 

@@ -3,6 +3,9 @@
 import { memoryTokenStore, type TokenStore } from "./tokens";
 import type {
   AuditEntry,
+  Basemap,
+  BasemapConfig,
+  BasemapPreset,
   CoordinateSystem,
   CrsDefaults,
   CrsOperation,
@@ -293,6 +296,18 @@ export function createApiClient(options: ApiClientOptions = {}) {
       if (!response.ok) throw await toApiError(response);
       return response.arrayBuffer();
     },
+
+    // --- Basemaps --------------------------------------------------------------------
+    listBasemaps: (params: { include_inactive?: boolean } = {}) =>
+      request<Basemap[]>("GET", `/api/basemaps/${query(params)}`),
+    addBasemapPreset: (preset: BasemapPreset, api_key = "", scope: "district" | "global" = "district") =>
+      request<Basemap>("POST", "/api/basemaps/presets/", { preset, api_key, scope }),
+    createBasemap: (data: Partial<Basemap> & { api_key?: string; scope?: "district" | "global" }) =>
+      request<Basemap>("POST", "/api/basemaps/", data),
+    updateBasemap: (id: number, data: Partial<Basemap> & { api_key?: string }) =>
+      request<Basemap>("PATCH", `/api/basemaps/${id}/`, data),
+    /** 400 with a plain message when the key is missing or rejected. */
+    basemapConfig: (id: number) => request<BasemapConfig>("GET", `/api/basemaps/${id}/client-config/`),
 
     // --- Audit log ---------------------------------------------------------------
     listAudit: (filters: AuditFilters = {}) =>

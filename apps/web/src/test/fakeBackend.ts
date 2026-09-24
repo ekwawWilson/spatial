@@ -35,6 +35,7 @@ export function makeMe(overrides: Partial<Me> = {}): Me {
         role: "district_admin",
         permissions: [
           "audit.view",
+          "basemap.manage",
           "crs.manage",
           "district.view",
           "feature.edit",

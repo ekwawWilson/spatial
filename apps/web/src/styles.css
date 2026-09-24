@@ -116,6 +116,7 @@ button.secondary { background: var(--surface); color: var(--accent); border: 1px
 .layer-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.2rem; align-items: center; }
 .layer-actions input[type="range"] { width: 5rem; }
 .small { font-size: 0.8rem; }
+.basemap-picker { display: flex; flex-direction: column; gap: 0.3rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border); }
 .stack { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 1rem; }
 .table-scroll { overflow: auto; }
 tr.selected td { background: #fdecdf; }

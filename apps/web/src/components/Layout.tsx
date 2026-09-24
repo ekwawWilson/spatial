@@ -45,6 +45,7 @@ export function Layout() {
         </NavLink>
         {can("project.view") && <NavLink to="/projects">Projects</NavLink>}
         <NavLink to="/crs">Coordinate systems</NavLink>
+        {(can("basemap.manage") || me?.is_system_admin) && <NavLink to="/basemaps">Basemaps</NavLink>}
         {can("membership.view") && <NavLink to="/members">Members</NavLink>}
         {can("audit.view") && <NavLink to="/audit">Audit log</NavLink>}
         {me?.is_system_admin && (

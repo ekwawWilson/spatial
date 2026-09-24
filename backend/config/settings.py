@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "core",
     "crs",
     "projects",
+    "basemaps",
 ]
 
 MIDDLEWARE = [
@@ -151,6 +152,11 @@ CELERY_TASK_TRACK_STARTED = True
 
 # Phase 2 seeds the system default CRS from this on a new installation only.
 INITIAL_DEFAULT_CRS: str = env("INITIAL_DEFAULT_CRS", default="EPSG:2136")
+
+# Encrypts third-party API keys at rest (e.g. basemap keys). If empty, a key is
+# derived from SECRET_KEY; set it explicitly in production so SECRET_KEY can be
+# rotated without losing stored keys.
+FIELD_ENCRYPTION_KEY: str = env("FIELD_ENCRYPTION_KEY", default="")
 
 # Phase 8: organisation keys for .spp files. Parsed there; reserved here so the
 # setting exists in every environment from the start.

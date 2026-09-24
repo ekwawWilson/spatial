@@ -1,6 +1,13 @@
 import "ol/ol.css";
 
-import { authenticatedTileLoader, olStyleFunction, type ApiClient, type Layer } from "@spatial/map-core";
+import {
+  authenticatedTileLoader,
+  basemapSource,
+  olStyleFunction,
+  type ApiClient,
+  type BasemapConfig,
+  type Layer,
+} from "@spatial/map-core";
 import OlMap from "ol/Map";
 import View from "ol/View";
 import { Attribution, Rotate, ScaleLine, Zoom } from "ol/control";
@@ -14,7 +21,6 @@ import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
 import VectorTileLayer from "ol/layer/VectorTile";
 import { transformExtent } from "ol/proj";
-import OSM from "ol/source/OSM";
 import VectorSource from "ol/source/Vector";
 import VectorTileSource from "ol/source/VectorTile";
 import { getArea, getLength } from "ol/sphere";
@@ -46,6 +52,11 @@ export interface MapViewProps {
   onPointer(position: [number, number] | null): void;
   /** Zoom to this WGS 84 extent when it changes. */
   zoomTo: { extent: number[]; seq: number } | null;
+  /** Background map, or null for none. */
+  basemap: BasemapConfig | null;
+  basemapOpacity: number;
+  /** Called with a plain message when the basemap can't be drawn. */
+  onBasemapError(message: string | null): void;
 }
 
 const GHANA_CENTRE_3857: [number, number] = [-133_000, 870_000];
@@ -55,6 +66,7 @@ export function MapView(props: MapViewProps) {
   const map = useRef<OlMap | null>(null);
   const layerById = useRef(new Map<number, BaseLayer>());
   const measureSource = useRef(new VectorSource());
+  const baseLayer = useRef(new TileLayer({ zIndex: -1 }));
   const latest = useRef(props);
   latest.current = props;
 
@@ -68,7 +80,7 @@ export function MapView(props: MapViewProps) {
     });
     const olMap = new OlMap({
       target: target.current,
-      layers: [new TileLayer({ source: new OSM(), zIndex: -1 }), measureLayer],
+      layers: [baseLayer.current, measureLayer],
       view: new View({ center: GHANA_CENTRE_3857, zoom: 7 }),
       controls: [new Zoom(), new Rotate({ autoHide: false, tipLabel: "Reset north" }), new ScaleLine(), new Attribution()],
     });
@@ -175,6 +187,40 @@ export function MapView(props: MapViewProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.tool]);
+
+  // Basemap: build its source; report tiles that fail (e.g. a revoked key).
+  useEffect(() => {
+    const config = props.basemap;
+    latest.current.onBasemapError(null);
+    if (!config) {
+      baseLayer.current.setSource(null);
+      return;
+    }
+    let cancelled = false;
+    basemapSource(config)
+      .then((source) => {
+        if (cancelled) return;
+        let reported = false;
+        source.on("tileloaderror", () => {
+          if (reported) return;
+          reported = true;
+          latest.current.onBasemapError(
+            `${config.name}: tiles aren't loading. The API key may be invalid or the service unavailable.`,
+          );
+        });
+        baseLayer.current.setSource(source);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) latest.current.onBasemapError(`${config.name}: ${err instanceof Error ? err.message : String(err)}`);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [props.basemap]);
+
+  useEffect(() => {
+    baseLayer.current.setOpacity(props.basemapOpacity);
+  }, [props.basemapOpacity]);
 
   useEffect(() => {
     const olMap = map.current;

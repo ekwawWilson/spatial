@@ -22,6 +22,10 @@ PERMISSIONS: dict[str, frozenset[Role]] = {
     "membership.manage": frozenset({Role.DISTRICT_ADMIN}),
     "audit.view": frozenset({Role.DISTRICT_ADMIN}),
     "crs.manage": frozenset({Role.DISTRICT_ADMIN}),
+    "project.view": ALL_ROLES,
+    "project.edit": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
+    "layer.edit": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
+    "feature.edit": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
 }
 
 

@@ -37,4 +37,5 @@ python_files = ["test_*.py"]
 addopts = "--strict-markers -ra"
 markers = [
   "fixtures: checks on the shared test datasets in /fixtures",
+  "slow: performance checks (run in CI; skip locally with -m 'not slow')",
 ]

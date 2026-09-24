@@ -23,8 +23,8 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 3 | Projects, layer engine, web map shell | **complete except manual panning QA** (decision 2026-09-24): gate passed in CI (`2d702d9`); open item in `docs/qa/phase-3-map-performance.md` |
 | 4 | Basemaps | **complete except live-key QA** (decision 2026-09-24): gate passed in CI (`e17bc7b`); open item in `docs/qa/phase-4-basemap-keys.md` |
 | 5 | Import and export | **complete except manual QGIS check and DWG verification** (decision 2026-09-24): gate passed in CI (`37e8604`); open items in `docs/qa/phase-5-qgis-exports.md` and the Phase 5 notes |
-| 6 | Editing and boundary creation | in progress on branch `phase-6` |
-| 7 | Readiness checklist | not started |
+| 6 | Editing and boundary creation | gate in CI on branch `phase-6`; awaiting the merge decision |
+| 7 | Readiness checklist | in progress on branch `phase-7` |
 | 8 | `.spp` project files | not started |
 | 9 | Android field app (offline) | not started |
 | 10 | Sync, conflicts, ground-truthing | not started |
@@ -67,3 +67,11 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 - **GPS-walk boundaries** (method `gps`) are accepted by the API; the field capture that produces them comes in Phase 10.
 - **Traverses** use grid bearings; ground distances can be reduced with a scale factor. The known-survey gate test is `projects/tests/test_traverse.py`.
 - **Development builds** expose the OpenLayers map as `window.__spatialMap` for browser tests (snapping precision). Production builds don't.
+
+## Phase 7 notes
+- **Templates** are copied into each project when it's created (a signal on `PlanProject`), so later template changes never rewrite a project's checklist. "Add new template items" copies what's missing. The platform default has no district; a district's own copy follows the tenant rule.
+- **Metrics are live:** computed on each read (`readiness.services`), so the score follows imports and edits without a refresh job. Coverage uses a ~100-cell grid over the planning area in Web Mercator. It measures how spread out the data is, not a survey quantity, and treats points, lines and polygons the same way.
+- **Rules gate statuses:** ready and verified need the item's rules met. Only `checklist.verify` (district admins) can verify, or change a verified item.
+- **Linking:** an unlinked layer item links to the one project layer with its exact title. Import and Draw from the item create the layer under that title.
+- **Send to field** is disabled until Phase 10 (ground-truthing tasks).
+- **History fix (from Phase 6 QA):** a save writes the row and then its exact geometry, so each version produced two audit records. Feature history now shows one entry per version, with its complete state.

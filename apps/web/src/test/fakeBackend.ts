@@ -36,6 +36,9 @@ export function makeMe(overrides: Partial<Me> = {}): Me {
         permissions: [
           "audit.view",
           "basemap.manage",
+          "checklist.edit",
+          "checklist.template",
+          "checklist.verify",
           "crs.manage",
           "data.export",
           "data.import",

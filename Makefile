@@ -11,7 +11,7 @@ AS_OWNER := -e DB_USER=$(POSTGRES_USER) -e DB_PASSWORD=$(POSTGRES_PASSWORD)
 BACKEND_RUN := $(COMPOSE) run --rm --no-deps $(AS_OWNER) backend
 
 .PHONY: help env up down build logs ps migrate fixtures seed shell \
-        test test-backend test-web e2e lint typecheck check demo-phase-0 demo-phase-1 demo-phase-2 demo-phase-3 demo-phase-4 demo-phase-5 demo-phase-6 web-install
+        test test-backend test-web e2e lint typecheck check demo-phase-0 demo-phase-1 demo-phase-2 demo-phase-3 demo-phase-4 demo-phase-5 demo-phase-6 demo-phase-7 web-install
 
 help:
 	@grep -E '^[a-z0-9-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-16s %s\n",$$1,$$2}'
@@ -93,3 +93,6 @@ demo-phase-5: ## Walk through the Phase 5 deliverable (needs `make up seed`)
 
 demo-phase-6: ## Walk through the Phase 6 deliverable (needs `make up seed`)
 	./scripts/demo-phase-6.sh
+
+demo-phase-7: ## Walk through the Phase 7 deliverable (needs `make up seed`)
+	./scripts/demo-phase-7.sh

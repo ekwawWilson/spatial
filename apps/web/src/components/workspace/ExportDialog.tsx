@@ -28,10 +28,14 @@ export function ExportDialog(props: {
   layers: Layer[];
   systems: CoordinateSystem[];
   selection?: { layerId: number; featureIds: number[] } | null;
+  /** Layers ticked to start with (default: the visible ones). */
+  initialLayerIds?: number[];
   onClose(): void;
 }) {
   const { api } = useSession();
-  const [layerIds, setLayerIds] = useState<number[]>(props.layers.filter((l) => l.visible).map((l) => l.id));
+  const [layerIds, setLayerIds] = useState<number[]>(
+    props.initialLayerIds ?? props.layers.filter((l) => l.visible).map((l) => l.id),
+  );
   const [format, setFormat] = useState<ExportFormat>("gpkg");
   const [crs, setCrs] = useState("");
   const [onlySelection, setOnlySelection] = useState(false);

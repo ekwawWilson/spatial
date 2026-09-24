@@ -36,6 +36,12 @@ import type {
   Role,
   Tokens,
   User,
+  Checklist,
+  ChecklistItem,
+  ChecklistStatus,
+  ChecklistTemplate,
+  ReadinessDashboard,
+  TemplateItem,
 } from "./types";
 
 export interface ServiceStatus {
@@ -146,6 +152,15 @@ export function createApiClient(options: ApiClientOptions = {}) {
       refreshing = null;
     });
     return refreshing;
+  }
+
+  /** An authenticated file download. */
+  async function blob(path: string): Promise<Blob> {
+    const send = () => doFetch(`${root}${path}`, { headers: headers(false) });
+    let response = await send();
+    if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
+    if (!response.ok) throw await toApiError(response);
+    return response.blob();
   }
 
   async function request<T>(method: Method, path: string, body?: unknown, retry = true): Promise<T> {
@@ -369,6 +384,42 @@ export function createApiClient(options: ApiClientOptions = {}) {
       if (!response.ok) throw await toApiError(response);
       return response.blob();
     },
+
+    // --- Readiness checklist ---------------------------------------------------------
+    getChecklist: (projectId: number) => request<Checklist>("GET", `/api/projects/${projectId}/checklist/`),
+    /** Adds items added to the template since the project started. */
+    addMissingChecklistItems: (projectId: number) =>
+      request<Checklist & { added: number }>("POST", `/api/projects/${projectId}/checklist/`),
+    updateChecklistItem: (
+      id: number,
+      data: Partial<{ status: ChecklistStatus; owner: number | null; due_date: string | null; notes: string; linked_layer: number | null }>,
+    ) => request<ChecklistItem>("PATCH", `/api/checklist-items/${id}/`, data),
+    /** Creates a layer for a map-layer item (named after it, in its domain) and links it. */
+    createChecklistLayer: (id: number) =>
+      request<ChecklistItem & { layer: number }>("POST", `/api/checklist-items/${id}/create-layer/`),
+    async uploadChecklistAttachment(itemId: number, file: File): Promise<ChecklistItem> {
+      const form = new FormData();
+      form.set("file", file);
+      const send = () =>
+        doFetch(`${root}/api/checklist-items/${itemId}/attachments/`, { method: "POST", headers: headers(false), body: form });
+      let response = await send();
+      if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
+      if (!response.ok) throw await toApiError(response);
+      return (await response.json()) as ChecklistItem;
+    },
+    deleteChecklistAttachment: (id: number) => request<void>("DELETE", `/api/checklist-attachments/${id}/`),
+    downloadChecklistAttachment: (id: number) => blob(`/api/checklist-attachments/${id}/download/`),
+    exportChecklist: (projectId: number, format: "csv" | "pdf") =>
+      blob(`/api/projects/${projectId}/checklist/export/${query({ format })}`),
+    readinessDashboard: () => request<ReadinessDashboard>("GET", "/api/readiness/"),
+    getChecklistTemplate: () => request<ChecklistTemplate>("GET", "/api/readiness/template/"),
+    customiseChecklistTemplate: () => request<ChecklistTemplate>("POST", "/api/readiness/template/"),
+    revertChecklistTemplate: () => request<void>("DELETE", "/api/readiness/template/"),
+    createTemplateItem: (data: Omit<TemplateItem, "id" | "order"> & { order?: number }) =>
+      request<TemplateItem>("POST", "/api/readiness/template-items/", data),
+    updateTemplateItem: (id: number, data: Partial<Omit<TemplateItem, "id">>) =>
+      request<TemplateItem>("PATCH", `/api/readiness/template-items/${id}/`, data),
+    deleteTemplateItem: (id: number) => request<void>("DELETE", `/api/readiness/template-items/${id}/`),
 
     // --- Audit log ---------------------------------------------------------------
     listAudit: (filters: AuditFilters = {}) =>

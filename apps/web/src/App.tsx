@@ -5,6 +5,7 @@ import { RequireAuth, RequirePermission, RequireSystemAdmin } from "./components
 import { AccountPage } from "./pages/AccountPage";
 import { AuditPage } from "./pages/AuditPage";
 import { BasemapsPage } from "./pages/BasemapsPage";
+import { ChecklistPage } from "./pages/ChecklistPage";
 import { CrsPage } from "./pages/CrsPage";
 import { DistrictsPage } from "./pages/DistrictsPage";
 import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPages";
@@ -13,6 +14,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { MembersPage } from "./pages/MembersPage";
 import { ProjectWorkspace } from "./pages/ProjectWorkspace";
 import { ProjectsPage } from "./pages/ProjectsPage";
+import { ReadinessPage } from "./pages/ReadinessPage";
 import { StatusPage } from "./pages/StatusPage";
 import { UsersPage } from "./pages/UsersPage";
 
@@ -47,6 +49,22 @@ export function App() {
           element={
             <RequirePermission permission="project.view">
               <ProjectWorkspace />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="projects/:projectId/checklist"
+          element={
+            <RequirePermission permission="project.view">
+              <ChecklistPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="readiness"
+          element={
+            <RequirePermission permission="project.view">
+              <ReadinessPage />
             </RequirePermission>
           }
         />

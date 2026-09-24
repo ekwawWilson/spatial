@@ -10,4 +10,5 @@ Written for physical planners, district administrators and field officers. Secti
 - [Basemaps](basemaps.md)
 - [Importing and exporting data](import-export.md)
 - [Editing features and making the planning area](editing-and-boundaries.md)
+- [The readiness checklist](readiness-checklist.md)
 - [System administration](system-admin.md)

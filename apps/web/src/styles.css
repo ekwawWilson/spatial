@@ -130,3 +130,13 @@ fieldset { border: 1px solid var(--border); border-radius: 4px; }
 .facts dd { margin: 0; }
 ol.history { padding-left: 1.2rem; font-size: 0.85rem; }
 ol.history li { margin-bottom: 0.3rem; }
+
+/* Readiness checklist */
+.progress { height: 0.5rem; background: var(--border, #ddd); border-radius: 0.25rem; overflow: hidden; }
+.progress > div { height: 100%; background: var(--accent, #2a7a3b); }
+.score { font-size: 2rem; }
+.group-progress { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.6rem; margin: 0.5rem 0 1rem; }
+.blockers { border-left: 3px solid var(--danger); padding-left: 0.8rem; margin-bottom: 1rem; }
+.blockers ul, .checks { margin: 0.2rem 0; padding-left: 1.2rem; }
+.checklist-items tr.complete td:first-child { opacity: 0.75; }
+.checklist-items tr.details td { background: var(--surface, #fafafa); }

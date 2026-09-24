@@ -11,7 +11,7 @@ import {
   type Layer,
 } from "@spatial/map-core";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { ErrorMessage } from "../components/ErrorMessage";
 import { MapView, type Measurement, type Tool } from "../components/map/MapView";
@@ -21,18 +21,30 @@ import { BasemapPicker } from "../components/workspace/BasemapPicker";
 import { BoundaryPanel } from "../components/workspace/BoundaryPanel";
 import { EditPanel } from "../components/workspace/EditPanel";
 import { ExportDialog } from "../components/workspace/ExportDialog";
-import { ImportWizard } from "../components/workspace/ImportWizard";
+import { ImportWizard, type ImportBinding } from "../components/workspace/ImportWizard";
 import { SchemaEditor, StyleEditor } from "../components/workspace/LayerEditors";
 import { LayerTree } from "../components/workspace/LayerTree";
 import { useMapEditing } from "../components/workspace/useMapEditing";
 import { useSession } from "../session";
 
-type Dialog = { kind: "style" | "fields"; layer: Layer } | { kind: "import" | "export" } | null;
+type Dialog =
+  | { kind: "style" | "fields"; layer: Layer }
+  | { kind: "import"; binding?: ImportBinding }
+  | { kind: "export"; layerIds?: number[] }
+  | null;
+
+/** What the checklist page asks the workspace to open (router state). */
+export type ChecklistAction =
+  | { kind: "import"; binding: ImportBinding }
+  | { kind: "export"; layerId: number }
+  | { kind: "draw"; layerId: number };
 
 export function ProjectWorkspace() {
   const { projectId } = useParams();
   const id = Number(projectId);
   const { api, can, districtId } = useSession();
+  const location = useLocation();
+  const navigate = useNavigate();
   const project = useLoad(() => api.getProject(id), [api, id, districtId]);
   const layersLoad = useLoad(() => api.listLayers(id), [api, id, districtId]);
   const systems = useLoad(() => api.listCrs(), [api, districtId]);
@@ -99,6 +111,31 @@ export function ProjectWorkspace() {
     },
     onError: setError,
   });
+
+  // Open the tool a checklist item asked for, once the layers are loaded.
+  const checklistAction = (location.state as { checklist?: ChecklistAction } | null)?.checklist;
+  useEffect(() => {
+    if (!checklistAction || !layersLoad.data) return;
+    navigate(location.pathname, { replace: true, state: null });
+    if (checklistAction.kind === "import") {
+      setDialog({ kind: "import", binding: checklistAction.binding });
+    } else if (checklistAction.kind === "export") {
+      setDialog({ kind: "export", layerIds: [checklistAction.layerId] });
+    } else {
+      const layer = layersLoad.data.find((l) => l.id === checklistAction.layerId);
+      if (!layer) return;
+      setSelectedLayerId(layer.id);
+      setTool("identify");
+      editing.setSettings({
+        layerId: layer.id,
+        geometryType: layer.geometry_type,
+        mode: "draw",
+        snapLayerIds: [layer.id],
+        snapTolerance: 10,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checklistAction, layersLoad.data]);
 
   function chooseBasemap(value: number | null) {
     setBasemapId(value);
@@ -182,6 +219,7 @@ export function ProjectWorkspace() {
           {project.data?.community} · {project.data?.crs_detail.code} {project.data?.crs_detail.name}
         </span>
         <span className="spacer" />
+        <Link to={`/projects/${id}/checklist`}>Readiness checklist</Link>
         {can("data.import") && (
           <button type="button" className="secondary" onClick={() => setDialog({ kind: "import" })}>
             Import data
@@ -357,6 +395,7 @@ export function ProjectWorkspace() {
             projectId={id}
             layers={layers}
             systems={systems.data ?? []}
+            binding={dialog.binding}
             onDone={() => {
               layersLoad.reload();
               setDataVersion((v) => v + 1);
@@ -372,6 +411,7 @@ export function ProjectWorkspace() {
             layers={layers}
             systems={systems.data ?? []}
             selection={selected ? { layerId: selected.layerId, featureIds: [selected.featureId] } : null}
+            initialLayerIds={dialog.layerIds}
             onClose={() => setDialog(null)}
           />
         </div>

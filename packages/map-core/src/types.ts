@@ -450,3 +450,129 @@ export interface TraverseResult {
   corrections: [number, number][];
   polygon: GeoJSONGeometry;
 }
+
+// --- Readiness checklist (Phase 7) ------------------------------------------------------
+
+export type ChecklistGroup = "authority" | "planning_area" | "base_map" | "existing" | "people";
+export type ChecklistKind = "document" | "layer" | "boundary";
+export type ChecklistStatus = "not_started" | "in_progress" | "ready" | "verified";
+
+export interface ChecklistRules {
+  min_features?: number;
+  min_coverage?: number;
+  min_attributes?: number;
+  max_age_days?: number;
+  min_verified?: number;
+  boundary_status?: BoundaryStatus;
+  no_overlaps?: boolean;
+}
+
+export interface LayerMetrics {
+  layer: number;
+  layer_name: string;
+  feature_count: number;
+  /** % of the planning area (grid cells) holding features; null without a boundary. */
+  coverage: number | null;
+  attributes: number | null;
+  attribute_fields: string[];
+  newest: string | null;
+  age_days: number | null;
+  verified: number | null;
+}
+
+export interface BoundaryMetrics {
+  exists: boolean;
+  status: BoundaryStatus | null;
+  valid: boolean | null;
+  area_ha: number | null;
+  overlaps: number;
+}
+
+export interface ChecklistCheck {
+  ok: boolean;
+  label: string;
+  problem: string | null;
+}
+
+export interface ChecklistAttachment {
+  id: number;
+  name: string;
+  size: number;
+  uploaded_at: string;
+}
+
+export interface ChecklistItem {
+  id: number;
+  group: ChecklistGroup;
+  key: string;
+  title: string;
+  description: string;
+  kind: ChecklistKind;
+  domain: string;
+  geometry_type: "" | "point" | "line" | "polygon";
+  rules: ChecklistRules;
+  status: ChecklistStatus;
+  owner: number | null;
+  owner_name: string | null;
+  due_date: string | null;
+  notes: string;
+  linked_layer: number | null;
+  attachments: ChecklistAttachment[];
+  metrics: LayerMetrics | BoundaryMetrics | null;
+  checks: ChecklistCheck[];
+  rules_met: boolean;
+  complete: boolean;
+  blockers: string[];
+}
+
+export interface ChecklistGroupProgress {
+  group: ChecklistGroup;
+  label: string;
+  total: number;
+  complete: number;
+}
+
+export interface Checklist {
+  project: number;
+  project_name: string;
+  score: number;
+  complete: number;
+  total: number;
+  groups: ChecklistGroupProgress[];
+  items: ChecklistItem[];
+  blockers: { item: number; title: string; problem: string }[];
+}
+
+export interface ReadinessDashboard {
+  score: number;
+  projects: {
+    project: number;
+    name: string;
+    status: string;
+    score: number;
+    complete: number;
+    total: number;
+    groups: ChecklistGroupProgress[];
+    blockers: { item: number; title: string; problem: string }[];
+  }[];
+}
+
+export interface TemplateItem {
+  id: number;
+  group: ChecklistGroup;
+  key: string;
+  title: string;
+  description: string;
+  kind: ChecklistKind;
+  domain: string;
+  geometry_type: string;
+  rules: ChecklistRules;
+  order: number;
+}
+
+export interface ChecklistTemplate {
+  id: number | null;
+  name: string | null;
+  own: boolean;
+  items: TemplateItem[];
+}

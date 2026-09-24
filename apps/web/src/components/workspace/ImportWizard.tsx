@@ -72,10 +72,41 @@ export function choiceProblem(choice: LayerChoice, layer: InspectedLayer, inspec
   return null;
 }
 
+/** An import started from a checklist item: into its layer, or a new layer
+ * named after the item, in its domain. */
+export interface ImportBinding {
+  title: string;
+  layerId: number | null;
+  domain: Domain;
+  geometryType?: GeometryType;
+}
+
+/** Applies a checklist binding: the first source layer goes to the item's
+ * layer (or a new one named after it); any others are left out. */
+export function bindChoices(choices: LayerChoice[], binding: ImportBinding | undefined): LayerChoice[] {
+  if (!binding) return choices;
+  return choices.map((choice, i) => {
+    if (i > 0) return { ...choice, include: false };
+    const plan = binding.layerId
+      ? { ...choice.plan, target_layer: binding.layerId, new_layer: undefined }
+      : {
+          ...choice.plan,
+          target_layer: undefined,
+          new_layer: {
+            name: binding.title,
+            domain: binding.domain,
+            geometry_type: binding.geometryType ?? choice.plan.new_layer?.geometry_type ?? "polygon",
+          },
+        };
+    return { ...choice, plan };
+  });
+}
+
 export function ImportWizard(props: {
   projectId: number;
   layers: Layer[];
   systems: CoordinateSystem[];
+  binding?: ImportBinding;
   onDone(): void;
   onClose(): void;
 }) {
@@ -98,7 +129,7 @@ export function ImportWizard(props: {
       const inspected = await api.uploadImport(props.projectId, file, encoding || undefined);
       const found = inspected.inspection as Inspection;
       setJob(inspected);
-      setChoices(found.layers.map((layer) => defaultChoice(layer, found, props.systems)));
+      setChoices(bindChoices(found.layers.map((layer) => defaultChoice(layer, found, props.systems)), props.binding));
     } catch (err) {
       setError(err);
     } finally {
@@ -163,6 +194,12 @@ export function ImportWizard(props: {
   return (
     <div className="card wide" role="dialog" aria-modal="true" aria-label="Import data">
       <h2>Import data</h2>
+      {props.binding && (
+        <p className="muted small">
+          For the checklist item <strong>{props.binding.title}</strong>
+          {props.binding.layerId ? ", into its layer." : ", into a new layer named after it."}
+        </p>
+      )}
       {!job && (
         <form onSubmit={uploadFile} className="stack" aria-label="Choose a file">
           <p className="muted">

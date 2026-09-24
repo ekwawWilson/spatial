@@ -421,6 +421,7 @@ def test_item_changes_are_audited(planner):
     entry = AuditLog.objects.filter(
         table_name="readiness_item", row_id=str(item["id"]), action="UPDATE"
     ).latest("id")
+    assert entry.before is not None and entry.after is not None
     assert entry.before["status"] == "not_started"
     assert entry.after["status"] == "in_progress"
     assert entry.after["notes"] == "10 years"

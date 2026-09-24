@@ -9,7 +9,16 @@ export const ROLE_LABELS: Record<Role, string> = {
   viewer: "Viewer",
 };
 
-export type Permission = "district.view" | "membership.view" | "membership.manage" | "audit.view" | "crs.manage";
+export type Permission =
+  | "district.view"
+  | "membership.view"
+  | "membership.manage"
+  | "audit.view"
+  | "crs.manage"
+  | "project.view"
+  | "project.edit"
+  | "layer.edit"
+  | "feature.edit";
 
 export interface DistrictBrief {
   id: number;
@@ -160,3 +169,113 @@ export interface DefinitionPreview {
 }
 
 export type Position = [number, number];
+
+// --- Projects, layers, features (Phase 3) -----------------------------------------------
+
+export type Domain = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "other";
+
+export const DOMAIN_LABELS: Record<Domain, string> = {
+  A: "A. Territory",
+  B: "B. Land & parcels",
+  C: "C. Buildings & properties",
+  D: "D. Streets & addressing",
+  E: "E. Infrastructure & services",
+  F: "F. Environment & physical geography",
+  G: "G. Development activity",
+  H: "H. Socio-economic & demographic",
+  I: "I. Projects & investment",
+  J: "J. Planning & policy",
+  other: "Other",
+};
+
+export type GeometryType = "point" | "line" | "polygon";
+export type FieldType = "text" | "integer" | "decimal" | "boolean" | "date" | "choice";
+
+export interface SchemaField {
+  name: string;
+  label: string;
+  type: FieldType;
+  required: boolean;
+  choices?: (string | number)[];
+  default?: unknown;
+}
+
+export interface Symbol {
+  fill: string;
+  stroke: string;
+  stroke_width: number;
+  point_radius: number;
+  fill_opacity: number;
+}
+
+export type LayerStyle =
+  | ({ kind: "single"; label_field: string | null } & Symbol)
+  | {
+      kind: "categorized";
+      field: string;
+      categories: ({ value: unknown } & Symbol)[];
+      default: Symbol;
+      label_field: string | null;
+    };
+
+export interface CrsBrief {
+  id: number;
+  code: string;
+  name: string;
+  units: string;
+  kind: "projected" | "geographic";
+}
+
+export interface Project {
+  id: number;
+  name: string;
+  community: string;
+  description: string;
+  crs: number;
+  crs_detail: CrsBrief;
+  status: "draft" | "active" | "archived";
+  layer_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Layer {
+  id: number;
+  project: number;
+  name: string;
+  domain: Domain;
+  geometry_type: GeometryType;
+  crs: number;
+  crs_detail: CrsBrief;
+  schema: SchemaField[];
+  style: LayerStyle;
+  order: number;
+  visible: boolean;
+  opacity: number;
+  source: "drawn" | "upload" | "field" | "derived";
+  feature_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GeoJSONGeometry {
+  type: string;
+  coordinates: unknown;
+}
+
+export interface MapFeature {
+  type: "Feature";
+  id: number;
+  geometry: GeoJSONGeometry | null;
+  properties: Record<string, unknown>;
+  meta: { uuid: string; version: number; origin: string; verified: boolean; updated_at: string };
+}
+
+export interface FeaturePage {
+  type: "FeatureCollection";
+  crs_code: string;
+  numberMatched: number;
+  numberReturned: number;
+  next_offset: number | null;
+  features: MapFeature[];
+}

@@ -134,6 +134,11 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@spatial.local")
 SPECTACULAR_SETTINGS = {
     "TITLE": "Spatial Planning Platform API",
     "COMPONENT_SPLIT_REQUEST": True,
+    # Several models have a "kind" choice field; give each enum its own name.
+    "ENUM_NAME_OVERRIDES": {
+        "DistrictKindEnum": "core.models.District.Kind",
+        "CrsKindEnum": "crs.models.CoordinateSystem.Kind",
+    },
     "DESCRIPTION": "Community planning GIS platform for Ghanaian MMDAs.",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,

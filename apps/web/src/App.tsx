@@ -10,6 +10,8 @@ import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPage
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { MembersPage } from "./pages/MembersPage";
+import { ProjectWorkspace } from "./pages/ProjectWorkspace";
+import { ProjectsPage } from "./pages/ProjectsPage";
 import { StatusPage } from "./pages/StatusPage";
 import { UsersPage } from "./pages/UsersPage";
 
@@ -30,6 +32,22 @@ export function App() {
         <Route index element={<HomePage />} />
         <Route path="account" element={<AccountPage />} />
         <Route path="crs" element={<CrsPage />} />
+        <Route
+          path="projects"
+          element={
+            <RequirePermission permission="project.view">
+              <ProjectsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="projects/:projectId"
+          element={
+            <RequirePermission permission="project.view">
+              <ProjectWorkspace />
+            </RequirePermission>
+          }
+        />
         <Route
           path="members"
           element={

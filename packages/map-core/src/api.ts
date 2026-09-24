@@ -7,7 +7,12 @@ import type {
   CrsDefaults,
   CrsOperation,
   DefinitionPreview,
+  FeaturePage,
+  GeoJSONGeometry,
+  Layer,
+  MapFeature,
   Position,
+  Project,
   AuditFilters,
   District,
   DistrictKind,
@@ -39,6 +44,8 @@ export class ApiError extends Error {
     message: string,
     readonly status: number,
     readonly fields: Record<string, string[]> = {},
+    /** The parsed response body, e.g. the current feature on 409 Conflict. */
+    readonly body: unknown = null,
   ) {
     super(message);
     this.name = "ApiError";
@@ -72,11 +79,11 @@ async function toApiError(response: Response): Promise<ApiError> {
   }
   if (body && typeof body === "object" && !Array.isArray(body)) {
     const record = body as Record<string, unknown>;
-    if (typeof record.detail === "string") return new ApiError(record.detail, response.status);
+    if (typeof record.detail === "string") return new ApiError(record.detail, response.status, {}, body);
     const fields: Record<string, string[]> = {};
     for (const [key, value] of Object.entries(record)) fields[key] = toMessages(value);
     const first = fields.non_field_errors?.[0] ?? Object.values(fields)[0]?.[0];
-    return new ApiError(first ?? `Request failed (HTTP ${response.status})`, response.status, fields);
+    return new ApiError(first ?? `Request failed (HTTP ${response.status})`, response.status, fields, body);
   }
   if (Array.isArray(body)) {
     return new ApiError(toMessages(body)[0] ?? `Request failed (HTTP ${response.status})`, response.status);
@@ -235,6 +242,57 @@ export function createApiClient(options: ApiClientOptions = {}) {
       request<void>("PUT", "/api/crs/operations/", { from_crs, to_crs, pipeline }),
     unpinCrsOperation: (from_crs: string, to_crs: string) =>
       request<void>("DELETE", `/api/crs/operations/${query({ from_crs, to_crs })}`),
+
+    // --- Projects, layers, features ----------------------------------------------
+    listProjects: (params: { include_archived?: boolean; page?: number } = {}) =>
+      request<Page<Project>>("GET", `/api/projects/${query(params)}`),
+    getProject: (id: number) => request<Project>("GET", `/api/projects/${id}/`),
+    createProject: (data: { name: string; community?: string; description?: string; crs?: number }) =>
+      request<Project>("POST", "/api/projects/", data),
+    updateProject: (id: number, data: Partial<Pick<Project, "name" | "community" | "description" | "status">>) =>
+      request<Project>("PATCH", `/api/projects/${id}/`, data),
+    archiveProject: (id: number) => request<void>("DELETE", `/api/projects/${id}/`),
+    setLayerOrder: (projectId: number, layerIds: number[]) =>
+      request<void>("POST", `/api/projects/${projectId}/layer-order/`, { layer_ids: layerIds }),
+
+    listLayers: (projectId: number) => request<Layer[]>("GET", `/api/layers/${query({ project: projectId })}`),
+    createLayer: (data: Partial<Layer> & Pick<Layer, "project" | "name" | "geometry_type">) =>
+      request<Layer>("POST", "/api/layers/", data),
+    /** Removing schema fields that hold values needs them listed in confirmDrop. */
+    updateLayer: (id: number, data: Partial<Layer>, confirmDrop: string[] = []) =>
+      request<Layer>(
+        "PATCH",
+        `/api/layers/${id}/${query({ confirm_drop: confirmDrop.join(",") })}`,
+        data,
+      ),
+    deleteLayer: (id: number) => request<void>("DELETE", `/api/layers/${id}/`),
+    layerExtent: (id: number) =>
+      request<{ native: number[] | null; wgs84: number[] | null }>("GET", `/api/layers/${id}/extent/`),
+    listFeatures: (
+      layerId: number,
+      params: { geometry?: "wgs84" | "native"; bbox?: string; limit?: number; offset?: number } = {},
+    ) => request<FeaturePage>("GET", `/api/layers/${layerId}/features/${query(params)}`),
+    createFeature: (layerId: number, data: { geometry?: GeoJSONGeometry | null; properties?: Record<string, unknown> }) =>
+      request<MapFeature>("POST", `/api/layers/${layerId}/features/`, data),
+    /** 409 means someone else saved first; the error carries the current feature. */
+    updateFeature: (
+      id: number,
+      data: { version: number; geometry?: GeoJSONGeometry | null; properties?: Record<string, unknown> },
+    ) => request<MapFeature>("PATCH", `/api/features/${id}/`, data),
+    /** One feature, geometry in the layer's native CRS (exact coordinates). */
+    getFeature: (id: number) => request<MapFeature>("GET", `/api/features/${id}/`),
+    deleteFeature: (id: number) => request<void>("DELETE", `/api/features/${id}/`),
+    /** Vector tile bytes (null when the tile is empty), with auth and district headers. */
+    async fetchTile(layerId: number, z: number, x: number, y: number): Promise<ArrayBuffer | null> {
+      const path = `/api/layers/${layerId}/tiles/${z}/${x}/${y}.pbf`;
+      let response = await doFetch(`${root}${path}`, { headers: headers(false) });
+      if (response.status === 401 && tokens.get() && (await refreshTokens())) {
+        response = await doFetch(`${root}${path}`, { headers: headers(false) });
+      }
+      if (response.status === 204) return null;
+      if (!response.ok) throw await toApiError(response);
+      return response.arrayBuffer();
+    },
 
     // --- Audit log ---------------------------------------------------------------
     listAudit: (filters: AuditFilters = {}) =>

@@ -20,7 +20,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 0 | Engineering foundation | **complete**: gate passed in CI on 2026-09-23 (`f24f940`) |
 | 1 | Identity, tenancy, administration | **complete**: gate passed in CI on 2026-09-24 (`519edd6`) |
 | 2 | Coordinate reference systems | **complete except official control points** (decision 2026-09-24): gate passed in CI (`2f87af6`); the control-point test runs automatically once points are added to `fixtures/source/control_points.csv` |
-| 3 | Projects, layer engine, web map shell | not started |
+| 3 | Projects, layer engine, web map shell | in progress on branch `phase-3` |
 | 4 | Basemaps | not started |
 | 5 | Import and export | not started |
 | 6 | Editing and boundary creation | not started |
@@ -42,3 +42,9 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 - **Exact round trips:** PROJ's inverse of a 2D datum shift leaves up to ~3 mm error across Ghana. The platform uses one operation per pair of systems and inverts it numerically, so round trips are exact (< 1e-6 mm). Tested in `crs/tests/test_crs.py`.
 - **Web map definitions:** pyproj's PROJ strings omit the datum shift, which would place Accra-datum data about 313 m from the server's position. The API sends proj4 strings with `+towgs84` from the server's operation; tests check that proj4js agrees within 1 cm.
 - **Gate item "changing a default doesn't change existing projects":** projects arrive in Phase 3. Phase 2 tests that a default change touches nothing but the setting; Phase 3 adds the project-level test.
+
+## Phase 3 notes
+- **Tiles are served by Django** (`ST_AsMVT` inside the request's tenant context), not Martin: row-level security then applies to tiles with no extra machinery. The 100k-feature gate is measured by `test_tiles_for_a_100k_feature_layer_are_fast`, which covers zooms 14–17. The web map draws layers with more than 2,000 features from tiles at zoom 14 and above. Martin stays in docker-compose, unused, until a need appears.
+- **Native geometry** has no ORM field; `projects.geometry` is the only reader and writer. Triggers reject SRID mismatches and CRS changes on populated layers.
+- **Basemap:** OpenStreetMap is a placeholder until the Phase 4 basemap manager.
+- **Smooth panning** of the 100k layer in a browser is a manual QA check (`docs/qa/phase-3-map-performance.md`); the automated gate covers tile response times.

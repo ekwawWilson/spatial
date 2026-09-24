@@ -66,6 +66,8 @@ class ProjectViewSet(viewsets.ModelViewSet[PlanProject]):
             PlanProject.objects.filter(district_id=require_district_id(self.request))
             .select_related("crs")
             .annotate(layer_count=Count("layers"))
+            # GROUP BY queries ignore Meta.ordering, so order explicitly.
+            .order_by("-updated_at", "id")
         )
         if self.request.query_params.get("include_archived") != "true":
             qs = qs.exclude(status=PlanProject.Status.ARCHIVED)
@@ -153,6 +155,8 @@ class LayerViewSet(viewsets.ModelViewSet[Layer]):
             Layer.objects.filter(district_id=require_district_id(self.request))
             .select_related("crs")
             .annotate(feature_count=Count("features"))
+            # GROUP BY queries ignore Meta.ordering: draw order, top first.
+            .order_by("-order", "id")
         )
         project = self.request.query_params.get("project")
         if project:

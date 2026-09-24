@@ -43,6 +43,7 @@ export function Layout() {
         <NavLink to="/" end>
           Home
         </NavLink>
+        {can("project.view") && <NavLink to="/projects">Projects</NavLink>}
         <NavLink to="/crs">Coordinate systems</NavLink>
         {can("membership.view") && <NavLink to="/members">Members</NavLink>}
         {can("audit.view") && <NavLink to="/audit">Audit log</NavLink>}

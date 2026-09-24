@@ -85,7 +85,7 @@ test("draw with snapping, undo and redo, and restore from history", async ({ pag
     [corner.x + 4, corner.y - 3],
   ] as const;
   for (const [x, y] of clicks) {
-    const onMap = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest(".map") !== null, [x, y]);
+    const onMap = await page.evaluate((p) => document.elementFromPoint(p.x, p.y)?.closest(".map") !== null, { x, y });
     expect(onMap, `click at ${x},${y} is not on the map`).toBe(true);
     await page.mouse.click(x, y);
   }

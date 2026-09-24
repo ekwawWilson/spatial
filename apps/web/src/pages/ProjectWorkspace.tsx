@@ -17,11 +17,13 @@ import { MapView, type Measurement, type Tool } from "../components/map/MapView"
 import { useLoad } from "../components/useLoad";
 import { AttributeTable, IdentifyPanel } from "../components/workspace/AttributeTable";
 import { BasemapPicker } from "../components/workspace/BasemapPicker";
+import { ExportDialog } from "../components/workspace/ExportDialog";
+import { ImportWizard } from "../components/workspace/ImportWizard";
 import { SchemaEditor, StyleEditor } from "../components/workspace/LayerEditors";
 import { LayerTree } from "../components/workspace/LayerTree";
 import { useSession } from "../session";
 
-type Dialog = { kind: "style" | "fields"; layer: Layer } | null;
+type Dialog = { kind: "style" | "fields"; layer: Layer } | { kind: "import" | "export" } | null;
 
 export function ProjectWorkspace() {
   const { projectId } = useParams();
@@ -158,6 +160,16 @@ export function ProjectWorkspace() {
           {project.data?.community} · {project.data?.crs_detail.code} {project.data?.crs_detail.name}
         </span>
         <span className="spacer" />
+        {can("data.import") && (
+          <button type="button" className="secondary" onClick={() => setDialog({ kind: "import" })}>
+            Import data
+          </button>
+        )}
+        {can("data.export") && (
+          <button type="button" className="secondary" onClick={() => setDialog({ kind: "export" })} disabled={layers.length === 0}>
+            Export
+          </button>
+        )}
         <div className="tools" role="toolbar" aria-label="Map tools">
           {(
             [
@@ -258,6 +270,31 @@ export function ProjectWorkspace() {
           <p className="muted">Select a layer to see its attribute table.</p>
         )}
       </section>
+      {dialog?.kind === "import" && (
+        <div className="dialog">
+          <ImportWizard
+            projectId={id}
+            layers={layers}
+            systems={systems.data ?? []}
+            onDone={() => {
+              layersLoad.reload();
+              setDataVersion((v) => v + 1);
+            }}
+            onClose={() => setDialog(null)}
+          />
+        </div>
+      )}
+      {dialog?.kind === "export" && (
+        <div className="dialog">
+          <ExportDialog
+            projectId={id}
+            layers={layers}
+            systems={systems.data ?? []}
+            selection={selected ? { layerId: selected.layerId, featureIds: [selected.featureId] } : null}
+            onClose={() => setDialog(null)}
+          />
+        </div>
+      )}
       {dialog?.kind === "style" && (
         <div className="dialog" role="dialog" aria-modal="true" aria-label="Edit style">
           <StyleEditor

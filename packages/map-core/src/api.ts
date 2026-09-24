@@ -3,6 +3,9 @@
 import { memoryTokenStore, type TokenStore } from "./tokens";
 import type {
   AuditEntry,
+  DataJob,
+  ExportFormat,
+  ImportPlanItem,
   Basemap,
   BasemapConfig,
   BasemapPreset,
@@ -308,6 +311,34 @@ export function createApiClient(options: ApiClientOptions = {}) {
       request<Basemap>("PATCH", `/api/basemaps/${id}/`, data),
     /** 400 with a plain message when the key is missing or rejected. */
     basemapConfig: (id: number) => request<BasemapConfig>("GET", `/api/basemaps/${id}/client-config/`),
+
+    // --- Import and export ----------------------------------------------------------
+    /** Uploads a file for import; the job comes back inspected (or a 400 explaining why not). */
+    async uploadImport(projectId: number, file: File, encoding?: string): Promise<DataJob> {
+      const form = new FormData();
+      form.set("project", String(projectId));
+      form.set("file", file);
+      if (encoding) form.set("encoding", encoding);
+      const send = () => doFetch(`${root}/api/transfer/jobs/imports/`, { method: "POST", headers: headers(false), body: form });
+      let response = await send();
+      if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
+      if (!response.ok) throw await toApiError(response);
+      return (await response.json()) as DataJob;
+    },
+    runImport: (jobId: number, layers: ImportPlanItem[]) =>
+      request<DataJob>("POST", `/api/transfer/jobs/${jobId}/run/`, { layers }),
+    startExport: (data: { project: number; layer_ids: number[]; format: ExportFormat; crs?: string | null; feature_ids?: number[] }) =>
+      request<DataJob>("POST", "/api/transfer/jobs/exports/", data),
+    getJob: (id: number) => request<DataJob>("GET", `/api/transfer/jobs/${id}/`),
+    listJobs: (projectId: number) => request<Page<DataJob>>("GET", `/api/transfer/jobs/${query({ project: projectId })}`),
+    /** The finished export as a file (downloads are district data, so authenticated). */
+    async downloadExport(job: Pick<DataJob, "id" | "result_name">): Promise<Blob> {
+      const send = () => doFetch(`${root}/api/transfer/jobs/${job.id}/download/`, { headers: headers(false) });
+      let response = await send();
+      if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
+      if (!response.ok) throw await toApiError(response);
+      return response.blob();
+    },
 
     // --- Audit log ---------------------------------------------------------------
     listAudit: (filters: AuditFilters = {}) =>

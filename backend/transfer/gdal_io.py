@@ -249,7 +249,7 @@ def _family_name(geom: ogr.Geometry) -> str:
         ogr.wkbMultiSurface: "MultiPolygon",
         ogr.wkbGeometryCollection: "GeometryCollection",
     }
-    return names.get(geom_type, ogr.GeometryTypeToName(geom_type))
+    return names.get(geom_type, str(ogr.GeometryTypeToName(geom_type)))
 
 
 def to_geojson(geom: ogr.Geometry) -> dict[str, Any]:
@@ -277,7 +277,7 @@ def iter_features(
     defn = layer.GetLayerDefn()
     names = [defn.GetFieldDefn(i).GetName() for i in range(defn.GetFieldCount())]
     for row, feature in enumerate(layer, start=1):
-        attrs = {}
+        attrs: dict[str, Any] = {}
         for i, name in enumerate(names):
             if not feature.IsFieldSetAndNotNull(i):
                 attrs[name] = None

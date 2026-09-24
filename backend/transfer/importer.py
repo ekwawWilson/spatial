@@ -33,7 +33,7 @@ from crs.services import transform_geojson
 from projects import geometry as geo
 from projects import schema as schema_rules
 from projects import styles
-from projects.models import Feature, Layer
+from projects.models import ACCEPTED_GEOJSON_TYPES, Feature, Layer
 
 from . import gdal_io
 from .models import DataJob
@@ -147,7 +147,7 @@ def import_layer(
     bad_values = item.get("bad_values", "blank")
     cad_layers = set(item.get("cad_layers") or [])
     seen: set[str] = set()
-    accepted = geo.ACCEPTED_GEOJSON_TYPES[layer.geometry_type]
+    accepted = ACCEPTED_GEOJSON_TYPES[layer.geometry_type]
 
     for row, geojson, attrs, raw in gdal_io.iter_features(
         path, job.file_format, item["source"], encoding=item.get("encoding")

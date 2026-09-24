@@ -35,7 +35,7 @@ def project(planner_client):
 
 @pytest.fixture
 def gen(fixtures_dir) -> Path:
-    return fixtures_dir / "generated"
+    return Path(fixtures_dir) / "generated"
 
 
 def upload(client, project, path: Path, **extra: Any):

@@ -22,7 +22,7 @@ def source_file(job: DataJob) -> Path:
     return job_dir(job) / "source" / job.original_name
 
 
-@shared_task
+@shared_task  # type: ignore[misc]
 def run_job(job_id: int, district_id: int, user_id: int | None) -> None:
     """Runs an import or export as the job's owner, in the job's district."""
     with tenant_context(district_id, user_id=user_id):

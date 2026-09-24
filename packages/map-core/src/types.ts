@@ -19,7 +19,9 @@ export type Permission =
   | "project.edit"
   | "layer.edit"
   | "feature.edit"
-  | "basemap.manage";
+  | "basemap.manage"
+  | "data.import"
+  | "data.export";
 
 export interface DistrictBrief {
   id: number;
@@ -316,4 +318,78 @@ export interface BasemapConfig {
   min_zoom: number;
   max_zoom: number;
   key?: string;
+}
+
+// --- Import and export (Phase 5) ---------------------------------------------------------
+
+export interface InspectedField {
+  name: string;
+  suggested_name: string;
+  type: FieldType;
+}
+
+export interface InspectedLayer {
+  name: string;
+  feature_count: number;
+  geometry_types: Record<string, number>;
+  has_z: boolean;
+  fields: InspectedField[];
+  crs: { found: boolean; epsg: number | null; confidence: number; name: string | null; wkt: string | null };
+  encoding: string | null;
+  cad_layers: string[];
+}
+
+export interface Inspection {
+  format: string;
+  layers: InspectedLayer[];
+  crs_confirmation_required: boolean;
+}
+
+export interface ImportPlanItem {
+  source: string;
+  crs: string;
+  crs_confirmed?: boolean;
+  target_layer?: number;
+  new_layer?: { name: string; domain: Domain; geometry_type: GeometryType };
+  fields: { source: string; target: string; type?: FieldType }[];
+  invalid_geometry?: "fix" | "skip" | "abort";
+  duplicates?: "keep" | "skip";
+  bad_values?: "blank" | "skip_feature";
+  cad_layers?: string[];
+  encoding?: string;
+}
+
+export interface ImportLayerReport {
+  source: string;
+  target_layer: number;
+  target_name: string;
+  imported: number;
+  skipped: number;
+  fixed_geometries: number;
+  duplicates: number;
+  blanked_values: number;
+  z_dropped: number;
+  operation: { name: string; accuracy_m: number | null } | null;
+  problems: { row: number; message: string }[];
+}
+
+export type ExportFormat = "gpkg" | "shp" | "geojson" | "kml" | "kmz" | "dxf" | "dwg";
+
+export interface DataJob {
+  id: number;
+  uuid: string;
+  kind: "import" | "export";
+  project: number;
+  status: "uploaded" | "inspected" | "queued" | "running" | "done" | "failed";
+  file_format: string;
+  original_name: string;
+  inspection: Inspection | Record<string, never>;
+  plan: Record<string, unknown>;
+  live_progress: { done: number; total: number; stage: string } | null;
+  report: { layers?: ImportLayerReport[] } & Record<string, unknown>;
+  error: string;
+  result_name: string;
+  download_url: string | null;
+  created_at: string;
+  finished_at: string | null;
 }

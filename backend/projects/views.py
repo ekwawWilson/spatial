@@ -16,22 +16,36 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.permissions import district_permission, request_user, require_district_id
+from core.permissions import (
+    district_permission,
+    has_permission,
+    request_user,
+    require_district_id,
+)
 from core.schema import DISTRICT_HEADER
-from crs.services import resolve_default
+from crs.models import CoordinateSystem
+from crs.services import resolve_default, transform_geojson
 
+from . import boundary as boundaries
+from . import editing, traverse
 from . import geometry as geo
 from . import schema as schema_rules
 from .models import Feature, Layer, PlanProject
 from .serializers import (
+    BoundarySerializer,
+    BoundaryStatusSerializer,
     FeatureWriteSerializer,
     GeoJSONFeatureSerializer,
     LayerOrderSerializer,
     LayerSerializer,
+    MergeSerializer,
     ProjectSerializer,
+    RestoreSerializer,
+    SplitSerializer,
+    TraverseSerializer,
 )
 
-SAFE_ACTIONS = {"list", "retrieve", "extent", "features"}
+SAFE_ACTIONS = {"list", "retrieve", "extent", "features", "boundary", "history"}
 MAX_FEATURES_PER_PAGE = 10_000
 
 
@@ -47,11 +61,36 @@ def _drf(exc: DjangoValidationError) -> serializers.ValidationError:
     )
 
 
+def incoming_geometry(geometry: Any, crs_code: str | None, layer: Layer) -> Any:
+    """A geometry in the layer's CRS: converted (with the platform's operation)
+    only when the caller says it's in another CRS, e.g. EPSG:3857 from the map."""
+    if geometry is None or not crs_code or crs_code.strip().upper() == layer.crs.code:
+        return geometry
+    source = CoordinateSystem.objects.filter(code=crs_code.strip().upper(), is_active=True).first()
+    if source is None:
+        raise serializers.ValidationError(
+            {"geometry_crs": f"Unknown coordinate system {crs_code!r}."}
+        )
+    try:
+        converted, _ = transform_geojson(geometry, source, layer.crs)
+    except DjangoValidationError as exc:
+        raise _drf(exc) from exc
+    return converted
+
+
+def check_not_locked_boundary(feature: Feature) -> None:
+    project = PlanProject.objects.filter(boundary_feature=feature).first()
+    if project and project.boundary_status != PlanProject.BoundaryStatus.DRAFT:
+        raise serializers.ValidationError(
+            "This is an agreed or approved planning-area boundary: reopen it before changing it."
+        )
+
+
 # --- Projects ------------------------------------------------------------------------
 
 
 @extend_schema(parameters=[DISTRICT_HEADER])
-class ProjectViewSet(viewsets.ModelViewSet[PlanProject]):
+class ProjectViewSet(viewsets.ModelViewSet[PlanProject]):  # boundary actions: ProjectBoundaryMixin
     """Plan projects of the current district. Deleting a project archives it."""
 
     serializer_class = ProjectSerializer
@@ -295,7 +334,9 @@ class LayerViewSet(viewsets.ModelViewSet[Layer]):
             properties = schema_rules.validate_properties(
                 layer.schema, data.validated_data.get("properties", {})
             )
-            geometry = data.validated_data.get("geometry")
+            geometry = incoming_geometry(
+                data.validated_data.get("geometry"), data.validated_data.get("geometry_crs"), layer
+            )
             if geometry is not None:
                 geo.check_geometry(geometry, layer)
         except DjangoValidationError as exc:
@@ -319,7 +360,7 @@ class LayerViewSet(viewsets.ModelViewSet[Layer]):
 @extend_schema(parameters=[DISTRICT_HEADER])
 class FeatureViewSet(
     mixins.RetrieveModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet[Feature]
-):
+):  # Editing actions (history, restore, split, merge) are added below via FeatureEditingMixin.
     """One feature. Geometry is exchanged in the layer's native CRS. Updates
     must send the version they edited; a stale version gets 409 Conflict."""
 
@@ -367,6 +408,11 @@ class FeatureViewSet(
                     status=status.HTTP_409_CONFLICT,
                 )
             layer = feature.layer
+            check_not_locked_boundary(feature)
+            if "geometry" in data.validated_data:
+                data.validated_data["geometry"] = incoming_geometry(
+                    data.validated_data["geometry"], data.validated_data.get("geometry_crs"), layer
+                )
             try:
                 if "properties" in data.validated_data:
                     changes = schema_rules.validate_properties(
@@ -442,3 +488,179 @@ class LayerTileView(APIView):
         return HttpResponse(
             data, content_type="application/vnd.mapbox-vector-tile", headers=headers
         )
+
+
+# --- Phase 6: editing, boundaries, traverses -------------------------------------------
+
+
+class FeatureEditingMixin:
+    """History, restore, split and merge for FeatureViewSet."""
+
+    @extend_schema(responses=OpenApiTypes.OBJECT)
+    @action(detail=True, methods=["get"])
+    def history(self, request: Request, pk: str | None = None) -> Response:
+        """Every version of the feature, newest first."""
+        feature = self.get_object()  # type: ignore[attr-defined]
+        return Response(editing.history(feature))
+
+    @extend_schema(request=RestoreSerializer, responses=GeoJSONFeatureSerializer)
+    @action(detail=True, methods=["post"])
+    def restore(self, request: Request, pk: str | None = None) -> Response:
+        """Makes an earlier version current again (as a new version)."""
+        data = RestoreSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        with transaction.atomic():
+            feature = self.get_queryset().select_for_update(of=("self",)).get(pk=pk)  # type: ignore[attr-defined]
+            check_not_locked_boundary(feature)
+            if feature.version != data.validated_data["version"]:
+                return Response(
+                    {"detail": "Someone else changed this feature since you loaded it."}, status=409
+                )
+            try:
+                feature = editing.restore(
+                    feature, data.validated_data["audit_id"], request_user(request)
+                )
+            except DjangoValidationError as exc:
+                raise _drf(exc) from exc
+        return Response(
+            feature_json(feature, geo.read_geometries([feature.pk], native=True)[feature.pk])
+        )
+
+    @extend_schema(request=SplitSerializer, responses=OpenApiTypes.OBJECT)
+    @action(detail=True, methods=["post"])
+    def split(self, request: Request, pk: str | None = None) -> Response:
+        """Cuts the feature with a line; returns all the pieces."""
+        data = SplitSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        with transaction.atomic():
+            feature = self.get_queryset().select_for_update(of=("self",)).get(pk=pk)  # type: ignore[attr-defined]
+            check_not_locked_boundary(feature)
+            if feature.version != data.validated_data["version"]:
+                return Response(
+                    {"detail": "Someone else changed this feature since you loaded it."}, status=409
+                )
+            blade = incoming_geometry(
+                data.validated_data["blade"], data.validated_data.get("blade_crs"), feature.layer
+            )
+            try:
+                pieces = editing.split(feature, blade, request_user(request))
+            except DjangoValidationError as exc:
+                raise _drf(exc) from exc
+        geometries = geo.read_geometries([p.pk for p in pieces], native=True)
+        return Response({"features": [feature_json(p, geometries[p.pk]) for p in pieces]})
+
+    @extend_schema(request=MergeSerializer, responses=GeoJSONFeatureSerializer)
+    @action(detail=False, methods=["post"])
+    def merge(self, request: Request) -> Response:
+        """Unites touching features of one layer into one."""
+        data = MergeSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        ids = data.validated_data["feature_ids"]
+        if data.validated_data["keep"] not in ids:
+            raise serializers.ValidationError({"keep": "Must be one of the merged features."})
+        with transaction.atomic():
+            features = list(self.get_queryset().select_for_update(of=("self",)).filter(pk__in=ids))  # type: ignore[attr-defined]
+            if len(features) != len(set(ids)):
+                raise serializers.ValidationError(
+                    {"feature_ids": "Some features don't exist here."}
+                )
+            for feature in features:
+                check_not_locked_boundary(feature)
+            keep = next(f for f in features if f.pk == data.validated_data["keep"])
+            try:
+                merged = editing.merge(features, keep, request_user(request))
+            except DjangoValidationError as exc:
+                raise _drf(exc) from exc
+        return Response(
+            feature_json(merged, geo.read_geometries([merged.pk], native=True)[merged.pk])
+        )
+
+
+class ProjectBoundaryMixin:
+    """The planning area of a project (ProjectViewSet)."""
+
+    @extend_schema(methods=["GET"], responses=OpenApiTypes.OBJECT)
+    @extend_schema(methods=["PUT"], request=BoundarySerializer, responses=OpenApiTypes.OBJECT)
+    @action(detail=True, methods=["get", "put"])
+    def boundary(self, request: Request, pk: str | None = None) -> Response:
+        """GET: the validation report. PUT: create or replace the boundary."""
+        project = self.get_object()  # type: ignore[attr-defined]
+        if request.method == "PUT":
+            if not has_permission(request, "project.edit"):
+                raise PermissionDenied("Your role in this district does not allow this.")
+            data = BoundarySerializer(data=request.data)
+            data.is_valid(raise_exception=True)
+            layer = boundaries.boundary_layer(project, request_user(request))
+            geometry = incoming_geometry(
+                data.validated_data["geometry"], data.validated_data.get("geometry_crs"), layer
+            )
+            try:
+                boundaries.set_boundary(
+                    project, geometry, data.validated_data["method"], request_user(request)
+                )
+            except DjangoValidationError as exc:
+                raise _drf(exc) from exc
+            project.refresh_from_db()
+        return Response(boundaries.report(project))
+
+    @extend_schema(request=BoundaryStatusSerializer, responses=OpenApiTypes.OBJECT)
+    @action(detail=True, methods=["post"], url_path="boundary-status")
+    def boundary_status(self, request: Request, pk: str | None = None) -> Response:
+        """Moves the boundary through draft -> agreed -> approved (or reopens it)."""
+        project = self.get_object()  # type: ignore[attr-defined]
+        data = BoundaryStatusSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        target = data.validated_data["status"]
+        if project.boundary_feature is None:
+            raise serializers.ValidationError("Create the boundary first.")
+        try:
+            code = boundaries.required_permission(project.boundary_status, target)
+        except DjangoValidationError as exc:
+            raise _drf(exc) from exc
+        if not has_permission(request, code):
+            raise PermissionDenied(
+                "Only district administrators can approve a boundary or reopen an approved one."
+                if code == "boundary.approve"
+                else "Your role in this district does not allow this."
+            )
+        if target != "draft":
+            report = boundaries.report(project)
+            if not report["valid"]:
+                raise serializers.ValidationError(
+                    f"The boundary is invalid: {report['invalid_reason']}"
+                )
+        project.boundary_status = target
+        project.save(update_fields=["boundary_status", "updated_at"])
+        return Response(boundaries.report(project))
+
+
+class TraverseView(APIView):
+    """Computes a bearing-and-distance traverse: stations, misclosure, accuracy
+    ratio and (optionally) the Bowditch-adjusted polygon. Nothing is saved."""
+
+    @extend_schema(request=TraverseSerializer, responses=OpenApiTypes.OBJECT)
+    def post(self, request: Request) -> Response:
+        data = TraverseSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        legs = [(leg["bearing"], leg["distance"]) for leg in data.validated_data["legs"]]
+        try:
+            result = traverse.compute(
+                tuple(data.validated_data["start"]),  # type: ignore[arg-type]
+                legs,
+                adjust=data.validated_data["adjust"],
+                scale_factor=data.validated_data["scale_factor"],
+            )
+        except DjangoValidationError as exc:
+            raise _drf(exc) from exc
+        return Response({**result.as_dict(), "polygon": traverse.to_polygon(result)})
+
+
+# Attach the Phase 6 actions to the viewsets (kept in mixins above for readability).
+class ProjectWithBoundaryViewSet(ProjectBoundaryMixin, ProjectViewSet):
+    pass
+
+
+class FeatureWithEditingViewSet(FeatureEditingMixin, FeatureViewSet):
+    def perform_destroy(self, instance: Feature) -> None:
+        check_not_locked_boundary(instance)
+        instance.delete()

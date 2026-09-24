@@ -123,6 +123,12 @@ class FeatureWriteSerializer(serializers.Serializer[None]):
     version = serializers.IntegerField(
         required=False, help_text="Required when updating: the version you edited"
     )
+    geometry_crs = serializers.CharField(
+        required=False,
+        help_text="Code of the CRS the geometry is in (e.g. EPSG:3857 when drawn on the web "
+        "map). Omit when it's already in the layer's CRS. Converted with the platform's "
+        "operation.",
+    )
 
 
 class GeoJSONFeatureSerializer(serializers.Serializer[None]):
@@ -132,3 +138,41 @@ class GeoJSONFeatureSerializer(serializers.Serializer[None]):
     id = serializers.IntegerField()
     geometry = serializers.JSONField(allow_null=True)
     properties = serializers.JSONField()
+
+
+class SplitSerializer(serializers.Serializer[None]):
+    blade = serializers.JSONField(help_text="GeoJSON LineString")
+    blade_crs = serializers.CharField(required=False)
+    version = serializers.IntegerField()
+
+
+class MergeSerializer(serializers.Serializer[None]):
+    feature_ids = serializers.ListField(child=serializers.IntegerField(), min_length=2)
+    keep = serializers.IntegerField(help_text="Feature whose properties the result keeps")
+
+
+class RestoreSerializer(serializers.Serializer[None]):
+    audit_id = serializers.IntegerField()
+    version = serializers.IntegerField(help_text="The current version you're replacing")
+
+
+class BoundarySerializer(serializers.Serializer[None]):
+    geometry = serializers.JSONField(help_text="GeoJSON Polygon")
+    geometry_crs = serializers.CharField(required=False)
+    method = serializers.ChoiceField(choices=["drawn", "coordinates", "traverse", "import", "gps"])
+
+
+class BoundaryStatusSerializer(serializers.Serializer[None]):
+    status = serializers.ChoiceField(choices=["draft", "agreed", "approved"])
+
+
+class TraverseLegSerializer(serializers.Serializer[None]):
+    bearing = serializers.CharField()
+    distance = serializers.FloatField()
+
+
+class TraverseSerializer(serializers.Serializer[None]):
+    start = serializers.ListField(child=serializers.FloatField(), min_length=2, max_length=2)
+    legs = TraverseLegSerializer(many=True)
+    adjust = serializers.BooleanField(default=False)
+    scale_factor = serializers.FloatField(default=1.0)

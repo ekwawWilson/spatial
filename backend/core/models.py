@@ -1,6 +1,7 @@
 from typing import Any, ClassVar
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.gis.db import models as gis
 from django.db import models
 
 
@@ -81,6 +82,9 @@ class District(models.Model):
     code = models.CharField(max_length=20, unique=True)
     kind = models.CharField(max_length=20, choices=Kind.choices)
     is_active = models.BooleanField(default=True)
+    # Official district boundary (WGS 84), if loaded: planning areas are checked
+    # against it.
+    boundary = gis.MultiPolygonField(srid=4326, null=True, blank=True)
 
     class Meta:
         ordering = ["name"]

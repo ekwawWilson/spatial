@@ -28,6 +28,7 @@ A person can hold a different role in each district they belong to. System admin
 | `basemap.manage` | district_admin |
 | `data.import` | district_admin, planner |
 | `data.export` | district_admin, planner |
+| `boundary.approve` | district_admin |
 
 ## System administrator only
 - Set the system default coordinate system, add coordinate systems for every district, and pin the transformation used between two systems.

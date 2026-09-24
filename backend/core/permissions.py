@@ -29,6 +29,7 @@ PERMISSIONS: dict[str, frozenset[Role]] = {
     "basemap.manage": frozenset({Role.DISTRICT_ADMIN}),
     "data.import": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
     "data.export": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
+    "boundary.approve": frozenset({Role.DISTRICT_ADMIN}),
 }
 
 

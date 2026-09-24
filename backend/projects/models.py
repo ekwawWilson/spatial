@@ -46,6 +46,20 @@ class PlanProject(models.Model):
     # never alter it.
     crs = models.ForeignKey("crs.CoordinateSystem", on_delete=models.PROTECT, related_name="+")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT)
+
+    class BoundaryStatus(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        AGREED = "agreed", "Agreed with stakeholders"
+        APPROVED = "approved", "Approved"
+
+    # The planning area: one polygon feature in the project's "Planning area"
+    # layer. Agreed and approved boundaries can't be edited until reopened.
+    boundary_feature = models.ForeignKey(
+        "projects.Feature", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    boundary_status = models.CharField(
+        max_length=10, choices=BoundaryStatus.choices, default=BoundaryStatus.DRAFT
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+"
     )

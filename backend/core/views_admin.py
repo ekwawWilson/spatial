@@ -1,11 +1,16 @@
+import json
 from typing import Any
 
+from django.contrib.gis.gdal import GDALException
+from django.contrib.gis.geos import GEOSException, GEOSGeometry, MultiPolygon
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -46,6 +51,35 @@ class RegionViewSet(ReadAnyWriteSystemAdmin):
     pagination_class = None
 
 
+class DistrictBoundarySerializer(serializers.Serializer[None]):
+    geometry = serializers.JSONField(help_text="GeoJSON Polygon or MultiPolygon in WGS 84")
+
+
+def _district_boundary(district: District, request: Request) -> Response:
+    if request.method == "PUT":
+        if not is_system_admin(request):
+            raise PermissionDenied("Only system administrators can load district boundaries.")
+        data = DistrictBoundarySerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        try:
+            geom = GEOSGeometry(json.dumps(data.validated_data["geometry"]), srid=4326)
+        except (ValueError, GEOSException, GDALException) as exc:
+            raise serializers.ValidationError(
+                {"geometry": f"Not a valid GeoJSON geometry: {exc}"}
+            ) from exc
+        if geom.geom_type == "Polygon":
+            geom = MultiPolygon(geom, srid=4326)
+        if geom.geom_type != "MultiPolygon" or not geom.valid:
+            raise serializers.ValidationError(
+                {"geometry": "Must be a valid polygon or multipolygon."}
+            )
+        district.boundary = geom
+        district.save(update_fields=["boundary"])
+    return Response(
+        {"geometry": json.loads(district.boundary.geojson) if district.boundary else None}
+    )
+
+
 class DistrictViewSet(ReadAnyWriteSystemAdmin):
     """System admins see every district; everyone else sees the districts they
     belong to. Districts are deactivated, never deleted."""
@@ -54,6 +88,15 @@ class DistrictViewSet(ReadAnyWriteSystemAdmin):
     queryset = District.objects.none()  # schema hint; get_queryset() is used
     http_method_names = ["get", "post", "patch", "head", "options"]
     pagination_class = None
+
+    @extend_schema(
+        methods=["PUT"], request=DistrictBoundarySerializer, responses=OpenApiTypes.OBJECT
+    )
+    @extend_schema(methods=["GET"], responses=OpenApiTypes.OBJECT)
+    @action(detail=True, methods=["get", "put"])
+    def boundary(self, request: Request, pk: str | None = None) -> Response:
+        """The district's official boundary (WGS 84), used to check planning areas."""
+        return _district_boundary(self.get_object(), request)
 
     def get_queryset(self) -> QuerySet[District]:
         qs = District.objects.select_related("region")

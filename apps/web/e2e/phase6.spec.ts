@@ -56,6 +56,7 @@ test("draw with snapping, undo and redo, and restore from history", async ({ pag
   const form = page.getByRole("form", { name: "New project" });
   await form.getByLabel("Name").fill(`Editing check ${Date.now()}`);
   await form.getByRole("button", { name: "Create project" }).click();
+  await page.waitForURL(/\/projects\/\d+$/);
   const projectId = Number(page.url().split("/").pop());
 
   // A parcels layer with one feature, created through the API (Ghana National Grid feet).

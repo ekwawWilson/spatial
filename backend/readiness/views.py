@@ -52,6 +52,12 @@ class ItemUpdateSerializer(serializers.ModelSerializer[Item]):
         fields = ["status", "owner", "due_date", "notes", "linked_layer"]
 
 
+class AttachmentSerializer(serializers.ModelSerializer[Attachment]):
+    class Meta:
+        model = Attachment
+        fields = ["id", "name", "size", "uploaded_at"]
+
+
 class AttachmentUploadSerializer(serializers.Serializer[Any]):
     file = serializers.FileField()
 
@@ -435,6 +441,9 @@ class ItemViewSet(
 
 @extend_schema(parameters=[DISTRICT_HEADER])
 class AttachmentViewSet(mixins.DestroyModelMixin, viewsets.GenericViewSet[Attachment]):
+    """A checklist item's documents: download or remove."""
+
+    serializer_class = AttachmentSerializer
     queryset = Attachment.objects.none()
 
     def get_permissions(self) -> list[BasePermission]:

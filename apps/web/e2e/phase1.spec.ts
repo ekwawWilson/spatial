@@ -30,7 +30,7 @@ test("district admin adds a member and finds the change in the audit log", async
   const row = page.getByRole("row").filter({ hasText: "sma.admin@example.test" }).first();
   await expect(row).toBeVisible();
   await row.click();
-  await expect(page.getByRole("cell", { name: '"field_officer"' })).toBeVisible();
+  await expect(page.getByRole("cell", { name: '"field_officer"', exact: true })).toBeVisible();
 });
 
 test("viewer cannot reach administration pages", async ({ page }) => {

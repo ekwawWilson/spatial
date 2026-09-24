@@ -213,10 +213,41 @@ export function AttributeTable(props: AttributeTableProps) {
   );
 }
 
-/** Everything about the feature clicked on the map. */
-export function IdentifyPanel({ layer, featureId, onClose }: { layer: Layer; featureId: number; onClose(): void }) {
+/** Everything about the feature clicked on the map, including its history. */
+export function IdentifyPanel({
+  layer,
+  featureId,
+  canEdit,
+  onClose,
+  onRestored,
+}: {
+  layer: Layer;
+  featureId: number;
+  canEdit: boolean;
+  onClose(): void;
+  onRestored(): void;
+}) {
   const { api } = useSession();
-  const feature = useLoad(() => api.getFeature(featureId), [api, featureId]);
+  const [version, setVersion] = useState(0);
+  const feature = useLoad(() => api.getFeature(featureId), [api, featureId, version]);
+  const [showHistory, setShowHistory] = useState(false);
+  const history = useLoad(
+    () => (showHistory ? api.featureHistory(featureId) : Promise.resolve([])),
+    [api, featureId, showHistory, version],
+  );
+  const [error, setError] = useState<unknown>(null);
+
+  async function restore(auditId: number) {
+    if (!feature.data) return;
+    setError(null);
+    try {
+      await api.restoreFeature(featureId, auditId, feature.data.meta.version);
+      setVersion((v) => v + 1);
+      onRestored();
+    } catch (err) {
+      setError(err);
+    }
+  }
 
   return (
     <aside className="identify" aria-label="Feature details">
@@ -245,6 +276,27 @@ export function IdentifyPanel({ layer, featureId, onClose }: { layer: Layer; fea
             </dd>
           </div>
         </dl>
+      )}
+      <button type="button" className="link" onClick={() => setShowHistory(!showHistory)}>
+        {showHistory ? "Hide history" : "History"}
+      </button>
+      {error ? <p role="alert" className="error">{errorText(error)}</p> : null}
+      {showHistory && (
+        <ol className="history" aria-label="History">
+          {history.data?.map((entry) => (
+            <li key={entry.audit_id}>
+              <span>
+                {new Date(entry.at).toLocaleString()} · {entry.user_email ?? "system"} · {entry.action.toLowerCase()}
+                {entry.changed_fields.length ? `: ${entry.changed_fields.join(", ")}` : ""}
+              </span>
+              {canEdit && entry.action !== "DELETE" && entry.version !== feature.data?.meta.version && (
+                <button type="button" className="link" onClick={() => restore(entry.audit_id)}>
+                  Restore this version
+                </button>
+              )}
+            </li>
+          ))}
+        </ol>
       )}
     </aside>
   );

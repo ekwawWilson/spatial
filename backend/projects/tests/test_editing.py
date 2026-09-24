@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 from django.urls import reverse
@@ -64,12 +65,15 @@ def add(client, layer_id, coords=SQUARE, **extra):
     )
 
 
-def community_geometry(fixtures_dir: Path, code: str) -> dict:
+def community_geometry(fixtures_dir: Path, code: str) -> dict[str, Any]:
     ds = ogr.Open(str(Path(fixtures_dir) / "generated" / "sample.gpkg"))
     layer = ds.GetLayerByName("communities")
     for feature in layer:
         if feature.GetField("code") == code:
-            return json.loads(feature.GetGeometryRef().ExportToJson(["SIGNIFICANT_FIGURES=17"]))
+            geometry: dict[str, Any] = json.loads(
+                feature.GetGeometryRef().ExportToJson(["SIGNIFICANT_FIGURES=17"])
+            )
+            return geometry
     raise AssertionError(code)
 
 
@@ -285,6 +289,7 @@ def test_geometry_drawn_on_the_map_is_converted_explicitly(planner):
     created = add(planner, layer["id"], [list(p) for p in in_3857], geometry_crs="EPSG:3857")
     assert created.status_code == 201, created.data
     native = read_geometries([created.json()["id"]], native=True)[created.json()["id"]]
+    assert native is not None
     for got, want in zip(native["coordinates"][0], SQUARE, strict=True):
         assert got == pytest.approx(want, abs=1e-6)  # feet
 

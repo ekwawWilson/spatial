@@ -2,7 +2,7 @@ import json
 from typing import Any
 
 from django.contrib.gis.gdal import GDALException
-from django.contrib.gis.geos import GEOSException, GEOSGeometry, MultiPolygon
+from django.contrib.gis.geos import GEOSException, GEOSGeometry, MultiPolygon, Polygon
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
@@ -67,9 +67,9 @@ def _district_boundary(district: District, request: Request) -> Response:
             raise serializers.ValidationError(
                 {"geometry": f"Not a valid GeoJSON geometry: {exc}"}
             ) from exc
-        if geom.geom_type == "Polygon":
+        if isinstance(geom, Polygon):
             geom = MultiPolygon(geom, srid=4326)
-        if geom.geom_type != "MultiPolygon" or not geom.valid:
+        if not isinstance(geom, MultiPolygon) or not geom.valid:
             raise serializers.ValidationError(
                 {"geometry": "Must be a valid polygon or multipolygon."}
             )

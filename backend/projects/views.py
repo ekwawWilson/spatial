@@ -645,7 +645,7 @@ class TraverseView(APIView):
         legs = [(leg["bearing"], leg["distance"]) for leg in data.validated_data["legs"]]
         try:
             result = traverse.compute(
-                tuple(data.validated_data["start"]),  # type: ignore[arg-type]
+                tuple(data.validated_data["start"]),
                 legs,
                 adjust=data.validated_data["adjust"],
                 scale_factor=data.validated_data["scale_factor"],

@@ -21,7 +21,8 @@ export type Permission =
   | "feature.edit"
   | "basemap.manage"
   | "data.import"
-  | "data.export";
+  | "data.export"
+  | "boundary.approve";
 
 export interface DistrictBrief {
   id: number;
@@ -392,4 +393,57 @@ export interface DataJob {
   download_url: string | null;
   created_at: string;
   finished_at: string | null;
+}
+
+// --- Editing and boundaries (Phase 6) ----------------------------------------------------
+
+export interface HistoryEntry {
+  audit_id: number;
+  version: number | null;
+  action: "INSERT" | "UPDATE" | "DELETE";
+  at: string;
+  user_email: string | null;
+  changed_fields: string[];
+  properties: Record<string, unknown> | null;
+  geometry: GeoJSONGeometry | null;
+}
+
+export type BoundaryStatus = "draft" | "agreed" | "approved";
+export type BoundaryMethod = "drawn" | "coordinates" | "traverse" | "import" | "gps";
+
+export interface BoundaryReport {
+  exists: boolean;
+  feature?: number;
+  status?: BoundaryStatus;
+  valid?: boolean;
+  invalid_reason?: string | null;
+  vertices?: number;
+  area_m2?: number;
+  area_ha?: number;
+  area_acres?: number;
+  perimeter_m?: number;
+  area_native?: number | null;
+  perimeter_native?: number | null;
+  native_units?: string;
+  neighbours?: ({ project: number; name: string } & ({ kind: "overlap"; area_m2: number } | { kind: "gap"; distance_m: number }))[];
+  district_boundary_loaded?: boolean;
+  outside_district_m2?: number | null;
+}
+
+export interface TraverseLeg {
+  bearing: string;
+  distance: number;
+}
+
+export interface TraverseResult {
+  stations: [number, number][];
+  raw_end: [number, number];
+  misclosure_e: number;
+  misclosure_n: number;
+  misclosure: number;
+  perimeter: number;
+  accuracy_ratio: number | null;
+  adjusted: boolean;
+  corrections: [number, number][];
+  polygon: GeoJSONGeometry;
 }

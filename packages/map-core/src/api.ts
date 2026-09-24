@@ -3,6 +3,12 @@
 import { memoryTokenStore, type TokenStore } from "./tokens";
 import type {
   AuditEntry,
+  BoundaryMethod,
+  BoundaryReport,
+  BoundaryStatus,
+  HistoryEntry,
+  TraverseLeg,
+  TraverseResult,
   DataJob,
   ExportFormat,
   ImportPlanItem,
@@ -278,12 +284,20 @@ export function createApiClient(options: ApiClientOptions = {}) {
       layerId: number,
       params: { geometry?: "wgs84" | "native"; bbox?: string; limit?: number; offset?: number } = {},
     ) => request<FeaturePage>("GET", `/api/layers/${layerId}/features/${query(params)}`),
-    createFeature: (layerId: number, data: { geometry?: GeoJSONGeometry | null; properties?: Record<string, unknown> }) =>
+    createFeature: (
+      layerId: number,
+      data: { geometry?: GeoJSONGeometry | null; geometry_crs?: string; properties?: Record<string, unknown> },
+    ) =>
       request<MapFeature>("POST", `/api/layers/${layerId}/features/`, data),
     /** 409 means someone else saved first; the error carries the current feature. */
     updateFeature: (
       id: number,
-      data: { version: number; geometry?: GeoJSONGeometry | null; properties?: Record<string, unknown> },
+      data: {
+        version: number;
+        geometry?: GeoJSONGeometry | null;
+        geometry_crs?: string;
+        properties?: Record<string, unknown>;
+      },
     ) => request<MapFeature>("PATCH", `/api/features/${id}/`, data),
     /** One feature, geometry in the layer's native CRS (exact coordinates). */
     getFeature: (id: number) => request<MapFeature>("GET", `/api/features/${id}/`),
@@ -299,6 +313,22 @@ export function createApiClient(options: ApiClientOptions = {}) {
       if (!response.ok) throw await toApiError(response);
       return response.arrayBuffer();
     },
+
+    // --- Editing and boundaries -------------------------------------------------------
+    featureHistory: (id: number) => request<HistoryEntry[]>("GET", `/api/features/${id}/history/`),
+    restoreFeature: (id: number, audit_id: number, version: number) =>
+      request<MapFeature>("POST", `/api/features/${id}/restore/`, { audit_id, version }),
+    splitFeature: (id: number, version: number, blade: GeoJSONGeometry, blade_crs?: string) =>
+      request<{ features: MapFeature[] }>("POST", `/api/features/${id}/split/`, { version, blade, blade_crs }),
+    mergeFeatures: (feature_ids: number[], keep: number) =>
+      request<MapFeature>("POST", "/api/features/merge/", { feature_ids, keep }),
+    boundaryReport: (projectId: number) => request<BoundaryReport>("GET", `/api/projects/${projectId}/boundary/`),
+    setBoundary: (projectId: number, geometry: GeoJSONGeometry, method: BoundaryMethod, geometry_crs?: string) =>
+      request<BoundaryReport>("PUT", `/api/projects/${projectId}/boundary/`, { geometry, method, geometry_crs }),
+    setBoundaryStatus: (projectId: number, status: BoundaryStatus) =>
+      request<BoundaryReport>("POST", `/api/projects/${projectId}/boundary-status/`, { status }),
+    computeTraverse: (data: { start: [number, number]; legs: TraverseLeg[]; adjust: boolean; scale_factor?: number }) =>
+      request<TraverseResult>("POST", "/api/geometry/traverse/", data),
 
     // --- Basemaps --------------------------------------------------------------------
     listBasemaps: (params: { include_inactive?: boolean } = {}) =>

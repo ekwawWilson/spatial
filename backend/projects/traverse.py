@@ -17,6 +17,7 @@ reduced to grid distances with `scale_factor` (grid = ground x factor).
 import math
 import re
 from dataclasses import dataclass, field
+from typing import Any
 
 from django.core.exceptions import ValidationError
 
@@ -156,7 +157,7 @@ def compute(
     )
 
 
-def to_polygon(result: TraverseResult) -> dict[str, object]:
+def to_polygon(result: TraverseResult) -> dict[str, Any]:
     """GeoJSON polygon of a traverse (closing it to the start if needed)."""
     ring = [list(p) for p in result.stations]
     # A traverse that closes within floating-point noise ends on its start.

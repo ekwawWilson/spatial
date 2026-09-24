@@ -27,6 +27,8 @@ import { getArea, getLength } from "ol/sphere";
 import { Stroke, Style } from "ol/style";
 import { useEffect, useRef } from "react";
 
+import { installEditing, installPolygonDraw, type EditCallbacks, type EditSettings } from "./editing";
+
 /** Layers with more features than this are drawn from vector tiles. */
 export const GEOJSON_LIMIT = 2000;
 /** Tiled layers appear from street level (see the Phase 3 tile performance gate). */
@@ -57,6 +59,13 @@ export interface MapViewProps {
   basemapOpacity: number;
   /** Called with a plain message when the basemap can't be drawn. */
   onBasemapError(message: string | null): void;
+  /** Editing mode (null: viewing). */
+  edit?: EditSettings | null;
+  editCallbacks?: EditCallbacks;
+  /** Told whether the edit layer can be edited on the map (large tiled layers can't). */
+  onEditAvailability?(available: boolean): void;
+  /** When set, the map draws one polygon (the planning area) and hands it over. */
+  onBoundaryDrawn?: ((geometry: import("@spatial/map-core").GeoJSONGeometry) => void) | null;
 }
 
 const GHANA_CENTRE_3857: [number, number] = [-133_000, 870_000];
@@ -85,7 +94,7 @@ export function MapView(props: MapViewProps) {
       controls: [new Zoom(), new Rotate({ autoHide: false, tipLabel: "Reset north" }), new ScaleLine(), new Attribution()],
     });
     olMap.on("singleclick", (event) => {
-      if (latest.current.tool !== "identify") return;
+      if (latest.current.tool !== "identify" || latest.current.edit || latest.current.onBoundaryDrawn) return;
       let hit: { layerId: number; featureId: number } | null = null;
       olMap.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
         const layerId = layer?.get("layerId") as number | undefined;
@@ -221,6 +230,32 @@ export function MapView(props: MapViewProps) {
   useEffect(() => {
     baseLayer.current.setOpacity(props.basemapOpacity);
   }, [props.basemapOpacity]);
+
+  const drawingBoundary = Boolean(props.onBoundaryDrawn);
+  useEffect(() => {
+    const olMap = map.current;
+    if (!olMap || !drawingBoundary) return;
+    const snapTo = latest.current.layers.filter((l) => l.feature_count <= GEOJSON_LIMIT).map((l) => l.id);
+    return installPolygonDraw(olMap, layerById.current, snapTo, (g) => latest.current.onBoundaryDrawn?.(g));
+  }, [drawingBoundary]);
+
+  // Editing: identify/measure are off while an edit mode is active.
+  const editKey = props.edit ? JSON.stringify(props.edit) : "";
+  useEffect(() => {
+    const olMap = map.current;
+    if (!olMap || !props.edit) return;
+    const callbacks: EditCallbacks = {
+      onDrawn: (g) => latest.current.editCallbacks?.onDrawn(g),
+      onReshaped: (id, g) => latest.current.editCallbacks?.onReshaped(id, g),
+      onDeleteRequested: (id) => latest.current.editCallbacks?.onDeleteRequested(id),
+      onSplitLine: (g) => latest.current.editCallbacks?.onSplitLine(g),
+      onSelectMany: (ids) => latest.current.editCallbacks?.onSelectMany(ids),
+    };
+    const remove = installEditing(olMap, layerById.current, props.edit, callbacks);
+    latest.current.onEditAvailability?.(remove !== null);
+    return () => remove?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editKey, props.layers]);
 
   useEffect(() => {
     const olMap = map.current;

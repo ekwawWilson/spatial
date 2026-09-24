@@ -6,6 +6,7 @@ import {
   formatPosition,
   registerSystems,
   type BasemapConfig,
+  type BoundaryReport,
   type CoordinateSystem,
   type Layer,
 } from "@spatial/map-core";
@@ -17,10 +18,13 @@ import { MapView, type Measurement, type Tool } from "../components/map/MapView"
 import { useLoad } from "../components/useLoad";
 import { AttributeTable, IdentifyPanel } from "../components/workspace/AttributeTable";
 import { BasemapPicker } from "../components/workspace/BasemapPicker";
+import { BoundaryPanel } from "../components/workspace/BoundaryPanel";
+import { EditPanel } from "../components/workspace/EditPanel";
 import { ExportDialog } from "../components/workspace/ExportDialog";
 import { ImportWizard } from "../components/workspace/ImportWizard";
 import { SchemaEditor, StyleEditor } from "../components/workspace/LayerEditors";
 import { LayerTree } from "../components/workspace/LayerTree";
+import { useMapEditing } from "../components/workspace/useMapEditing";
 import { useSession } from "../session";
 
 type Dialog = { kind: "style" | "fields"; layer: Layer } | { kind: "import" | "export" } | null;
@@ -77,6 +81,24 @@ export function ProjectWorkspace() {
       current = false;
     };
   }, [api, effectiveBasemapId]);
+
+  const boundaryLoad = useLoad(() => api.boundaryReport(id), [api, id, districtId]);
+  const [boundary, setBoundary] = useState<BoundaryReport | null>(null);
+  const [drawingBoundary, setDrawingBoundary] = useState(false);
+  useEffect(() => {
+    if (boundaryLoad.data) setBoundary(boundaryLoad.data);
+  }, [boundaryLoad.data]);
+
+  const editing = useMapEditing({
+    api,
+    layers,
+    selectedFeature: selected,
+    onChanged: () => {
+      setDataVersion((v) => v + 1);
+      layersLoad.reload();
+    },
+    onError: setError,
+  });
 
   function chooseBasemap(value: number | null) {
     setBasemapId(value);
@@ -186,6 +208,23 @@ export function ProjectWorkspace() {
       </header>
       <ErrorMessage error={error ?? layersLoad.error} />
       <aside className="workspace-side">
+        {project.data && (
+          <BoundaryPanel
+            project={project.data}
+            report={boundary}
+            systems={systems.data ?? []}
+            drawing={drawingBoundary}
+            onDraw={() => {
+              editing.setSettings(null);
+              setDrawingBoundary(!drawingBoundary);
+            }}
+            onChanged={(report) => {
+              setBoundary(report);
+              layersLoad.reload();
+              setDataVersion((v) => v + 1);
+            }}
+          />
+        )}
         <BasemapPicker
           basemaps={basemaps.data ?? []}
           selectedId={effectiveBasemapId}
@@ -237,6 +276,21 @@ export function ProjectWorkspace() {
           basemap={basemapConfig}
           basemapOpacity={basemapOpacity}
           onBasemapError={setBasemapProblem}
+          edit={editing.settings}
+          editCallbacks={editing.callbacks}
+          onEditAvailability={editing.setAvailable}
+          onBoundaryDrawn={
+            drawingBoundary
+              ? (geometry) => {
+                  setDrawingBoundary(false);
+                  void run(async () => {
+                    setBoundary(await api.setBoundary(id, geometry, "drawn", "EPSG:3857"));
+                    layersLoad.reload();
+                    setDataVersion((v) => v + 1);
+                  });
+                }
+              : null
+          }
         />
         <div className="map-status" aria-live="polite">
           <span aria-label="Pointer position">{pointerText}</span>
@@ -252,11 +306,38 @@ export function ProjectWorkspace() {
           <IdentifyPanel
             layer={layers.find((l) => l.id === selected.layerId)!}
             featureId={selected.featureId}
+            canEdit={can("feature.edit")}
             onClose={() => setSelected(null)}
+            onRestored={() => {
+              setDataVersion((v) => v + 1);
+              boundaryLoad.reload();
+            }}
           />
         )}
       </main>
       <section className="workspace-table">
+        {selectedLayer && can("feature.edit") && (
+          <EditPanel
+            layer={selectedLayer}
+            layers={layers}
+            settings={editing.settings?.layerId === selectedLayer.id ? editing.settings : null}
+            available={editing.available}
+            mergeCount={editing.mergeSelection.length}
+            undoLabel={editing.undoLabel}
+            redoLabel={editing.redoLabel}
+            busy={editing.busy}
+            onSettings={(next) => {
+              editing.setSettings(next);
+              if (next) {
+                setTool("identify");
+                setDrawingBoundary(false);
+              }
+            }}
+            onUndo={editing.undo}
+            onRedo={editing.redo}
+            onMerge={editing.merge}
+          />
+        )}
         {selectedLayer ? (
           <AttributeTable
             layer={selectedLayer}

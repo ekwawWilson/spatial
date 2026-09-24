@@ -123,3 +123,10 @@ tr.selected td { background: #fdecdf; }
 .dialog { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(0, 0, 0, 0.35); z-index: 100; overflow: auto; }
 .dialog .card { max-height: 90vh; overflow: auto; }
 fieldset { border: 1px solid var(--border); border-radius: 4px; }
+.edit-panel { padding-bottom: 0.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+.boundary-panel { padding-bottom: 0.6rem; margin-bottom: 0.6rem; border-bottom: 1px solid var(--border); }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.6rem; font-size: 0.85rem; margin: 0.4rem 0; }
+.facts dt { font-weight: 600; }
+.facts dd { margin: 0; }
+ol.history { padding-left: 1.2rem; font-size: 0.85rem; }
+ol.history li { margin-bottom: 0.3rem; }

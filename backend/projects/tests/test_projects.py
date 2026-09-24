@@ -2,6 +2,7 @@
 
 import json
 import time
+from typing import Any
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -28,7 +29,7 @@ SQUARE_FT = [
     [1190631.4519123456, 337808.94461234567],
     [1190631.4519123456, 337708.94461234567],
 ]
-SCHEMA = [
+SCHEMA: list[dict[str, Any]] = [
     {"name": "parcel_id", "type": "text", "required": True},
     {"name": "floors", "type": "integer"},
     {
@@ -152,6 +153,7 @@ def test_native_coordinates_round_trip_exactly(client_a, layer):
 def test_wgs84_copy_uses_the_platform_operation(client_a, layer):
     feature_id = add_feature(client_a, layer).json()["id"]
     wgs = read_geometries([feature_id], native=False)[feature_id]
+    assert wgs is not None
     expected, _ = transform_points(SQUARE_FT, crs("EPSG:2136"), crs("EPSG:4326"))
     for got, want in zip(wgs["coordinates"][0], expected, strict=True):
         assert got == pytest.approx(list(want), abs=1e-12)
@@ -339,6 +341,7 @@ def tile_for(lon: float, lat: float, z: int) -> tuple[int, int, int]:
 def test_tile_contains_the_feature_and_is_cacheable(client_a, layer):
     feature_id = add_feature(client_a, layer).json()["id"]
     wgs = read_geometries([feature_id], native=False)[feature_id]
+    assert wgs is not None
     lon, lat = wgs["coordinates"][0][0]
     z, x, y = tile_for(lon, lat, 16)
     url = reverse("layer-tile", args=[layer.id, z, x, y])

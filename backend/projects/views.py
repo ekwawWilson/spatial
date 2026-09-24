@@ -156,7 +156,9 @@ class LayerViewSet(viewsets.ModelViewSet[Layer]):
         )
         project = self.request.query_params.get("project")
         if project:
-            qs = qs.filter(project_id=project)
+            if not project.isdigit():
+                raise serializers.ValidationError({"project": "Must be a project id."})
+            qs = qs.filter(project_id=int(project))
         return qs
 
     def perform_create(self, serializer: serializers.BaseSerializer[Layer]) -> None:
@@ -318,7 +320,8 @@ class FeatureViewSet(
     must send the version they edited; a stale version gets 409 Conflict."""
 
     queryset = Feature.objects.none()  # schema hint; get_queryset() is used
-    serializer_class = GeoJSONFeatureSerializer
+    # Documents the response shape only; features are serialised by feature_json().
+    serializer_class = GeoJSONFeatureSerializer  # type: ignore[assignment]
 
     def get_permissions(self) -> list[BasePermission]:
         code = (

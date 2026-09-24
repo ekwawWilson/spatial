@@ -136,6 +136,24 @@ export function ImportWizard(props: {
     return () => clearTimeout(timer);
   }, [api, job, props]);
 
+  // The coordinate system list may arrive after the file was inspected: fill in
+  // the file's own CRS then, unless the user has already chosen one.
+  useEffect(() => {
+    if (!inspection || props.systems.length === 0) return;
+    setChoices((all) => {
+      let changed = false;
+      const next = all.map((choice, i) => {
+        const layer = inspection.layers[i];
+        if (!layer || choice.plan.crs || !layer.crs.epsg) return choice;
+        const detected = props.systems.find((s) => s.code === `EPSG:${layer.crs.epsg}`);
+        if (!detected) return choice;
+        changed = true;
+        return { ...choice, plan: { ...choice.plan, crs: detected.code } };
+      });
+      return changed ? next : all;
+    });
+  }, [inspection, props.systems]);
+
   function update(i: number, change: Partial<ImportPlanItem>, include?: boolean) {
     setChoices((all) =>
       all.map((c, j) => (j === i ? { include: include ?? c.include, plan: { ...c.plan, ...change } } : c)),

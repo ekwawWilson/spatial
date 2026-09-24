@@ -75,8 +75,17 @@ test("draw with snapping, undo and redo, and restore from history", async ({ pag
   await page.mouse.click(corner.x + 4, corner.y + 3);
   await page.mouse.click(corner.x + 150, corner.y + 5);
   await page.mouse.click(corner.x + 150, corner.y + 120);
-  await page.mouse.dblclick(corner.x + 10, corner.y + 120);
-  await expect.poll(async () => (await api(page, "GET", `/api/layers/${layer.id}/features/?geometry=native`)).body.numberMatched).toBe(2);
+  await page.mouse.click(corner.x + 10, corner.y + 120);
+  // Clicking the first corner again closes the polygon (more reliable than a
+  // double-click, which the map may also treat as "zoom in").
+  await page.mouse.click(corner.x + 4, corner.y + 3);
+  await page.waitForTimeout(1000);
+  const problems = await page.getByRole("alert").allTextContents();
+  await expect
+    .poll(async () => (await api(page, "GET", `/api/layers/${layer.id}/features/?geometry=native`)).body.numberMatched, {
+      message: `drawn polygon not saved; alerts on the page: ${JSON.stringify(problems)}`,
+    })
+    .toBe(2);
 
   // Snapping precision: the drawn corner is the existing corner, within 1 mm.
   const features = (await api(page, "GET", `/api/layers/${layer.id}/features/?geometry=native`)).body.features as { id: number; geometry: { coordinates: number[][][] } }[];

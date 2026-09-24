@@ -132,9 +132,12 @@ export function MapView(props: MapViewProps) {
     }
   }, [props.api, props.layers, props.selected]);
 
-  // (Re)load GeoJSON-backed layers when their data may have changed.
+  // (Re)load layer data only when it may have changed: layers added or removed,
+  // feature counts changed, or an edit elsewhere (dataVersion). Style,
+  // visibility and opacity changes don't refetch anything.
+  const dataKey = props.layers.map((l) => `${l.id}:${l.feature_count}`).join(",");
   useEffect(() => {
-    for (const layer of props.layers) {
+    for (const layer of latest.current.layers) {
       const olLayer = layerById.current.get(layer.id);
       if (!olLayer || olLayer.get("tiled")) {
         const source = (olLayer as VectorTileLayer | undefined)?.getSource();
@@ -142,7 +145,7 @@ export function MapView(props: MapViewProps) {
         continue;
       }
       const source = (olLayer as VectorLayer).getSource() as VectorSource<import("ol/Feature").default<Geometry>>;
-      props.api
+      latest.current.api
         .listFeatures(layer.id, { limit: GEOJSON_LIMIT })
         .then((page) => {
           const features = new GeoJSON().readFeatures(page, { featureProjection: "EPSG:3857" });
@@ -151,7 +154,7 @@ export function MapView(props: MapViewProps) {
         })
         .catch(() => source.clear());
     }
-  }, [props.api, props.layers, props.dataVersion]);
+  }, [props.api, dataKey, props.dataVersion]);
 
   // Measuring tools.
   useEffect(() => {

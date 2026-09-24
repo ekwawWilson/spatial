@@ -21,7 +21,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 1 | Identity, tenancy, administration | **complete**: gate passed in CI on 2026-09-24 (`519edd6`) |
 | 2 | Coordinate reference systems | **complete except official control points** (decision 2026-09-24): gate passed in CI (`2f87af6`); the control-point test runs automatically once points are added to `fixtures/source/control_points.csv` |
 | 3 | Projects, layer engine, web map shell | **complete except manual panning QA** (decision 2026-09-24): gate passed in CI (`2d702d9`); open item in `docs/qa/phase-3-map-performance.md` |
-| 4 | Basemaps | in progress on branch `phase-4` |
+| 4 | Basemaps | **complete except live-key QA** (decision 2026-09-24): gate passed in CI (`e17bc7b`); open item in `docs/qa/phase-4-basemap-keys.md` |
 | 5 | Import and export | not started |
 | 6 | Editing and boundary creation | not started |
 | 7 | Readiness checklist | not started |

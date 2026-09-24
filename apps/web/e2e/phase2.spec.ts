@@ -19,9 +19,15 @@ test("planner converts GPS coordinates to the Ghana National Grid with the accur
   await form.getByRole("textbox").fill("-0.2 5.6");
   await form.getByRole("button", { name: "Convert" }).click();
   const result = page.getByRole("region", { name: "Conversion result" });
-  // Reference computed with PROJ (Accra to WGS 84 (4)); server output to 3 dp.
-  await expect(result).toContainText("E 1190631.452 ft (GC), N 337708.945 ft (GC)");
   await expect(result).toContainText("±6 m");
+  // Reference from PROJ (Accra to WGS 84 (4)). The server applies the exact
+  // inverse of its single canonical operation, which differs from PROJ's direct
+  // conversion by ~1 mm, so compare within 1 cm (0.033 ft).
+  const text = (await result.textContent()) ?? "";
+  const match = text.match(/E ([\d.]+) ft \(GC\), N ([\d.]+) ft \(GC\)/);
+  expect(match).not.toBeNull();
+  expect(Math.abs(Number(match![1]) - 1190631.452)).toBeLessThan(0.033);
+  expect(Math.abs(Number(match![2]) - 337708.945)).toBeLessThan(0.033);
 });
 
 test("district admin sets the district default; it becomes the default for new projects", async ({ page }) => {

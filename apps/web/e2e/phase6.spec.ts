@@ -72,13 +72,23 @@ test("draw with snapping, undo and redo, and restore from history", async ({ pag
   const editing = page.getByRole("region", { name: "Editing" });
   await editing.getByRole("button", { name: "Draw" }).click();
   const corner = await vertexPixel(page, layer.id);
-  await page.mouse.click(corner.x + 4, corner.y + 3);
-  await page.mouse.click(corner.x + 150, corner.y + 5);
-  await page.mouse.click(corner.x + 150, corner.y + 120);
-  await page.mouse.click(corner.x + 10, corner.y + 120);
-  // Clicking the first corner again closes the polygon (more reliable than a
-  // double-click, which the map may also treat as "zoom in").
-  await page.mouse.click(corner.x + 4, corner.y + 3);
+  // The first corner is the square's south-west corner and zooming leaves only a
+  // small margin around it, so draw up and to the right (inside the square) to
+  // keep every click on the map rather than on the panels around it.
+  const clicks = [
+    [corner.x + 4, corner.y - 3],
+    [corner.x + 80, corner.y - 5],
+    [corner.x + 80, corner.y - 80],
+    [corner.x + 10, corner.y - 80],
+    // Clicking the first corner again closes the polygon (more reliable than a
+    // double-click, which the map may also treat as "zoom in").
+    [corner.x + 4, corner.y - 3],
+  ] as const;
+  for (const [x, y] of clicks) {
+    const onMap = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest(".map") !== null, [x, y]);
+    expect(onMap, `click at ${x},${y} is not on the map`).toBe(true);
+    await page.mouse.click(x, y);
+  }
   await page.waitForTimeout(1000);
   const problems = await page.getByRole("alert").allTextContents();
   await expect

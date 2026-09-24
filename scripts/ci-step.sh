@@ -9,8 +9,11 @@ log=$(mktemp)
 status=${PIPESTATUS[0]}
 
 if [ "$status" -ne 0 ]; then
-  # Annotation messages need %, CR and LF escaped.
-  tail -n 40 "$log" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk 'BEGIN{ORS="%0A"}{print}' \
+  # Crash dumps (e.g. a segfault in a C extension) print the crashing frames
+  # first, far above the tail: include fatal errors and frames from our code
+  # (/app/...) before the last lines. Annotation messages need %, CR and LF escaped.
+  { grep -m 40 -E 'Fatal Python error|File "/app/' "$log" || true; echo '...'; tail -n 40 "$log"; } \
+    | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk 'BEGIN{ORS="%0A"}{print}' \
     | { printf '::error title=%s failed (exit %s)::' "$1" "$status"; cat; echo; }
 fi
 rm -f "$log"

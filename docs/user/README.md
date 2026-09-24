@@ -8,4 +8,5 @@ Written for physical planners, district administrators and field officers. Secti
 - [Coordinate systems](coordinate-systems.md)
 - [Projects, layers and the map](projects-and-layers.md)
 - [Basemaps](basemaps.md)
+- [Importing and exporting data](import-export.md)
 - [System administration](system-admin.md)

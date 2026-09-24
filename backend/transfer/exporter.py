@@ -223,9 +223,9 @@ def run_export(job: DataJob, out: Path) -> tuple[Path, dict[str, Any]]:
         target = wgs84 if fmt in WGS84_ONLY else (chosen or layer.crs)
         ds = shared or driver.CreateDataSource(str(folder / f"{layer.name}{ext}"))
         summaries.append(write_layer(ds, fmt, layer, _rows(layer, feature_ids), target, folder))
-        if shared is None:
-            ds = None
-    shared = None  # flush
+        ds = None  # closes a per-layer file (a shared one is still held by `shared`)
+    # Close the shared file so GDAL finishes writing it before it's zipped.
+    shared = None
     if fmt == "dwg":
         dxf = folder / f"{job.project.name}.dxf"
         dwg = dxf.with_suffix(".dwg")

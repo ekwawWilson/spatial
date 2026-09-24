@@ -22,7 +22,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 2 | Coordinate reference systems | **complete except official control points** (decision 2026-09-24): gate passed in CI (`2f87af6`); the control-point test runs automatically once points are added to `fixtures/source/control_points.csv` |
 | 3 | Projects, layer engine, web map shell | **complete except manual panning QA** (decision 2026-09-24): gate passed in CI (`2d702d9`); open item in `docs/qa/phase-3-map-performance.md` |
 | 4 | Basemaps | **complete except live-key QA** (decision 2026-09-24): gate passed in CI (`e17bc7b`); open item in `docs/qa/phase-4-basemap-keys.md` |
-| 5 | Import and export | not started |
+| 5 | Import and export | in progress on branch `phase-5` |
 | 6 | Editing and boundary creation | not started |
 | 7 | Readiness checklist | not started |
 | 8 | `.spp` project files | not started |
@@ -53,3 +53,9 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 - **Offline caching:** no provider preset allows it (OSM tile policy; Google, Esri and Bing terms). `basemaps.services.assert_offline_allowed()` is the single check, and the Phase 9 packager must call it.
 - **API keys** are Fernet-encrypted at rest (`FIELD_ENCRYPTION_KEY`, falling back to a key derived from `SECRET_KEY`), write-only in the API, and left out of audit records. Keys that tile URLs need (Google, Bing) do reach the browser; restrict them by referrer.
 - **Gate item "each preset renders with a valid key":** CI has no provider keys. OSM and Esri render in the e2e test. Google session creation and key rejection are tested against a mocked Google API. A live check with real keys is a manual QA item (`docs/qa/phase-4-basemap-keys.md`).
+
+## Phase 5 notes
+- **Exactness:** coordinates move between OGR and the platform as GeoJSON with 17 significant figures. Round trips are exact for GPKG, SHP and GeoJSON, within 1e-9° for KML (text precision) and within 1e-6 ft for DXF. See `transfer/tests/test_transfer.py::test_round_trip*`.
+- **DWG** needs LibreDWG, which isn't packaged for Ubuntu 24.04. The backend image builds it from source only with `--build-arg WITH_LIBREDWG=true`; that build is **not yet verified**. Without it, DWG import/export says so plainly and the DWG test is skipped.
+- **One transaction per import:** a failure or "abort" adds nothing. Progress goes through the cache (Redis db 1), so it's visible while the transaction is open.
+- **Gate item "exports open correctly in QGIS"** is manual: `docs/qa/phase-5-qgis-exports.md`.

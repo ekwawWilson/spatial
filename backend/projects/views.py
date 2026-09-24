@@ -95,7 +95,8 @@ class ProjectViewSet(viewsets.ModelViewSet[PlanProject]):  # boundary actions: P
 
     serializer_class = ProjectSerializer
     queryset = PlanProject.objects.none()  # schema hint; get_queryset() is used
-    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+    # PUT only for the planning-area boundary action.
+    http_method_names = ["get", "post", "put", "patch", "delete", "head", "options"]
 
     def get_permissions(self) -> list[BasePermission]:
         return permissions_for(self, "project.edit")
@@ -119,6 +120,14 @@ class ProjectViewSet(viewsets.ModelViewSet[PlanProject]):  # boundary actions: P
         if crs.district_id not in (None, district_id):
             raise serializers.ValidationError({"crs": "Not available in this district."})
         serializer.save(district_id=district_id, crs=crs, created_by=user)
+
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        if not kwargs.get("partial"):
+            return Response(
+                {"detail": "Use PATCH to change a project."},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
+        return super().update(request, *args, **kwargs)
 
     def perform_destroy(self, instance: PlanProject) -> None:
         instance.status = PlanProject.Status.ARCHIVED

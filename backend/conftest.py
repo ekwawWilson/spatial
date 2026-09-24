@@ -98,3 +98,17 @@ def api() -> Callable[..., APIClient]:
         return client
 
     return make
+
+
+@pytest.fixture(autouse=True)
+def _celery_runs_inline():
+    """Background jobs (imports, exports) run inline in tests."""
+    from config.celery import app
+
+    app.conf.task_always_eager = True
+    app.conf.task_eager_propagates = True
+
+
+@pytest.fixture(autouse=True)
+def _media_in_tmp(settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path / "media"

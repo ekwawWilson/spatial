@@ -36,6 +36,9 @@ def _check_value(field: dict[str, Any], value: Any) -> Any:
         if isinstance(value, bool) or not isinstance(value, int):
             if isinstance(value, float) and value.is_integer():
                 return int(value)
+            # Imported text columns often hold numbers as text.
+            if isinstance(value, str) and re.fullmatch(r"\s*-?\d+\s*", value):
+                return int(value)
             raise ValueError("must be a whole number")
         return value
     if kind == "decimal":

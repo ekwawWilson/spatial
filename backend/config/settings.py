@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "crs",
     "projects",
     "basemaps",
+    "transfer",
 ]
 
 MIDDLEWARE = [
@@ -146,6 +147,15 @@ SPECTACULAR_SETTINGS = {
 }
 
 REDIS_URL: str = env("REDIS_URL", default="redis://redis:6379/0")
+
+# Cache (Google map sessions, import progress). A separate Redis database from
+# Celery's broker, so clearing the cache never touches queued jobs.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env("CACHE_URL", default="redis://redis:6379/1"),
+    }
+}
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TASK_TRACK_STARTED = True

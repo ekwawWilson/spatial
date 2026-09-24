@@ -21,6 +21,27 @@ RUN set -e; \
     find /tmp/apt-extra -type f -exec mv -t /etc/apt/sources.list.d {} +; \
     rmdir /tmp/apt-extra
 
+# Optional DWG support (experimental): LibreDWG isn't packaged for Ubuntu 24.04,
+# so it's built from source when WITH_LIBREDWG=true. Off by default to keep
+# builds fast; without it, DWG import/export report that DWG isn't available.
+# Not yet verified; see docs/dev/phases.md (Phase 5 notes).
+ARG WITH_LIBREDWG=false
+ARG LIBREDWG_VERSION=0.13.3
+RUN if [ "$WITH_LIBREDWG" = "true" ]; then \
+      set -e; \
+      mkdir /tmp/apt-extra; \
+      find /etc/apt/sources.list.d -type f ! -name 'ubuntu.sources' -exec mv -t /tmp/apt-extra {} +; \
+      apt-get update; \
+      apt-get install -y --no-install-recommends build-essential curl ca-certificates xz-utils; \
+      curl -fsSL "https://ftp.gnu.org/gnu/libredwg/libredwg-${LIBREDWG_VERSION}.tar.xz" | tar xJ -C /tmp; \
+      cd "/tmp/libredwg-${LIBREDWG_VERSION}"; \
+      ./configure --disable-bindings --disable-docs --prefix=/usr/local; \
+      make -j"$(nproc)"; make install; ldconfig; \
+      cd /; rm -rf "/tmp/libredwg-${LIBREDWG_VERSION}"; \
+      apt-get purge -y build-essential; apt-get autoremove -y; rm -rf /var/lib/apt/lists/*; \
+      find /tmp/apt-extra -type f -exec mv -t /etc/apt/sources.list.d {} +; rmdir /tmp/apt-extra; \
+    fi
+
 # --system-site-packages exposes the image's GDAL Python bindings (osgeo) to the venv.
 RUN python3 -m venv --system-site-packages $VIRTUAL_ENV
 

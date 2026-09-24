@@ -26,6 +26,8 @@ A person can hold a different role in each district they belong to. System admin
 | `layer.edit` | district_admin, planner |
 | `feature.edit` | district_admin, planner |
 | `basemap.manage` | district_admin |
+| `data.import` | district_admin, planner |
+| `data.export` | district_admin, planner |
 
 ## System administrator only
 - Set the system default coordinate system, add coordinate systems for every district, and pin the transformation used between two systems.
@@ -41,7 +43,6 @@ A person can hold a different role in each district they belong to. System admin
 ## Planned permissions (added in later phases)
 | Phase | Permissions |
 |---|---|
-| 5 | `data.import`, `data.export` |
 | 7 | `checklist.edit` |
 | 8 | `project.package` (.spp save/open) |
 | 9–10 | `field.capture`, `field.sync`, `conflict.resolve` |

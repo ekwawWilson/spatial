@@ -28,6 +28,7 @@ function SystemSelect(props: {
     <label>
       {props.label}
       <select
+        aria-label={props.label}
         value={props.value ?? ""}
         disabled={props.disabled}
         onChange={(e) => props.onChange(e.target.value ? Number(e.target.value) : null)}
@@ -189,13 +190,13 @@ function Converter({ systems }: { systems: CoordinateSystem[] }) {
       <div className="inline-form">
         <label>
           From
-          <select value={from} onChange={(e) => setFrom(e.target.value)}>
+          <select aria-label="Convert from" value={from} onChange={(e) => setFrom(e.target.value)}>
             {options}
           </select>
         </label>
         <label>
           To
-          <select value={to} onChange={(e) => setTo(e.target.value)}>
+          <select aria-label="Convert to" value={to} onChange={(e) => setTo(e.target.value)}>
             {options}
           </select>
         </label>

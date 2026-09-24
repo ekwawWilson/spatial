@@ -14,8 +14,8 @@ async function signIn(page: Page, email: string) {
 test("planner converts GPS coordinates to the Ghana National Grid with the accuracy stated", async ({ page }) => {
   await signIn(page, "sma.planner@example.test");
   const form = page.getByRole("form", { name: "Convert coordinates" });
-  await form.getByLabel("From").selectOption("EPSG:4326");
-  await form.getByLabel("To").selectOption("EPSG:2136");
+  await form.getByLabel("Convert from", { exact: true }).selectOption("EPSG:4326");
+  await form.getByLabel("Convert to", { exact: true }).selectOption("EPSG:2136");
   await form.getByRole("textbox").fill("-0.2 5.6");
   await form.getByRole("button", { name: "Convert" }).click();
   const result = page.getByRole("region", { name: "Conversion result" });
@@ -26,16 +26,16 @@ test("planner converts GPS coordinates to the Ghana National Grid with the accur
 
 test("district admin sets the district default; it becomes the default for new projects", async ({ page }) => {
   await signIn(page, "sma.admin@example.test");
-  await page.getByLabel("District default").selectOption({ label: "EPSG:25000 · Leigon / Ghana Metre Grid" });
+  await page.getByLabel("District default", { exact: true }).selectOption({ label: "EPSG:25000 · Leigon / Ghana Metre Grid" });
   await expect(page.getByRole("status").first()).toContainText("EPSG:25000");
   await expect(page.getByRole("status").first()).toContainText("the district default");
   // Put it back so the test can run again.
-  await page.getByLabel("District default").selectOption({ label: "Use the system default" });
+  await page.getByLabel("District default", { exact: true }).selectOption({ label: "Use the system default" });
   await expect(page.getByRole("status").first()).toContainText("the system default");
 });
 
 test("viewer can't change the district default or add systems", async ({ page }) => {
   await signIn(page, "sma.viewer@example.test");
-  await expect(page.getByLabel("District default")).toBeDisabled();
+  await expect(page.getByLabel("District default", { exact: true })).toBeDisabled();
   await expect(page.getByRole("form", { name: "Add coordinate system" })).toHaveCount(0);
 });

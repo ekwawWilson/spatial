@@ -28,7 +28,7 @@ test("planner imports a zipped shapefile, then exports the layer as GeoPackage",
   await dialog.getByRole("button", { name: "Upload and inspect" }).click();
   // What inspection found (on failure, Playwright prints the dialog's text).
   await expect(dialog).toContainText("The file says:");
-  await expect(dialog).toContainText("EPSG:2136");
+  await expect(dialog).toContainText("(EPSG:2136,"); // only in the "file says" line
   await expect(dialog.getByLabel("Coordinate system of buildings")).toHaveValue("EPSG:2136");
   // Shapefile truncated "property_id" to "property_i"; map it back.
   await dialog.getByLabel("New field name for property_i").fill("property_id");

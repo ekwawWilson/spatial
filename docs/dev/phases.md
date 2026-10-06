@@ -26,7 +26,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 6 | Editing and boundary creation | **complete** (decision 2026-09-24): gate passed in CI (`1e796b6`) |
 | 7 | Readiness checklist | **complete except "Send to field"** (decision 2026-10-06): gate passed in CI (`f1c733e`); the action is enabled in Phase 10 |
 | 8 | `.spp` project files | **complete** (decision 2026-10-06): gate passed in CI (`23e1624`), including the two-server check; saving and opening run inside one request (500 MB limit) |
-| 9 | Android field app (offline) | in progress on branch `phase-9` |
+| 9 | Android field app (offline) | **complete except the on-device test** (decision 2026-10-06): CI passed (`f87aa90`) and the APK builds; open item in `docs/qa/phase-9-field-app-on-device.md` |
 | 10 | Sync, conflicts, ground-truthing | not started |
 | 11 | Drone and raster imagery | not started |
 | 12 | Relationship layer and procedures | not started |

@@ -60,7 +60,14 @@ TB=$(login "$B"); DB=$(district "$B" "$TB")
 HB=(-H "Authorization: Bearer $TB" -H "X-District-ID: $DB")
 CODE=$(curl -sS -o "$WORK/opened.json" -w '%{http_code}' -X POST "$B/spp/open/" "${HB[@]}" -F "file=@$WORK/project.spp")
 [ "$CODE" = 201 ] || { cat "$WORK/opened.json"; fail "server B answered HTTP $CODE"; }
-PB=$(python3 -c 'import sys,json; r=json.load(open(sys.argv[1])); print(r["project"]); print(f"  opened as project {r[\"project\"]}: {r[\"layers\"]} layer(s), {r[\"features\"]} features, {r[\"new_feature_ids\"]} new ids", file=sys.stderr)' "$WORK/opened.json")
+PB=$(python3 - "$WORK/opened.json" <<'PY'
+import json, sys
+r = json.load(open(sys.argv[1]))
+print(r["project"])
+print(f"  opened as project {r['project']}: {r['layers']} layer(s), {r['features']} features,"
+      f" {r['new_feature_ids']} new ids", file=sys.stderr)
+PY
+)
 AFTER=$(pegs "$B" "$TB" "$DB" "$PB")
 [ "$BEFORE" = "$AFTER" ] || { echo "A: $BEFORE"; echo "B: $AFTER"; fail "coordinates or attributes differ between the servers"; }
 echo "  coordinates and attributes are identical on both servers"

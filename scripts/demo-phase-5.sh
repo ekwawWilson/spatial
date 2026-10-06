@@ -14,7 +14,7 @@ P=$(curl -fsS -X POST "$API/projects/" "${AUTH[@]}" -H 'Content-Type: applicatio
 
 step "1. Upload and inspect fixtures/generated/shp/buildings.zip"
 JOB=$(curl -fsS -X POST "$API/transfer/jobs/imports/" "${AUTH[@]}" -F "project=$P" -F "file=@fixtures/generated/shp/buildings.zip")
-echo "$JOB" | python3 -c 'import sys,json; l=json.load(sys.stdin)["inspection"]["layers"][0]; print(f"  layer {l[\"name\"]}: {l[\"feature_count\"]} features, CRS EPSG:{l[\"crs\"][\"epsg\"]} ({l[\"crs\"][\"confidence\"]}% match), fields {[f[\"name\"] for f in l[\"fields\"]]}")'
+echo "$JOB" | python3 -c 'import sys,json; l=json.load(sys.stdin)["inspection"]["layers"][0]; print(f"  layer {l["name"]}: {l["feature_count"]} features, CRS EPSG:{l["crs"]["epsg"]} ({l["crs"]["confidence"]}% match), fields {[f["name"] for f in l["fields"]]}")'
 J=$(echo "$JOB" | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
 
 step "2. Run the import (new layer, full field names)"

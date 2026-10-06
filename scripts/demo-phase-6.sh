@@ -14,7 +14,7 @@ P=$(curl -fsS -X POST "$API/projects/" "${H[@]}" -d "{\"name\":\"Boundary demo $
 
 step "1. Traverse (500 ft square, last leg booked 0.10 ft long), Bowditch-adjusted"
 TR=$(curl -fsS -X POST "$API/geometry/traverse/" "${H[@]}" -d '{"start":[1190600,337700],"legs":[{"bearing":"N 0 E","distance":500},{"bearing":"90","distance":500},{"bearing":"S 0 E","distance":500},{"bearing":"270 00 00","distance":500.10}],"adjust":true}')
-echo "$TR" | python3 -c 'import sys,json; r=json.load(sys.stdin); print(f"  misclosure {r[\"misclosure\"]:.3f} ft, 1 in {r[\"accuracy_ratio\"]:,.0f}, adjusted: {r[\"adjusted\"]}")'
+echo "$TR" | python3 -c 'import sys,json; r=json.load(sys.stdin); print(f"  misclosure {r["misclosure"]:.3f} ft, 1 in {r["accuracy_ratio"]:,.0f}, adjusted: {r["adjusted"]}")'
 
 step "2. Use it as the planning area; the report"
 POLY=$(echo "$TR" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin)["polygon"]))')

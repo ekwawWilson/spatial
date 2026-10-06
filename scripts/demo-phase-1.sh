@@ -26,7 +26,7 @@ curl -fsS "$API/auth/me/" -H "Authorization: Bearer $SMA" | json
 
 step "2. Members of their district"
 curl -fsS "$API/memberships/" -H "Authorization: Bearer $SMA" -H "X-District-ID: $SMA_ID" |
-  python3 -c 'import sys,json; [print(f"  {m[\"user\"][\"email\"]:28} {m[\"role\"]}") for m in json.load(sys.stdin)["results"]]'
+  python3 -c 'import sys,json; [print(f"  {m["user"]["email"]:28} {m["role"]}") for m in json.load(sys.stdin)["results"]]'
 
 step "3. The other district's admin asks for SMA's members: refused"
 ODA=$(token oda.admin@example.test)
@@ -38,7 +38,7 @@ curl -sS -o /dev/stdout -w '\n  HTTP %{http_code}\n' "$API/memberships/" -H "Aut
 
 step "5. Latest audit entries for SMA"
 curl -fsS "$API/audit/?page=1" -H "Authorization: Bearer $SMA" -H "X-District-ID: $SMA_ID" |
-  python3 -c 'import sys,json; [print(f"  {e[\"occurred_at\"][:19]}  {e[\"action\"]:6} {e[\"table_name\"]}#{e[\"row_id\"]}  by {e[\"user_email\"] or \"system\"}") for e in json.load(sys.stdin)["results"][:8]]'
+  python3 -c 'import sys,json; [print(f"  {e["occurred_at"][:19]}  {e["action"]:6} {e["table_name"]}#{e["row_id"]}  by {e["user_email"] or "system"}") for e in json.load(sys.stdin)["results"][:8]]'
 
 step "6. In the browser"
 echo "Open http://localhost:${WEB_PORT:-5173} and sign in as any demo account (password: $PASSWORD):"

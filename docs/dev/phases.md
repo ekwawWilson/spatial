@@ -88,3 +88,4 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 - **Gate item "older format version still opens":** version 1 is the only package version so far. The test drives the upgrade path with a stand-in version 2.
 - **Gate item "two instances":** `scripts/qa-phase-8-two-servers.sh` starts a second stack with its own database and runs in the CI e2e job.
 - **Limits:** files are built and opened inside the request (no background job yet), with the 500 MB upload limit. Very large projects may need the job queue later.
+- **Demo scripts** (`make demo-phase-N`) need Python 3.12 or newer on the host. Their summary lines had a quoting mistake in every phase until this one (they were never run: no local Docker, and CI doesn't run demos). Fixed and syntax-checked here; a real run of each is still to do.

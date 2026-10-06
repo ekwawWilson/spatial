@@ -11,7 +11,7 @@ D=$(curl -fsS "$API/auth/me/" -H "Authorization: Bearer $T" | python3 -c 'import
 H=(-H "Authorization: Bearer $T" -H "X-District-ID: $D" -H 'Content-Type: application/json')
 
 step "1. Basemaps available (keys never shown)"
-curl -fsS "$API/basemaps/" "${H[@]}" | python3 -c 'import sys,json; [print(f"  {b[\"name\"]:28} key: {\"set\" if b[\"has_key\"] else (\"missing\" if b[\"requires_key\"] else \"not needed\"):10} offline: {\"allowed\" if b[\"offline_cache_allowed\"] else \"not allowed\"}") for b in json.load(sys.stdin)]'
+curl -fsS "$API/basemaps/" "${H[@]}" | python3 -c 'import sys,json; [print(f"  {b["name"]:28} key: {"set" if b["has_key"] else ("missing" if b["requires_key"] else "not needed"):10} offline: {"allowed" if b["offline_cache_allowed"] else "not allowed"}") for b in json.load(sys.stdin)]'
 
 step "2. Add Google satellite without a key, then ask for its map config"
 G=$(curl -fsS -X POST "$API/basemaps/presets/" "${H[@]}" -d '{"preset":"google_satellite"}' | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')

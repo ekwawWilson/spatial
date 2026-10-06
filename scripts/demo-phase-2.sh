@@ -15,10 +15,10 @@ D=$(curl -fsS "$API/auth/me/" -H "Authorization: Bearer $T" | python3 -c 'import
 H=(-H "Authorization: Bearer $T" -H "X-District-ID: $D" -H 'Content-Type: application/json')
 
 step "1. Built-in coordinate systems"
-curl -fsS "$API/crs/systems/" "${H[@]}" | python3 -c 'import sys,json; [print(f"  {s[\"code\"]:11} {s[\"name\"]:32} {s[\"units\"]}") for s in json.load(sys.stdin)]'
+curl -fsS "$API/crs/systems/" "${H[@]}" | python3 -c 'import sys,json; [print(f"  {s["code"]:11} {s["name"]:32} {s["units"]}") for s in json.load(sys.stdin)]'
 
 step "2. Default for new projects"
-curl -fsS "$API/crs/defaults/" "${H[@]}" | python3 -c 'import sys,json; e=json.load(sys.stdin)["effective"]; print(f"  {e[\"crs\"][\"code\"]} (from the {e[\"source\"]} default)")'
+curl -fsS "$API/crs/defaults/" "${H[@]}" | python3 -c 'import sys,json; e=json.load(sys.stdin)["effective"]; print(f"  {e["crs"]["code"]} (from the {e["source"]} default)")'
 
 step "3. GPS point (Accra) -> Ghana National Grid, with the accuracy of the datum shift"
 curl -fsS -X POST "$API/crs/transform/" "${H[@]}" -d '{"from_crs":"EPSG:4326","to_crs":"EPSG:2136","points":[[-0.2,5.6]]}' | python3 -m json.tool
@@ -29,4 +29,4 @@ curl -fsS -X POST "$API/crs/transform/" "${H[@]}" -d '{"from_crs":"EPSG:2136","t
 
 step "5. All published Accra -> WGS 84 transformations"
 curl -fsS "$API/crs/operations/?from_crs=EPSG:2136&to_crs=EPSG:4326" "${H[@]}" |
-  python3 -c 'import sys,json; d=json.load(sys.stdin); [print(f"  {\"*\" if o[\"name\"]==d[\"current\"][\"name\"] else \" \"} ±{o[\"accuracy_m\"]} m  {o[\"name\"]}") for o in d["candidates"]]'
+  python3 -c 'import sys,json; d=json.load(sys.stdin); [print(f"  {"*" if o["name"]==d["current"]["name"] else " "} ±{o["accuracy_m"]} m  {o["name"]}") for o in d["candidates"]]'

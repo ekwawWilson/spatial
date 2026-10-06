@@ -11,7 +11,7 @@ D=$(curl -fsS "$API/auth/me/" -H "Authorization: Bearer $T" | python3 -c 'import
 H=(-H "Authorization: Bearer $T" -H "X-District-ID: $D" -H 'Content-Type: application/json')
 P=$(curl -fsS -X POST "$API/projects/" "${H[@]}" -d "{\"name\":\"Readiness demo $(date +%s)\"}" | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
 OUT=$(mktemp); trap 'rm -f "$OUT"' EXIT
-summary='import sys,json; d=json.load(sys.stdin); print(f"  score {d[\"score\"]}% ({d[\"complete\"]}/{d[\"total\"]}); blockers: {len(d[\"blockers\"])}")'
+summary='import sys,json; d=json.load(sys.stdin); print(f"  score {d["score"]}% ({d["complete"]}/{d["total"]}); blockers: {len(d["blockers"])}")'
 
 step "1. A new project gets the checklist"
 curl -fsS "$API/projects/$P/checklist/" "${H[@]}" | python3 -c "$summary"
@@ -24,7 +24,7 @@ curl -fsS "$API/projects/$P/checklist/" "${H[@]}" | python3 -c '
 import sys,json
 item = next(i for i in json.load(sys.stdin)["items"] if i["key"] == "buildings")
 m = item["metrics"]
-print(f"  buildings: {m[\"feature_count\"]} features, coverage {m[\"coverage\"]:.0f}%, attributes {m[\"attributes\"]:.0f}%")
+print(f"  buildings: {m["feature_count"]} features, coverage {m["coverage"]:.0f}%, attributes {m["attributes"]:.0f}%")
 for c in item["checks"]: print("   ", "ok " if c["ok"] else "NO ", c["label"] if c["ok"] else c["problem"])
 print("ITEM", item["id"])' | tee "$OUT"
 I=$(grep ^ITEM "$OUT" | cut -d' ' -f2)

@@ -36,6 +36,8 @@ PERMISSIONS: dict[str, frozenset[Role]] = {
     "field.package": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER, Role.FIELD_OFFICER}),
     "field.sync": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER, Role.FIELD_OFFICER}),
     "sync.resolve": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
+    "relations.edit": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
+    "standards.manage": frozenset({Role.DISTRICT_ADMIN}),
 }
 
 

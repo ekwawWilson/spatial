@@ -28,7 +28,9 @@ export type Permission =
   | "checklist.template"
   | "field.package"
   | "field.sync"
-  | "sync.resolve";
+  | "sync.resolve"
+  | "relations.edit"
+  | "standards.manage";
 
 export interface DistrictBrief {
   id: number;
@@ -552,6 +554,8 @@ export interface Checklist {
   total: number;
   groups: ChecklistGroupProgress[];
   items: ChecklistItem[];
+  /** Totals from the relationship layer's last run; null until it has run. */
+  baseline: (RelationsTotals & { at: string | null }) | null;
   blockers: { item: number; title: string; problem: string }[];
 }
 
@@ -713,4 +717,93 @@ export interface ContourResult {
   replaced: number;
   interval: number;
   converted_from: string | null;
+}
+
+// --- Relationship layer (Phase 12) ------------------------------------------------------------
+
+export interface RelationsRegistry {
+  roles: { code: string; label: string; domain: string; geometry: string[]; fields: { key: string; label: string; default: string }[] }[];
+  link_types: { code: string; subject: string; verb: string; object: string; inverse: string; procedure: string }[];
+  procedures: { code: string; does: string }[];
+  defaults: Record<string, unknown>;
+}
+
+export interface LayerRoleRow {
+  role: string;
+  layer: number | null;
+  config: Record<string, unknown>;
+  /** A likely layer, offered while the role isn't set. */
+  suggested: number | null;
+}
+
+export interface LinkSide {
+  feature: number;
+  layer: string;
+  label: string;
+}
+
+export interface RelationshipLink {
+  id: number;
+  type: string;
+  verb: string;
+  inverse: string;
+  subject: LinkSide;
+  /** Null for a breach of a planning standard. */
+  object: LinkSide | null;
+  rule: string;
+  method: "calculated" | "inferred" | "confirmed";
+  status: "active" | "rejected";
+  confidence: number;
+  details: Record<string, unknown>;
+  decided_by: string | null;
+  decided_at: string | null;
+  note: string;
+  created_at: string;
+}
+
+export type LinkCounts = { found: number; added: number; updated: number; removed: number; kept: number };
+
+export interface RelationsTotals {
+  properties: number;
+  in_flood_area?: number;
+  without_road_access?: number;
+  without_drain?: number;
+  with_permit?: number;
+  with_violations?: number;
+  violations?: Record<string, number>;
+  in_no_community?: number;
+  population_served?: number;
+  needs?: number;
+  needs_addressed?: number;
+  facilities?: number;
+}
+
+export interface RelationsSummary {
+  project: RelationsTotals;
+  communities: (RelationsTotals & { feature: number; name: string })[];
+}
+
+export interface RelationsRun {
+  id: number;
+  trigger: "manual" | "nightly" | "edit";
+  status: "running" | "done" | "failed";
+  started_at: string;
+  finished_at: string | null;
+  started_by: string | null;
+  report: Record<string, { skipped?: string } | Record<string, LinkCounts | number>>;
+  summary: RelationsSummary | Record<string, never>;
+  error: string;
+}
+
+export interface DevelopmentStandard {
+  id: number;
+  zone: string;
+  min_setback_m: number | null;
+  max_floors: number | null;
+  max_coverage_pct: number | null;
+  min_plot_m2: number | null;
+  permit_required: boolean;
+  build_in_flood_area: boolean;
+  notes: string;
+  updated_at: string;
 }

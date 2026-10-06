@@ -17,6 +17,7 @@ import { MembersPage } from "./pages/MembersPage";
 import { ProjectWorkspace } from "./pages/ProjectWorkspace";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { ReadinessPage } from "./pages/ReadinessPage";
+import { RelationsPage } from "./pages/RelationsPage";
 import { StatusPage } from "./pages/StatusPage";
 import { UsersPage } from "./pages/UsersPage";
 
@@ -59,6 +60,14 @@ export function App() {
           element={
             <RequirePermission permission="project.view">
               <ChecklistPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="projects/:projectId/relations"
+          element={
+            <RequirePermission permission="project.view">
+              <RelationsPage />
             </RequirePermission>
           }
         />

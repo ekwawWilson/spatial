@@ -69,7 +69,8 @@ services:
   worker:
     build: ./backend
     <<: *backend-env
-    command: ["celery", "-A", "config", "worker", "--loglevel=info"]
+    # -B: this worker also runs the schedule (the nightly relationship run).
+    command: ["celery", "-A", "config", "worker", "-B", "--loglevel=info"]
     volumes:
       - ./backend:/app
       - ./fixtures:/fixtures

@@ -3,6 +3,7 @@ from pathlib import Path
 
 import django_stubs_ext
 import environ
+from celery.schedules import crontab
 
 # Lets Django classes such as ModelAdmin take type parameters at runtime
 # (ModelAdmin[Region]), as the type stubs expect.
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     "field",
     "sync",
     "imagery",
+    "relations",
 ]
 
 MIDDLEWARE = [
@@ -165,6 +167,13 @@ CACHES = {
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TASK_TRACK_STARTED = True
+# Needs the worker started with -B (docker-compose does), or a separate beat.
+CELERY_BEAT_SCHEDULE = {
+    "relations-nightly": {
+        "task": "relations.tasks.nightly",
+        "schedule": crontab(hour=1, minute=30),
+    },
+}
 
 # Phase 2 seeds the system default CRS from this on a new installation only.
 INITIAL_DEFAULT_CRS: str = env("INITIAL_DEFAULT_CRS", default="EPSG:2136")

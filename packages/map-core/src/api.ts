@@ -52,6 +52,12 @@ import type {
   SyncConflictDetail,
   ContourResult,
   Imagery,
+  DevelopmentStandard,
+  LayerRoleRow,
+  RelationsRegistry,
+  RelationsRun,
+  RelationsSummary,
+  RelationshipLink,
 } from "./types";
 
 export interface ServiceStatus {
@@ -501,6 +507,24 @@ export function createApiClient(options: ApiClientOptions = {}) {
       if (!response.ok) throw await toApiError(response);
       return response.blob();
     },
+
+    // --- Relationship layer -------------------------------------------------------------
+    relationsRegistry: () => request<RelationsRegistry>("GET", "/api/relations/registry/"),
+    getLayerRoles: (projectId: number) => request<{ roles: LayerRoleRow[] }>("GET", `/api/projects/${projectId}/layer-roles/`),
+    setLayerRoles: (projectId: number, roles: { role: string; layer: number | null; config?: Record<string, unknown> }[]) =>
+      request<{ roles: LayerRoleRow[] }>("PUT", `/api/projects/${projectId}/layer-roles/`, { roles }),
+    latestRelationsRun: (projectId: number) =>
+      request<{ latest: RelationsRun | null; summary: RelationsSummary | null }>("GET", `/api/projects/${projectId}/relations/run/`),
+    runRelations: (projectId: number) => request<RelationsRun>("POST", `/api/projects/${projectId}/relations/run/`),
+    listRelationships: (filters: { project?: number; feature?: number; type?: string; method?: string; status?: string; page?: number }) =>
+      request<Page<RelationshipLink>>("GET", `/api/relationships/${query(filters)}`),
+    confirmRelationship: (id: number, note = "") => request<RelationshipLink>("POST", `/api/relationships/${id}/confirm/`, { note }),
+    rejectRelationship: (id: number, note = "") => request<RelationshipLink>("POST", `/api/relationships/${id}/reject/`, { note }),
+    reopenRelationship: (id: number) => request<RelationshipLink>("POST", `/api/relationships/${id}/reopen/`),
+    listStandards: () => request<DevelopmentStandard[]>("GET", "/api/standards/"),
+    createStandard: (data: Partial<DevelopmentStandard>) => request<DevelopmentStandard>("POST", "/api/standards/", data),
+    updateStandard: (id: number, data: Partial<DevelopmentStandard>) => request<DevelopmentStandard>("PATCH", `/api/standards/${id}/`, data),
+    deleteStandard: (id: number) => request<void>("DELETE", `/api/standards/${id}/`),
 
     // --- Audit log ---------------------------------------------------------------
     listAudit: (filters: AuditFilters = {}) =>

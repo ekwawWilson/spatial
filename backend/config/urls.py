@@ -14,6 +14,7 @@ urlpatterns = [
     path("api/", include("field.urls")),
     path("api/", include("sync.urls")),
     path("api/", include("imagery.urls")),
+    path("api/", include("relations.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="api-docs"),
 ]

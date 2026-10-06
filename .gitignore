@@ -27,3 +27,6 @@ backend/staticfiles/
 # editors
 .idea/
 .vscode/
+
+# backups made by scripts/backup.sh
+backups/

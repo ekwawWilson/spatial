@@ -4,6 +4,12 @@
 #
 #   ./build-apk.sh             build with the current version
 #   ./build-apk.sh --bump      raise the version first (0.1.0 -> 0.1.1, code 1 -> 2)
+#   ./build-apk.sh --aab       build an app bundle (.aab) for Google Play instead
+#
+# Signing: set SPATIAL_KEYSTORE, SPATIAL_KEYSTORE_PASSWORD and SPATIAL_KEY_ALIAS
+# to sign with the Assembly's own key (docs/ops/field-app-distribution.md).
+# Without them the build is signed with the standard debug key: fine for
+# trying the app, not for giving to staff.
 #
 # Installs whatever is missing, into your home folder only (no sudo):
 #   - Java 17 (Eclipse Temurin)                 -> ~/.local/jdk-17
@@ -32,13 +38,20 @@ ok()   { printf '    \033[32m✔\033[0m %s\n' "$*"; }
 die()  { printf '\n\033[1;31m✘ %s\033[0m\n' "$*" >&2; exit 1; }
 
 BUMP=false
+AAB=false
 for arg in "$@"; do
   case "$arg" in
     --bump) BUMP=true ;;
-    -h|--help) sed -n '2,19p' "$0"; exit 0 ;;
-    *) die "Unknown option: $arg (use --bump or --help)" ;;
+    --aab) AAB=true ;;
+    -h|--help) sed -n '2,27p' "$0"; exit 0 ;;
+    *) die "Unknown option: $arg (use --bump, --aab or --help)" ;;
   esac
 done
+if [[ -n "${SPATIAL_KEYSTORE:-}" ]]; then
+  [[ -f "$SPATIAL_KEYSTORE" ]] || die "SPATIAL_KEYSTORE=$SPATIAL_KEYSTORE doesn't exist."
+  [[ -n "${SPATIAL_KEYSTORE_PASSWORD:-}" && -n "${SPATIAL_KEY_ALIAS:-}" ]] || die "Set SPATIAL_KEYSTORE_PASSWORD and SPATIAL_KEY_ALIAS too."
+  export SPATIAL_KEYSTORE_PASSWORD  # apksigner reads it from the environment
+fi
 
 # ── 1. Basic tools ────────────────────────────────────────────────────────────
 step "Checking basic tools"
@@ -142,7 +155,9 @@ echo "sdk.dir=$SDK_DIR" > "$ANDROID_DIR/local.properties"
 ok "android/ generated; local.properties → $SDK_DIR"
 
 # ── 7. Build ──────────────────────────────────────────────────────────────────
-step "Building release APK — version $name (code $code)"
+TASK=assembleRelease; KIND=APK
+if $AAB; then TASK=bundleRelease; KIND="app bundle"; fi
+step "Building release $KIND — version $name (code $code)"
 cd "$ANDROID_DIR"
 chmod +x ./gradlew
 # Slow or patchy connections: wait longer per download and retry the build.
@@ -151,11 +166,28 @@ GRADLE_NET=(-Dorg.gradle.internal.http.socketTimeout=180000
             -Dorg.gradle.internal.http.connectionTimeout=180000
             -Dorg.gradle.internal.repository.max.retries=5)
 for attempt in 1 2 3 4 5; do
-  if ./gradlew "${GRADLE_NET[@]}" assembleRelease; then break; fi
+  if ./gradlew "${GRADLE_NET[@]}" "$TASK"; then break; fi
   (( attempt == 5 )) && die "Build failed 5 times. If it was the network, run ./build-apk.sh again — downloads resume."
   echo "    Build attempt $attempt failed — retrying in 15 s (downloads so far are kept)…"
   sleep 15
 done
+
+if $AAB; then
+  AAB_IN="$ANDROID_DIR/app/build/outputs/bundle/release/app-release.aab"
+  [[ -f "$AAB_IN" ]] || die "Build finished but $AAB_IN was not found."
+  AAB_OUT="$ANDROID_DIR/app/build/outputs/bundle/release/Spatial_Field-$name.aab"
+  cp "$AAB_IN" "$AAB_OUT"
+  step "Done"
+  if [[ -n "${SPATIAL_KEYSTORE:-}" ]]; then
+    jarsigner -keystore "$SPATIAL_KEYSTORE" -storepass "$SPATIAL_KEYSTORE_PASSWORD" "$AAB_OUT" "$SPATIAL_KEY_ALIAS" >/dev/null
+    ok "Signed with $SPATIAL_KEY_ALIAS from $SPATIAL_KEYSTORE"
+  else
+    echo "    Signed with the debug key: Google Play won't accept it. Set SPATIAL_KEYSTORE (see --help)."
+  fi
+  ok "App bundle: $AAB_OUT"
+  ok "Size: $(du -h "$AAB_OUT" | cut -f1)"
+  exit 0
+fi
 
 APK_IN="$ANDROID_DIR/app/build/outputs/apk/release/app-release.apk"
 [[ -f "$APK_IN" ]] || die "Build finished but $APK_IN was not found."
@@ -166,6 +198,14 @@ step "Done"
 ok "APK: $APK_OUT"
 ok "Size: $(du -h "$APK_OUT" | cut -f1)"
 APKSIGNER="$SDK_DIR/build-tools/36.0.0/apksigner"
+if [[ -n "${SPATIAL_KEYSTORE:-}" ]]; then
+  [[ -x "$APKSIGNER" ]] || die "apksigner not found at $APKSIGNER."
+  "$APKSIGNER" sign --ks "$SPATIAL_KEYSTORE" --ks-key-alias "$SPATIAL_KEY_ALIAS" \
+    --ks-pass env:SPATIAL_KEYSTORE_PASSWORD --key-pass env:SPATIAL_KEYSTORE_PASSWORD "$APK_OUT"
+  ok "Signed with $SPATIAL_KEY_ALIAS from $SPATIAL_KEYSTORE"
+else
+  echo "    Signed with the debug key: fine for trying the app, not for giving to staff (see --help)."
+fi
 if [[ -x "$APKSIGNER" ]]; then
   cert="$("$APKSIGNER" verify --print-certs "$APK_OUT" 2>/dev/null | sed -n 's/.*certificate SHA-256 digest: //p' | head -1)"
   ok "Signed, certificate SHA-256: ${cert:-unknown}"

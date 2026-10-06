@@ -1,0 +1,76 @@
+# Production overrides. Use together with the base file:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# What changes from development: the backend runs under gunicorn from the
+# code inside the image (no source mount, no auto-reload); the web app is
+# built and served by nginx on WEB_PORT; logs are rotated; services restart
+# on failure. Set DJANGO_DEBUG=false and real secrets in .env first
+# (docs/ops/deployment.md).
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "20m"
+      max-file: "10"
+
+services:
+  db:
+    <<: *logging
+    restart: unless-stopped
+    # Not reachable from outside the server.
+    ports: !reset []
+
+  redis:
+    <<: *logging
+    restart: unless-stopped
+
+  migrate:
+    <<: *logging
+    command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput"]
+    volumes: !override
+      - static:/app/staticfiles
+
+  backend:
+    <<: *logging
+    restart: unless-stopped
+    command: ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "${GUNICORN_WORKERS:-3}", "--timeout", "600", "--access-logfile", "-"]
+    environment:
+      NUM_PROXIES: "1"
+    ports: !reset []
+    volumes: !override
+      - ./docs:/docs:ro
+      - media:/media
+      - static:/app/staticfiles:ro
+
+  worker:
+    <<: *logging
+    restart: unless-stopped
+    volumes: !override
+      - media:/media
+
+  web:
+    <<: *logging
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.prod
+    ports: !override
+      - "${WEB_PORT:-80}:80"
+    volumes: !reset []
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ > /dev/null"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  # Not used (tiles are served by the backend); kept out of production.
+  martin:
+    profiles: ["unused"]
+  titiler:
+    profiles: ["unused"]
+
+volumes:
+  static:

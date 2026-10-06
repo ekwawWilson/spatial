@@ -73,8 +73,28 @@ jobs:
       - run: scripts/ci-step.sh pnpm --filter @spatial/web e2e
       - name: Phase 8 gate (a .spp file opens on a second stack)
         run: scripts/ci-step.sh scripts/qa-phase-8-two-servers.sh
+      - name: Phase 13 gate (20 field users syncing at once)
+        run: scripts/ci-step.sh python3 scripts/load-sync.py
+      - name: Phase 13 gate (a backup restores into an empty stack)
+        run: scripts/ci-step.sh scripts/qa-phase-13-restore.sh
       - name: Logs on failure
         if: failure()
         run: |
           docker compose logs --tail=200
           scripts/ci-service-logs.sh
+
+  # The production configuration: built images, gunicorn, nginx, real secrets.
+  production:
+    runs-on: ubuntu-latest
+    needs: [backend, web]
+    steps:
+      - uses: actions/checkout@v4
+      - name: A production .env
+        run: WEB_PORT=8080 scripts/make-production-env.sh localhost > .env
+      - name: Start the production stack
+        run: scripts/ci-step.sh docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build --wait
+      - name: Check it
+        run: WEB_PORT=8080 scripts/ci-step.sh scripts/qa-phase-13-production.sh
+      - name: Logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml logs --tail=200

@@ -9,7 +9,7 @@ class CoreConfig(AppConfig):
     name = "core"
 
     def ready(self) -> None:
-        from . import schema  # noqa: F401 - registers OpenAPI extensions
+        from . import checks, schema  # noqa: F401 - registers system checks and OpenAPI extensions
 
         post_migrate.connect(grant_app_role, sender=self, dispatch_uid="core.grant_app_role")
 

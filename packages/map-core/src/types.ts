@@ -283,7 +283,15 @@ export interface MapFeature {
   id: number;
   geometry: GeoJSONGeometry | null;
   properties: Record<string, unknown>;
-  meta: { uuid: string; version: number; origin: string; verified: boolean; updated_at: string };
+  meta: {
+    uuid: string;
+    version: number;
+    origin: string;
+    verified: boolean;
+    updated_at: string;
+    /** Fields whose values this user's role may not see (they are left out of properties). */
+    restricted?: string[];
+  };
 }
 
 export interface FeaturePage {

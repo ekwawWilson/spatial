@@ -11,7 +11,7 @@ AS_OWNER := -e DB_USER=$(POSTGRES_USER) -e DB_PASSWORD=$(POSTGRES_PASSWORD)
 BACKEND_RUN := $(COMPOSE) run --rm --no-deps $(AS_OWNER) backend
 
 .PHONY: help env up down build logs ps migrate fixtures seed shell \
-        test test-backend test-web e2e lint typecheck check demo-phase-0 demo-phase-1 demo-phase-2 demo-phase-3 demo-phase-4 demo-phase-5 demo-phase-6 demo-phase-7 demo-phase-8 qa-two-servers web-install
+        test test-backend test-web e2e lint typecheck check demo-phase-0 demo-phase-1 demo-phase-2 demo-phase-3 demo-phase-4 demo-phase-5 demo-phase-6 demo-phase-7 demo-phase-8 qa-two-servers prune-audit clean-media backup qa-restore qa-load web-install
 
 help:
 	@grep -E '^[a-z0-9-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-16s %s\n",$$1,$$2}'
@@ -100,6 +100,21 @@ demo-phase-7: ## Walk through the Phase 7 deliverable (needs `make up seed`)
 
 demo-phase-8: ## Walk through the Phase 8 deliverable (needs `make up seed`)
 	./scripts/demo-phase-8.sh
+
+prune-audit: ## Remove audit entries older than DAYS (at least 365). DRY=1 only counts
+	$(BACKEND_RUN) python manage.py prune_audit --older-than-days $(DAYS) $(if $(DRY),--dry-run,)
+
+clean-media: ## Remove uploaded files no record refers to. DRY=1 only lists
+	$(BACKEND_RUN) python manage.py clean_media $(if $(DRY),--dry-run,)
+
+backup: ## Back up the database and uploaded files to ./backups
+	./scripts/backup.sh
+
+qa-restore: ## Phase 13 gate: a backup restores into a second, empty stack (needs `make up seed`)
+	./scripts/qa-phase-13-restore.sh
+
+qa-load: ## Phase 13 gate: 20 field users syncing at once (needs `make up seed`)
+	python3 ./scripts/load-sync.py
 
 qa-two-servers: ## Phase 8 gate: a .spp file opens on a second, separate stack (needs `make up seed`)
 	./scripts/qa-phase-8-two-servers.sh

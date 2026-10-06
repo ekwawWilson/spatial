@@ -18,6 +18,9 @@ In a project, the **Layers** panel lists layers grouped by data domain (A. Terri
 
 Add a layer with **Add a layer**: give it a name, a data domain and whether it holds points, lines or polygons.
 
+#### Restricted fields (personal data)
+In a layer's **Fields**, tick **Restricted** for any field that identifies a person or their rights: owners' or claimants' names, phone numbers, ID numbers. Planners and district administrators still see and edit those values. Viewers and field officers see "restricted" instead, everywhere: in the table, on the map, in history and in the field app. A restricted field can't also be required. See [data protection](../ops/data-protection.md).
+
 ### Changing fields safely
 The platform won't let a change silently lose data:
 - Changing a field's type (e.g. text to whole number) is refused if existing values wouldn't fit. The message lists the features to fix first.

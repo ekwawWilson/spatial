@@ -47,6 +47,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "core.tenancy.ResetDbContextMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    # Serves the admin's static files in production (collected into STATIC_ROOT).
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -111,6 +113,21 @@ LANGUAGE_CODE = "en-gb"
 TIME_ZONE = "Africa/Accra"
 USE_I18N = True
 USE_TZ = True
+
+# --- Behind HTTPS in production -------------------------------------------------
+# The proxy in front ends TLS and says so with X-Forwarded-Proto.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+HTTPS_ONLY: bool = env.bool("HTTPS_ONLY", default=False)
+SECURE_SSL_REDIRECT = HTTPS_ONLY
+SESSION_COOKIE_SECURE = HTTPS_ONLY
+CSRF_COOKIE_SECURE = HTTPS_ONLY
+# Tell browsers to use HTTPS only, for this long. Start small; a year is 31536000.
+SECURE_HSTS_SECONDS: int = env.int("HSTS_SECONDS", default=0)
+SECURE_REFERRER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+# The health check is called inside the server over plain HTTP.
+SECURE_REDIRECT_EXEMPT = [r"^api/health/$"]
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"

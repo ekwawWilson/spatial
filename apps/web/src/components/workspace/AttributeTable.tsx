@@ -179,6 +179,13 @@ export function AttributeTable(props: AttributeTableProps) {
                         </td>
                       );
                     }
+                    if (feature.meta.restricted?.includes(field.name)) {
+                      return (
+                        <td key={field.name} className="muted" title="Your role can't see this value">
+                          restricted
+                        </td>
+                      );
+                    }
                     return (
                       <td
                         key={field.name}
@@ -297,7 +304,13 @@ export function IdentifyPanel({
           {layer.schema.map((field) => (
             <div key={field.name}>
               <dt>{field.label}</dt>
-              <dd>{display(feature.data!.properties[field.name]) || "—"}</dd>
+              <dd>
+                {feature.data!.meta.restricted?.includes(field.name) ? (
+                  <span className="muted">restricted</span>
+                ) : (
+                  display(feature.data!.properties[field.name]) || "—"
+                )}
+              </dd>
             </div>
           ))}
           <div>

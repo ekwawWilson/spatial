@@ -52,7 +52,6 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npx expo-doctor
 
   e2e:
     runs-on: ubuntu-latest

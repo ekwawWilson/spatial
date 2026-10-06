@@ -23,7 +23,7 @@ export const STATUS_LABELS: Record<ChecklistStatus, string> = {
   verified: "Verified",
 };
 
-const SEND_TO_FIELD_NOTE = "Ground-truthing tasks go to the field app once sync is available (Phase 10).";
+const SEND_TO_FIELD_NOTE = "Makes a task for field officers to check each unverified feature on the ground.";
 
 function pct(value: number | null | undefined): string {
   return value === null || value === undefined ? "—" : `${Math.round(value)}%`;
@@ -214,6 +214,7 @@ function ItemRows(props: {
   const { item } = props;
   const editable = can("checklist.edit") && (item.status !== "verified" || can("checklist.verify"));
   const [notes, setNotes] = useState(item.notes);
+  const [fieldNote, setFieldNote] = useState<string | null>(null);
   useEffect(() => setNotes(item.notes), [item.notes]);
 
   async function save(change: Parameters<typeof api.updateChecklistItem>[1]) {
@@ -328,8 +329,27 @@ function ItemRows(props: {
                     Draw
                   </button>
                 )}
-                {item.kind === "layer" && (
-                  <button type="button" className="secondary" disabled title={SEND_TO_FIELD_NOTE}>
+                {item.kind === "layer" && can("checklist.edit") && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={!item.linked_layer}
+                    title={item.linked_layer ? SEND_TO_FIELD_NOTE : "Import or draw this item's data first."}
+                    onClick={async () => {
+                      try {
+                        const sent = await api.sendToField(item.id);
+                        setFieldNote(
+                          sent.created
+                            ? `${sent.created} feature(s) sent for checking in the field. Officers get them at their next sync.`
+                            : sent.already_open
+                              ? `Already out: ${sent.already_open} feature(s) are waiting to be checked.`
+                              : "Every feature is already verified.",
+                        );
+                      } catch (err) {
+                        props.onError(err);
+                      }
+                    }}
+                  >
                     Send to field
                   </button>
                 )}
@@ -337,7 +357,7 @@ function ItemRows(props: {
                   <Link to={`/projects/${props.projectId}`}>Open the planning area in the workspace</Link>
                 )}
               </div>
-              {item.kind === "layer" && <p className="muted small">Send to field: {SEND_TO_FIELD_NOTE}</p>}
+              {fieldNote && <p role="status" className="small">{fieldNote}</p>}
 
               {editable && (
                 <div className="inline-form">

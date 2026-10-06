@@ -44,6 +44,12 @@ import type {
   TemplateItem,
   SppKeys,
   SppReport,
+  ConflictResolution,
+  FieldCapture,
+  FieldPhoto,
+  FieldTaskSummary,
+  SyncConflict,
+  SyncConflictDetail,
 } from "./types";
 
 export interface ServiceStatus {
@@ -445,6 +451,23 @@ export function createApiClient(options: ApiClientOptions = {}) {
     },
     /** Key ids and fingerprints (system administrators); never the keys. */
     sppKeys: () => request<SppKeys>("GET", "/api/spp/keys/"),
+
+    // --- Field sync -------------------------------------------------------------------
+    /** How a feature was recorded in the field (newest first); empty for office data. */
+    featureCaptures: (featureId: number) => request<FieldCapture[]>("GET", `/api/sync/captures/${query({ feature: featureId })}`),
+    featurePhotos: (featureId: number) => request<FieldPhoto[]>("GET", `/api/sync/photos/${query({ feature: featureId })}`),
+    photoFile: (uuid: string) => blob(`/api/sync/photos/${uuid}/file/`),
+    listConflicts: (projectId: number, status: "open" | "resolved" | "" = "open") =>
+      request<SyncConflict[]>("GET", `/api/sync/conflicts/${query({ project: projectId, status })}`),
+    getConflict: (id: number) => request<SyncConflictDetail>("GET", `/api/sync/conflicts/${id}/`),
+    resolveConflict: (
+      id: number,
+      data: { resolution: ConflictResolution; properties?: Record<string, unknown>; use_field_geometry?: boolean },
+    ) => request<SyncConflictDetail>("POST", `/api/sync/conflicts/${id}/resolve/`, data),
+    /** Makes ground-truthing tasks for a checklist item's layer. */
+    sendToField: (itemId: number) =>
+      request<{ created: number; already_open: number; verified: number }>("POST", `/api/checklist-items/${itemId}/send-to-field/`),
+    fieldTasks: (projectId: number) => request<FieldTaskSummary>("GET", `/api/sync/tasks/${query({ project: projectId })}`),
 
     // --- Audit log ---------------------------------------------------------------
     listAudit: (filters: AuditFilters = {}) =>

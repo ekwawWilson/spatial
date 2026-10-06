@@ -48,6 +48,7 @@ export function ProjectWorkspace() {
   const project = useLoad(() => api.getProject(id), [api, id, districtId]);
   const layersLoad = useLoad(() => api.listLayers(id), [api, id, districtId]);
   const systems = useLoad(() => api.listCrs(), [api, districtId]);
+  const conflicts = useLoad(() => api.listConflicts(id, "open"), [api, id, districtId]);
   const [layers, setLayers] = useState<Layer[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<number | null>(null);
   const [selected, setSelected] = useState<{ layerId: number; featureId: number } | null>(null);
@@ -221,6 +222,9 @@ export function ProjectWorkspace() {
         </span>
         <span className="spacer" />
         <Link to={`/projects/${id}/checklist`}>Readiness checklist</Link>
+        <Link to={`/projects/${id}/conflicts`}>
+          Field conflicts{conflicts.data?.length ? ` (${conflicts.data.length})` : ""}
+        </Link>
         {can("data.import") && (
           <button type="button" className="secondary" onClick={() => setDialog({ kind: "import" })}>
             Import data

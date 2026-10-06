@@ -140,3 +140,6 @@ ol.history li { margin-bottom: 0.3rem; }
 .blockers ul, .checks { margin: 0.2rem 0; padding-left: 1.2rem; }
 .checklist-items tr.complete td:first-child { opacity: 0.75; }
 .checklist-items tr.details td { background: var(--surface, #fafafa); }
+
+/* Field conflicts */
+tr.differs td { background: #fff8e1; }

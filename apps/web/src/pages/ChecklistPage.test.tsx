@@ -153,6 +153,21 @@ describe("checklist page", () => {
   });
 });
 
+describe("send to field", () => {
+  it("makes ground-truthing tasks for an item that has a layer", async () => {
+    const linked = { ...checklist, items: [checklist.items[0]!, { ...streets, linked_layer: 30 }] };
+    const api = backend({
+      "GET /api/projects/5/checklist/": () => ({ body: linked }),
+      "POST /api/checklist-items/7/send-to-field/": () => ({ status: 201, body: { created: 12, already_open: 0, verified: 3 } }),
+    });
+    renderApp(api.fetch, { tokens: signedIn, route: "/projects/5/checklist" });
+    const row = await screen.findByRole("button", { name: "Streets and access", expanded: false });
+    await userEvent.click(row);
+    await userEvent.click(screen.getByRole("button", { name: "Send to field" }));
+    expect(await screen.findByText(/12 feature\(s\) sent for checking in the field/)).toBeInTheDocument();
+  });
+});
+
 describe("import binding", () => {
   const choice = (name: string): LayerChoice => ({
     include: true,

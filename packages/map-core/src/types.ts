@@ -608,3 +608,64 @@ export interface SppKeys {
   problem: string | null;
   keys: { key_id: string; fingerprint: string; active: boolean }[];
 }
+
+// --- Field sync (Phase 10) --------------------------------------------------------------
+
+export interface FieldCapture {
+  feature_version: number;
+  method: "gps" | "gps_track" | "drawn" | "";
+  accuracy_m: number | null;
+  fix_time: string | null;
+  readings: number | null;
+  captured_at: string | null;
+  captured_by: string | null;
+  device_id: string;
+  notes: string;
+  received_at: string;
+}
+
+export interface FieldPhoto {
+  uuid: string;
+  feature: number;
+  size: number;
+  received: number;
+  complete: boolean;
+  latitude: number | null;
+  longitude: number | null;
+  accuracy_m: number | null;
+  taken_at: string | null;
+}
+
+export type ConflictResolution = "keep_field" | "keep_office" | "merged";
+
+export interface SyncConflict {
+  id: number;
+  project: number;
+  feature: number;
+  layer: number;
+  layer_name: string;
+  status: "open" | "resolved";
+  resolution: ConflictResolution | "";
+  submitted_by: string | null;
+  created_at: string;
+  base_version: number;
+  server_version: number;
+  resolved_by: string | null;
+  resolved_at: string | null;
+}
+
+export interface SyncConflictDetail extends SyncConflict {
+  schema: SchemaField[];
+  office: { version: number; properties: Record<string, unknown>; geometry: GeoJSONGeometry | null };
+  field: {
+    properties: Record<string, unknown> | null;
+    /** WGS 84; null when the device didn't change the shape. */
+    geometry: GeoJSONGeometry | null;
+    capture: Partial<FieldCapture>;
+  };
+}
+
+export interface FieldTaskSummary {
+  counts: { open: number; confirmed: number; corrected: number; not_found: number };
+  tasks: { id: number; feature: number; feature_uuid: string; layer: number; status: "open" | "done"; outcome: string; item: string; notes: string; completed_by: string | null; completed_at: string | null }[];
+}

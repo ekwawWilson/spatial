@@ -17,6 +17,7 @@ from typing import Any
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
@@ -94,10 +95,11 @@ def _create(change: dict[str, Any], district_id: int, device_id: str, user: User
     if existing is not None:
         # The same capture arriving under a new change id: already here.
         return {"status": "applied", "feature": _feature_result(existing), "duplicate": True}
+    layer_id = change.get("layer")
     layer = (
-        Layer.objects.select_related("crs")
-        .filter(pk=change.get("layer"), district_id=district_id)
-        .first()
+        Layer.objects.select_related("crs").filter(pk=layer_id, district_id=district_id).first()
+        if isinstance(layer_id, int)
+        else None
     )
     if layer is None:
         raise ValidationError({"layer": ["isn't a layer of this district"]})
@@ -166,11 +168,14 @@ def _update(change: dict[str, Any], district_id: int, device_id: str, user: User
 
 def _task(change: dict[str, Any], district_id: int, user: User) -> dict[str, Any]:
     payload = change.get("task") or {}
+    task_id = payload.get("id")
     task = (
         FieldTask.objects.select_for_update(of=("self",))
         .select_related("feature")
-        .filter(pk=payload.get("id"), district_id=district_id)
+        .filter(pk=task_id, district_id=district_id)
         .first()
+        if isinstance(task_id, int)
+        else None
     )
     if task is None:
         raise ValidationError({"task": ["this task no longer exists"]})
@@ -316,10 +321,10 @@ def pull(project: PlanProject, layer_ids: list[int], since: datetime | None) -> 
     tasks = FieldTask.objects.filter(project=project, feature__layer_id__in=ids).select_related(
         "feature", "item"
     )
-    if cutoff:
-        tasks = tasks.filter(updated_at__gt=cutoff)
-    else:
-        tasks = tasks.filter(status=FieldTask.Status.OPEN)
+    # Every open task (a device may have joined since they were made), plus
+    # those finished since the last pull, so other devices can close them.
+    open_tasks = Q(status=FieldTask.Status.OPEN)
+    tasks = tasks.filter(open_tasks | Q(updated_at__gt=cutoff) if cutoff else open_tasks)
     return {
         "server_time": now.isoformat(),
         "full": cutoff is None,

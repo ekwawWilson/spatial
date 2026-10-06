@@ -43,7 +43,9 @@ class OctetStreamParser(BaseParser):
 
     media_type = "application/octet-stream"
 
-    def parse(self, stream: Any, media_type: Any = None, parser_context: Any = None) -> bytes:
+    def parse(  # type: ignore[override]  # raw bytes, not a mapping
+        self, stream: Any, media_type: Any = None, parser_context: Any = None
+    ) -> bytes:
         data: bytes = stream.read()
         return data
 

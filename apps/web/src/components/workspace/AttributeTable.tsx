@@ -227,7 +227,8 @@ export function IdentifyPanel({
   onClose(): void;
   onRestored(): void;
 }) {
-  const { api } = useSession();
+  const { api, can } = useSession();
+  const canEditBoundary = can("project.edit");
   const [version, setVersion] = useState(0);
   const feature = useLoad(() => api.getFeature(featureId), [api, featureId, version]);
   const [showHistory, setShowHistory] = useState(false);
@@ -236,6 +237,34 @@ export function IdentifyPanel({
     [api, featureId, showHistory, version],
   );
   const [error, setError] = useState<unknown>(null);
+  const fromField = feature.data?.meta.origin === "field";
+  // How and by whom it was recorded, and its photos (field features only).
+  const captures = useLoad(() => (fromField ? api.featureCaptures(featureId) : Promise.resolve([])), [api, featureId, fromField, version]);
+  const photos = useLoad(() => (fromField ? api.featurePhotos(featureId) : Promise.resolve([])), [api, featureId, fromField, version]);
+  const capture = captures.data?.[0];
+
+  async function openPhoto(uuid: string) {
+    setError(null);
+    try {
+      const url = URL.createObjectURL(await api.photoFile(uuid));
+      window.open(url, "_blank", "noopener");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err) {
+      setError(err);
+    }
+  }
+
+  async function useAsPlanningArea() {
+    if (!feature.data?.geometry) return;
+    if (!window.confirm("Use this shape as the project's planning area? It replaces the current draft boundary.")) return;
+    setError(null);
+    try {
+      await api.setBoundary(layer.project, feature.data.geometry, "gps");
+      onRestored();
+    } catch (err) {
+      setError(err);
+    }
+  }
 
   async function restore(auditId: number) {
     if (!feature.data) return;
@@ -276,6 +305,30 @@ export function IdentifyPanel({
             </dd>
           </div>
         </dl>
+      )}
+      {capture && (
+        <p className="small" aria-label="Field capture">
+          Recorded in the field by {capture.captured_by ?? "someone"}
+          {capture.captured_at ? ` on ${new Date(capture.captured_at).toLocaleString()}` : ""}:{" "}
+          {capture.method === "gps" ? `GPS point, ${capture.readings ?? "?"} readings` : capture.method === "gps_track" ? `GPS walk, ${capture.readings ?? "?"} points` : "drawn on the device"}
+          {capture.accuracy_m !== null ? `, ±${capture.accuracy_m.toFixed(1)} m` : ""}.
+          {capture.notes ? ` Notes: ${capture.notes}` : ""}
+        </p>
+      )}
+      {photos.data && photos.data.length > 0 && (
+        <p className="small">
+          Photos:{" "}
+          {photos.data.map((photo, i) => (
+            <button key={photo.uuid} type="button" className="link" onClick={() => openPhoto(photo.uuid)}>
+              photo {i + 1}
+            </button>
+          ))}
+        </p>
+      )}
+      {canEditBoundary && fromField && layer.geometry_type === "polygon" && (
+        <button type="button" className="link" onClick={useAsPlanningArea}>
+          Use as the planning area
+        </button>
       )}
       <button type="button" className="link" onClick={() => setShowHistory(!showHistory)}>
         {showHistory ? "Hide history" : "History"}

@@ -19,7 +19,14 @@ from projects.models import Feature, Layer, PlanProject
 
 from . import procedures, services
 from .models import DevelopmentStandard, LayerRole, Relationship, Run
-from .registry import LINK_TYPES, PROCEDURES, ROLE_BY_CODE, ROLES, TYPE_BY_CODE
+from .registry import (
+    LINK_TYPES,
+    PROCEDURES,
+    ROLE_BY_CODE,
+    ROLE_CHOICES,
+    ROLES,
+    TYPE_BY_CODE,
+)
 
 
 def _perms(code: str) -> list[BasePermission]:
@@ -93,7 +100,7 @@ class RegistryView(APIView):
 
 
 class RoleSerializer(serializers.Serializer[Any]):
-    role = serializers.ChoiceField(choices=[r.code for r in ROLES])
+    role = serializers.ChoiceField(choices=ROLE_CHOICES)
     layer = serializers.IntegerField(allow_null=True)
     config = serializers.JSONField(required=False)
 

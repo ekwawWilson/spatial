@@ -344,6 +344,13 @@ def item_json(item: Item, evaluation: Evaluation, today: date) -> dict[str, Any]
     }
 
 
+def _baseline(project: PlanProject) -> dict[str, Any] | None:
+    from relations.services import latest_summary
+
+    summary = latest_summary(project)
+    return {"at": summary["at"], **summary["project"]} if summary else None
+
+
 def checklist(project: PlanProject) -> dict[str, Any]:
     """The project's checklist with metrics, score, per-group progress and blockers."""
     ensure_items(project)
@@ -380,6 +387,8 @@ def checklist(project: PlanProject) -> dict[str, Any]:
         "total": len(rows),
         "groups": groups,
         "items": rows,
+        # Totals from the relationship layer's last run (None until it has run).
+        "baseline": _baseline(project),
         "blockers": [
             {"item": r["id"], "title": r["title"], "problem": problem}
             for r in rows

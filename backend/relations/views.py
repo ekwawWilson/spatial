@@ -23,7 +23,6 @@ from .registry import (
     LINK_TYPES,
     PROCEDURES,
     ROLE_BY_CODE,
-    ROLE_CHOICES,
     ROLES,
     TYPE_BY_CODE,
 )
@@ -100,9 +99,16 @@ class RegistryView(APIView):
 
 
 class RoleSerializer(serializers.Serializer[Any]):
-    role = serializers.ChoiceField(choices=ROLE_CHOICES)
+    # Plain text, checked below: as a choice field it would need its own name
+    # in the API schema beside the staff "role" list.
+    role = serializers.CharField(max_length=20)
     layer = serializers.IntegerField(allow_null=True)
     config = serializers.JSONField(required=False)
+
+    def validate_role(self, value: str) -> str:
+        if value not in ROLE_BY_CODE:
+            raise serializers.ValidationError(f"Unknown part {value!r}.")
+        return value
 
 
 class RolesSerializer(serializers.Serializer[Any]):

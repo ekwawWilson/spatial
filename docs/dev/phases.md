@@ -29,7 +29,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 9 | Android field app (offline) | **complete except the on-device test** (decision 2026-10-06): CI passed (`f87aa90`) and the APK builds; open item in `docs/qa/phase-9-field-app-on-device.md` |
 | 10 | Sync, conflicts, ground-truthing | **complete except the on-device test and background retry** (decision 2026-10-06): gate passed in CI (`dd932eb`); open items in `docs/qa/phase-10-sync-on-device.md` and the Phase 10 notes |
 | 11 | Drone and raster imagery | **complete except the offline basemap on a device** (decision 2026-10-06): gate passed in CI (`5b34526`); the device check is in `docs/qa/phase-9-field-app-on-device.md` |
-| 12 | Relationship layer and procedures | not started |
+| 12 | Relationship layer and procedures | in progress on branch `phase-12` |
 | 13 | Hardening and release | not started |
 
 ## Open items carried forward
@@ -121,3 +121,12 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 - **Checklist:** the imagery item's rule `imagery_max_age_days` (365) is evaluated from the newest ready orthophoto's capture date. A migration adds the rule to the default template and to existing project items that had none.
 - **Gate:** alignment is tested by finding a building's edges in rendered tiles of the fixture image: within 1 m (one source pixel) on all four sides. The MBTiles content is tested on the server; opening it on a device is part of `docs/qa/phase-9-field-app-on-device.md`.
 - **Limits:** 500 MB per upload; images must be north-up; DEM tiles are drawn as a grey stretch (no hillshade).
+
+## Phase 12 notes
+- **Roles:** layers are generic, so `relations.LayerRole` says which layer of a project holds the properties, streets and so on (`relations/registry.py` lists the 14 roles and 12 link types). Unmapped roles make their procedures skip, and say so.
+- **Procedures** (`relations/procedures.py`) return candidate links; `services.reconcile` makes the stored links match them with the fewest changes. An unchanged link isn't touched, so a nightly run with no data changes writes nothing (and nothing to the audit log).
+- **People's decisions win:** a link with `decided_at` set (confirmed, rejected, or made by hand) is never changed or remade by a run.
+- **Measurements** use the WGS 84 copy of each geometry as geography, so layers in different coordinate systems can be compared in metres. They are analysis values. The setback check allows 5 cm.
+- **Standards** are per district and zone (`DevelopmentStandard`), falling back to the district default (empty zone), then to the platform's 3 m setback.
+- **Runs** are all-or-nothing and record a per-procedure report and the totals. Triggers: on request, nightly (`CELERY_BEAT_SCHEDULE`; the docker-compose worker runs with `-B`), and after edits (a signal on feature saves, collapsed to one refresh per 20 seconds; a property is refreshed alone, anything else refreshes the project).
+- **Not built:** drainage links are confirmed in the web app, not yet as a field task; needs are a layer the planner supplies (the platform doesn't derive needs from gaps in service).

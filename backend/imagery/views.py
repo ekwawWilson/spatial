@@ -65,7 +65,8 @@ class UploadSerializer(serializers.Serializer[Any]):
     name = serializers.CharField(max_length=200, required=False, allow_blank=True)
     kind = serializers.ChoiceField(choices=Imagery.Kind.choices, default=Imagery.Kind.ORTHO)
     capture_date = serializers.DateField(required=False, allow_null=True)
-    source = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    # Stored as the image's "source" (a serializer field can't be called that).
+    captured_by = serializers.CharField(max_length=200, required=False, allow_blank=True)
     crs = serializers.CharField(
         max_length=64,
         required=False,
@@ -140,7 +141,7 @@ class ImageryViewSet(
             kind=values["kind"],
             original_name=original,
             capture_date=values.get("capture_date"),
-            source=values.get("source", ""),
+            source=values.get("captured_by", ""),
             assigned_crs=values.get("crs", "").strip().upper(),
             created_by=user,
         )

@@ -478,7 +478,9 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async uploadImagery(data: { project: number; file: File; name?: string; kind: "ortho" | "dem"; capture_date?: string; source?: string; crs?: string }): Promise<Imagery> {
       const form = new FormData();
       for (const [key, value] of Object.entries(data)) {
-        if (value !== undefined && value !== "") form.set(key, value instanceof File ? value : String(value));
+        // The upload calls the image's source "captured_by".
+        const name = key === "source" ? "captured_by" : key;
+        if (value !== undefined && value !== "") form.set(name, value instanceof File ? value : String(value));
       }
       const send = () => doFetch(`${root}/api/imagery/`, { method: "POST", headers: headers(false), body: form });
       let response = await send();

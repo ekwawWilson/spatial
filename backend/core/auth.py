@@ -11,8 +11,13 @@ from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 from rest_framework.request import Request
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from .models import District, Membership, User
+from . import privacy
+from .models import District, Membership, Role, User
 from .tenancy import set_db_context
+
+# Mirrors PERMISSIONS["data.sensitive"] (a test keeps them equal); named here
+# because permissions.py imports this module's request helpers.
+SENSITIVE_ROLES = frozenset({Role.DISTRICT_ADMIN, Role.PLANNER})
 
 DISTRICT_HEADER = "HTTP_X_DISTRICT_ID"
 
@@ -32,6 +37,7 @@ class TenantJWTAuthentication(JWTAuthentication):
         set_db_context(user_id=None, district_id=None, is_system_admin=False)
         request.district_id = None  # type: ignore[attr-defined]
         request.membership = None  # type: ignore[attr-defined]
+        privacy.set_allowed(False)
 
         result = super().authenticate(request)
         if result is None:
@@ -40,6 +46,7 @@ class TenantJWTAuthentication(JWTAuthentication):
         if not isinstance(user, User):
             raise AuthenticationFailed("Unknown user type.")
         set_db_context(user_id=user.id, district_id=None, is_system_admin=user.is_system_admin)
+        privacy.set_allowed(user.is_system_admin)
 
         raw = request.META.get(DISTRICT_HEADER)
         if raw:
@@ -48,6 +55,10 @@ class TenantJWTAuthentication(JWTAuthentication):
             request.membership = membership  # type: ignore[attr-defined]
             set_db_context(
                 user_id=user.id, district_id=district_id, is_system_admin=user.is_system_admin
+            )
+            privacy.set_allowed(
+                user.is_system_admin
+                or (membership is not None and membership.role in SENSITIVE_ROLES)
             )
         return result
 

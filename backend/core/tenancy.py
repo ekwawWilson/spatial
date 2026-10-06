@@ -30,6 +30,8 @@ from django.core.exceptions import ImproperlyConfigured
 from django.db import DatabaseError, connection, transaction
 from django.http import HttpRequest, HttpResponse
 
+from . import privacy
+
 # --- SQL used by migrations -------------------------------------------------
 
 CONTEXT_FUNCTIONS_SQL = """
@@ -186,6 +188,7 @@ class ResetDbContextMiddleware:
         try:
             return self.get_response(request)
         finally:
+            privacy.set_allowed(True)  # the default outside a request
             # Skip requests that never opened a database connection.
             if connection.connection is not None:
                 try:

@@ -30,7 +30,8 @@ export type Permission =
   | "field.sync"
   | "sync.resolve"
   | "relations.edit"
-  | "standards.manage";
+  | "standards.manage"
+  | "data.sensitive";
 
 export interface DistrictBrief {
   id: number;
@@ -210,6 +211,8 @@ export interface SchemaField {
   required: boolean;
   choices?: (string | number)[];
   default?: unknown;
+  /** Personal data: hidden from roles without data.sensitive. */
+  sensitive?: boolean;
 }
 
 export interface Symbol {
@@ -280,7 +283,15 @@ export interface MapFeature {
   id: number;
   geometry: GeoJSONGeometry | null;
   properties: Record<string, unknown>;
-  meta: { uuid: string; version: number; origin: string; verified: boolean; updated_at: string };
+  meta: {
+    uuid: string;
+    version: number;
+    origin: string;
+    verified: boolean;
+    updated_at: string;
+    /** Fields whose values this user's role may not see (they are left out of properties). */
+    restricted?: string[];
+  };
 }
 
 export interface FeaturePage {

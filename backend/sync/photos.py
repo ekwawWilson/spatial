@@ -68,6 +68,14 @@ def append_chunk(photo: Photo, offset: int, data: bytes) -> Photo:
                 "The photo arrived damaged (its checksum doesn't match)."
                 " Send it again from the start."
             )
+        with open(part, "rb") as fh:
+            head = fh.read(12)
+        if not (head.startswith(b"\xff\xd8\xff") or head.startswith(b"\x89PNG\r\n\x1a\n")):
+            # Served to browsers as an image: anything else is refused.
+            part.unlink()
+            photo.received = 0
+            photo.save(update_fields=["received"])
+            raise ValidationError("The file isn't a JPEG or PNG photo.")
         part.replace(photo_path(photo))
         photo.complete = True
         photo.path = str(photo_path(photo).relative_to(settings.MEDIA_ROOT))

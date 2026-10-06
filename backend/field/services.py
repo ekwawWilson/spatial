@@ -18,6 +18,7 @@ from django.utils import timezone
 
 from basemaps.models import BasemapSource
 from crs.services import web_proj4
+from projects import privacy
 from projects.models import Layer, PlanProject
 
 PACKAGE_FORMAT = 1
@@ -69,6 +70,8 @@ def _features(layer: Layer, boundary_id: int | None) -> list[dict[str, Any]]:
         " ST_AsGeoJSON(f.geom_4326, %s) FROM projects_feature f"
         f" WHERE f.layer_id = %s AND f.geom_4326 IS NOT NULL{inside} ORDER BY f.id"
     )
+    # Restricted (personal) values don't go to devices whose user can't see them.
+    hidden = privacy.hidden_fields(layer)
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         return [
@@ -77,7 +80,9 @@ def _features(layer: Layer, boundary_id: int | None) -> list[dict[str, Any]]:
                 "uuid": str(uuid),
                 "version": version,
                 "verified": verified,
-                "properties": props if isinstance(props, dict) else json.loads(props),
+                "properties": privacy.redact(
+                    props if isinstance(props, dict) else json.loads(props), hidden
+                ),
                 "geometry": json.loads(geometry),
             }
             for fid, uuid, version, verified, props, geometry in cursor.fetchall()
@@ -135,7 +140,7 @@ def build_package(project: PlanProject, layer_ids: list[int] | None) -> dict[str
                 "name": layer.name,
                 "domain": layer.domain,
                 "geometry_type": layer.geometry_type,
-                "schema": layer.schema,
+                "schema": privacy.visible_schema(layer),
                 "style": layer.style,
                 "order": layer.order,
                 "feature_count": len(rows),

@@ -26,6 +26,7 @@ from crs.models import CoordinateSystem
 from crs.services import transform_geojson
 from field.services import DECIMALS
 from projects import geometry as geo
+from projects import privacy
 from projects import schema as schema_rules
 from projects.boundary import LAYER_NAME as BOUNDARY_LAYER
 from projects.models import Feature, Layer, PlanProject
@@ -106,6 +107,7 @@ def _create(change: dict[str, Any], district_id: int, device_id: str, user: User
     if layer.name == BOUNDARY_LAYER:
         raise ValidationError({"layer": ["the planning area is set in the office"]})
     geometry = _native(change.get("geometry") or {}, layer)
+    privacy.check_write(layer, change.get("properties"))
     properties = schema_rules.validate_properties(layer.schema, change.get("properties") or {})
     feature = Feature.objects.create(
         district_id=district_id,
@@ -155,6 +157,7 @@ def _update(change: dict[str, Any], district_id: int, device_id: str, user: User
         raise ValidationError({"feature_uuid": ["the planning area is changed in the office"]})
     geometry = _native(change["geometry"], layer) if has_geometry else None
     if isinstance(properties, dict):
+        privacy.check_write(layer, properties)
         changes = schema_rules.validate_properties(layer.schema, properties, partial=True)
         feature.properties = {**feature.properties, **changes}
     feature.version += 1
@@ -296,6 +299,7 @@ def pull(project: PlanProject, layer_ids: list[int], since: datetime | None) -> 
         + " AND ".join(conditions)
         + " ORDER BY f.id"
     )
+    hidden = {layer.pk: privacy.hidden_fields(layer) for layer in layers}
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         features = [
@@ -305,7 +309,9 @@ def pull(project: PlanProject, layer_ids: list[int], since: datetime | None) -> 
                 "layer": layer_id,
                 "version": version,
                 "verified": verified,
-                "properties": props if isinstance(props, dict) else json.loads(props),
+                "properties": privacy.redact(
+                    props if isinstance(props, dict) else json.loads(props), hidden[layer_id]
+                ),
                 "geometry": json.loads(geometry),
             }
             for fid, uuid, layer_id, version, verified, props, geometry in cursor.fetchall()
@@ -334,7 +340,7 @@ def pull(project: PlanProject, layer_ids: list[int], since: datetime | None) -> 
                 "name": layer.name,
                 "domain": layer.domain,
                 "geometry_type": layer.geometry_type,
-                "schema": layer.schema,
+                "schema": privacy.visible_schema(layer),
                 "style": layer.style,
                 "order": layer.order,
             }

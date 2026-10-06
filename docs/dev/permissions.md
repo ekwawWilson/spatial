@@ -37,6 +37,7 @@ A person can hold a different role in each district they belong to. System admin
 | `sync.resolve` | district_admin, planner |
 | `relations.edit` | district_admin, planner |
 | `standards.manage` | district_admin |
+| `data.sensitive` | district_admin, planner |
 
 ## System administrator only
 - Set the system default coordinate system, add coordinate systems for every district, and pin the transformation used between two systems.

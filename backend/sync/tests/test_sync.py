@@ -355,7 +355,7 @@ def test_a_photo_upload_resumes_after_a_break_without_damage(officer, planner, p
     lonlat = wgs(planner, NATIVE_POINT)
     change = create_change(project["pegs"], lonlat)
     (created,) = push(officer, change)
-    data = b"\xff\xd8" + bytes(range(256)) * 40  # 10 242 bytes
+    data = b"\xff\xd8\xff" + bytes(range(256)) * 40  # 10 243 bytes
     started = start_photo(officer, change["feature_uuid"], data)
     assert started.status_code == 201, started.content
     photo_uuid = started.json()["uuid"]
@@ -399,13 +399,24 @@ def test_a_damaged_photo_is_refused_and_can_be_sent_again(officer, planner, proj
     lonlat = wgs(planner, NATIVE_POINT)
     change = create_change(project["pegs"], lonlat)
     push(officer, change)
-    data = b"\xff\xd8" + b"photo" * 100
+    data = b"\xff\xd8\xff" + b"photo" * 100
     photo_uuid = start_photo(officer, change["feature_uuid"], data).json()["uuid"]
     damaged = send_chunk(officer, photo_uuid, 0, data[:-1] + b"X")
     assert damaged.status_code == 400 and "checksum" in str(damaged.json())
     assert officer.get(reverse("sync-photo-detail", args=[photo_uuid])).json()["received"] == 0
     assert planner.get(reverse("sync-photo-file", args=[photo_uuid])).status_code == 404
     assert send_chunk(officer, photo_uuid, 0, data).json()["complete"] is True
+
+
+def test_only_photos_are_accepted_as_photos(officer, planner, project):
+    lonlat = wgs(planner, NATIVE_POINT)
+    change = create_change(project["pegs"], lonlat)
+    push(officer, change)
+    script = b"<html><script>alert(1)</script></html>"
+    photo_uuid = start_photo(officer, change["feature_uuid"], script).json()["uuid"]
+    refused = send_chunk(officer, photo_uuid, 0, script)
+    assert refused.status_code == 400 and "JPEG or PNG" in str(refused.json())
+    assert planner.get(reverse("sync-photo-file", args=[photo_uuid])).status_code == 404
 
 
 def test_photo_limits(officer, planner, project, monkeypatch):

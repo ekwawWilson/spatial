@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Community Planning GIS Platform: User Manual</title>
+<style>
+body { font-family: Georgia, 'Times New Roman', serif; line-height: 1.5; max-width: 46rem; margin: 2rem auto; padding: 0 1rem; color: #1d2521; }
+h1 { font-size: 2.2rem; margin-top: 4rem; }
+h2 { font-size: 1.6rem; border-bottom: 2px solid #1f6f4a; padding-bottom: .2rem; margin-top: 3rem; page-break-before: always; }
+h3 { font-size: 1.2rem; margin-top: 1.6rem; }
+h4, h5 { font-size: 1.05rem; }
+.part { font: 600 .8rem/1 Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #1f6f4a; margin-top: 3rem; }
+table { border-collapse: collapse; width: 100%; margin: .8rem 0; font-size: .92rem; }
+th, td { border: 1px solid #c8cfca; padding: .35rem .5rem; text-align: left; vertical-align: top; }
+th { background: #eef3ef; }
+code, pre { font-family: Consolas, 'Courier New', monospace; font-size: .88rem; background: #f3f5f3; }
+code { padding: 0 .2rem; }
+pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
+.toc li { margin: .15rem 0; }
+.toc a { color: inherit; text-decoration: none; }
+.cover { text-align: center; margin: 6rem 0 4rem; }
+.cover p { color: #5f6b65; }
+@media print { body { margin: 0; max-width: none; } a { color: inherit; text-decoration: none; } h2 { page-break-before: always; } tr, pre { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="cover">
+<h1>Community Planning GIS Platform</h1>
+<p>User manual</p>
+<p>October 2026</p>
+</div>
+<h3>Contents</h3>
+<div class="toc"><ul>
+</ul><p class="part">Getting started</p><ul>
+<li><a href="#signing-in">Signing in and your account</a></li>
+<li><a href="#projects-and-layers">Projects, layers and the map</a></li>
+<li><a href="#coordinate-systems">Coordinate systems</a></li>
+<li><a href="#basemaps">Basemaps</a></li>
+</ul><p class="part">Building the plan&#x27;s data</p><ul>
+<li><a href="#import-export">Importing and exporting data</a></li>
+<li><a href="#editing-and-boundaries">Editing features and making the planning area</a></li>
+<li><a href="#imagery">Drone and satellite imagery</a></li>
+<li><a href="#readiness-checklist">The readiness checklist</a></li>
+<li><a href="#relationships">Relationships between features</a></li>
+</ul><p class="part">Working in the field</p><ul>
+<li><a href="#field-app">The field app (Android)</a></li>
+<li><a href="#field-sync">Field data in the office: sync, conflicts and ground-truthing</a></li>
+</ul><p class="part">Keeping work safe</p><ul>
+<li><a href="#project-files">Project files (.spp)</a></li>
+<li><a href="#audit-log">The audit log</a></li>
+</ul><p class="part">Administration</p><ul>
+<li><a href="#members">Managing district members</a></li>
+<li><a href="#system-admin">System administration</a></li>
+<li><a href="#data-protection">Data protection</a></li>
+</ul></div>
+<h2 id="signing-in">Signing in and your account</h2>
+<h3>Signing in</h3>
+<p>Sign in with your work email and password. Your email isn't case-sensitive.</p>
+<p>After <strong>5 wrong passwords in a row</strong>, your account is locked for <strong>15 minutes</strong>. The sign-in page doesn't say whether an account is locked or doesn't exist, so it can't be used to guess who has an account. If you're locked out, wait, or ask a system administrator to unlock you.</p>
+<h3>Your first password</h3>
+<p>When someone adds you, you get an email with a link to choose your password. The link works once, and it stops working if the password is changed some other way.</p>
+<h3>Forgotten password</h3>
+<p>Choose <strong>Forgotten your password?</strong> on the sign-in page and enter your email. If an account exists, you'll get a reset link. Resetting your password also unlocks your account.</p>
+<h3>Changing your password</h3>
+<p>Open your email address in the top bar, then <strong>Change password</strong>. Changing it signs you out on every other device.</p>
+<h3>Choosing a district</h3>
+<p>If you work for more than one district, pick the one you're working in from the <strong>District</strong> list at the top. What you can see and do depends on your role in that district. The app remembers your choice on this device.</p>
+<h2 id="projects-and-layers">Projects, layers and the map</h2>
+<h3>Plan projects</h3>
+<p>Open <strong>Projects</strong>. Each project is a piece of planning work, for example a local plan for one community. Planners and district administrators can create projects; everyone in the district can open them.</p>
+<p>A new project takes the <strong>default coordinate system</strong> (see Coordinate systems) unless you pick another. <strong>A project's coordinate system is fixed once it's created</strong>, so coordinates never change meaning later.</p>
+<p>Deleting a project archives it; nothing is lost.</p>
+<h3>Layers</h3>
+<p>In a project, the <strong>Layers</strong> panel lists layers grouped by data domain (A. Territory … J. Planning &amp; policy). For each layer you can:</p>
+<ul>
+<li><strong>show or hide</strong> it with the checkbox, and set its <strong>opacity</strong> with the slider;</li>
+<li><strong>Zoom</strong> to its features;</li>
+<li>move it <strong>↑ up or ↓ down</strong> (layers higher in the list are drawn on top);</li>
+<li>change its <strong>Style</strong>: one colour for everything, or a colour per value of a field (e.g. by land use), with optional labels;</li>
+<li>change its <strong>Fields</strong>: names, types (text, whole number, number, yes/no, date, choice), required, and choices;</li>
+<li><strong>Delete</strong> it, with its features.</li>
+</ul>
+<p>Add a layer with <strong>Add a layer</strong>: give it a name, a data domain and whether it holds points, lines or polygons.</p>
+<h5>Restricted fields (personal data)</h5>
+<p>In a layer's <strong>Fields</strong>, tick <strong>Restricted</strong> for any field that identifies a person or their rights: owners' or claimants' names, phone numbers, ID numbers. Planners and district administrators still see and edit those values. Viewers and field officers see "restricted" instead, everywhere: in the table, on the map, in history and in the field app. A restricted field can't also be required. See data protection.</p>
+<h4>Changing fields safely</h4>
+<p>The platform won't let a change silently lose data:</p>
+<ul>
+<li>Changing a field's type (e.g. text to whole number) is refused if existing values wouldn't fit. The message lists the features to fix first.</li>
+<li>Removing a field that still holds values asks you to confirm, because those values are deleted from every feature. The change is recorded in the audit log.</li>
+</ul>
+<h3>The map</h3>
+<ul>
+<li><strong>Identify</strong>: click a feature to see its details.</li>
+<li><strong>Measure distance / Measure area</strong>: click points; double-click to finish. Distances are shown in metres or kilometres and, for projects in feet, also in Gold Coast feet. Areas are shown in m², hectares and acres. Measurements are ground distances (geodesic), not map distances.</li>
+<li>Bottom-left: the pointer's position <strong>in the project's coordinate system</strong>.</li>
+<li>Scale bar bottom-left, north arrow top-right (click it to turn the map back to north-up).</li>
+</ul>
+<p>Very large layers (over 2,000 features) are drawn from zoom level 14 (roughly neighbourhood scale) upwards, so the map stays quick.</p>
+<h3>Attribute table</h3>
+<p>Select a layer's name to open its table below the map. Sort by clicking a column heading, and narrow the rows with <strong>Filter</strong>.</p>
+<p><strong>Double-click a value to edit it</strong>, then press Enter to save or Esc to cancel. The platform checks the value against the field's rules. If someone else changed the same feature since you opened the table, your edit isn't saved: you'll see a message and the table reloads with their version, so nobody's work is silently overwritten.</p>
+<h2 id="coordinate-systems">Coordinate systems</h2>
+<p>Open <strong>Coordinate systems</strong> in the menu.</p>
+<h3>Which system new projects use</h3>
+<p>Every project records the coordinate system its data is in. A new project starts with:</p>
+<ol>
+<li><strong>your personal default</strong>, if you've set one; otherwise</li>
+<li><strong>the district default</strong>, set by the district administrator; otherwise</li>
+<li><strong>the system default</strong>, set by system administrators (initially the Ghana National Grid, EPSG:2136).</li>
+</ol>
+<p>Changing any default only affects projects created afterwards. <strong>Existing projects and their coordinates never change.</strong></p>
+<h3>Built-in systems</h3>
+<table><thead><tr><th>Code</th><th>Name</th><th>Units</th><th>Use</th></tr></thead><tbody>
+<tr><td>EPSG:2136</td><td>Accra / Ghana National Grid</td><td>Gold Coast feet</td><td>survey and cadastral work (default)</td></tr>
+<tr><td>EPSG:25000</td><td>Leigon / Ghana Metre Grid</td><td>metres</td><td>metre-based national grid</td></tr>
+<tr><td>EPSG:2137</td><td>Accra / TM 1 NW</td><td>metres</td><td>defined for <strong>offshore</strong> Ghana; prefer EPSG:25000 onshore</td></tr>
+<tr><td>EPSG:4168</td><td>Accra (geographic)</td><td>degrees</td><td>latitude/longitude on the Accra datum</td></tr>
+<tr><td>EPSG:32630 / 32631</td><td>UTM 30N / 31N (WGS 84)</td><td>metres</td><td>GPS-based mapping; 31N east of 0°</td></tr>
+<tr><td>EPSG:4326</td><td>WGS 84</td><td>degrees</td><td>GPS, GeoJSON, KML</td></tr>
+<tr><td>EPSG:3857</td><td>Web Mercator</td><td>metres</td><td>web basemaps only; don't measure in it</td></tr>
+</tbody></table>
+<h3>Converting coordinates, and how accurate it is</h3>
+<p>Paste coordinates (one point per line) and choose <strong>From</strong> and <strong>To</strong>. The result names the transformation used and its accuracy.</p>
+<p><strong>Within one datum</strong> (e.g. Ghana National Grid ↔ Accra geographic) conversion is exact.</p>
+<p><strong>Between the Accra (or Leigon) datum and WGS 84</strong>, for example between survey plans and GPS or satellite imagery, the published transformations are only accurate to about <strong>±6 m</strong> (the best one) or <strong>±25 m</strong> (the others). Positions from GPS or imagery can therefore sit several metres from surveyed boundaries even when both are correct. For boundary work, compare like with like, or obtain better transformation parameters from the Survey and Mapping Division.</p>
+<p>Converting a point and converting it back always returns the original coordinates.</p>
+<h3>Adding a local or project grid</h3>
+<p>District administrators can add a coordinate system for their district, and system administrators for all districts. Paste the definition (WKT or PROJ string) supplied by the surveyor, choose <strong>Check definition</strong> to see what it is, then <strong>Add</strong>. EPSG systems can't be added this way; ask a system administrator to enable them.</p>
+<h3>Choosing the transformation (system administrators)</h3>
+<p>Under <strong>Transformation between two systems</strong>, pick two systems to see every published transformation and its accuracy. <strong>Use this</strong> makes one the standard for that pair, in both directions and for everyone. <strong>Go back to the most accurate available</strong> removes the choice.</p>
+<h2 id="basemaps">Basemaps</h2>
+<p>A basemap is the background map under your layers: streets, satellite imagery, or your district's own aerial photos.</p>
+<h3>Choosing a basemap in a project</h3>
+<p>In a project, the <strong>Basemap</strong> box at the top of the layer panel lists what's available. Pick one, or <strong>None</strong>, and set its opacity with the slider. Your choice is remembered for that project on this device.</p>
+<p>If a basemap can't be shown (for example, its API key is missing or no longer valid), a message appears under the list instead of a blank map. Ask your district administrator to fix the key on the <strong>Basemaps</strong> page.</p>
+<h3>Managing basemaps (district and system administrators)</h3>
+<p>Open <strong>Basemaps</strong>.</p>
+<p><strong>Ready-made basemaps:</strong></p>
+<table><thead><tr><th>Provider</th><th>Key needed</th><th>Notes</th></tr></thead><tbody>
+<tr><td>OpenStreetMap</td><td>no</td><td>available from the start</td></tr>
+<tr><td>Esri World Imagery</td><td>no</td><td>available from the start</td></tr>
+<tr><td>Google Maps (roadmap or satellite)</td><td>yes</td><td>Map Tiles API key from Google Cloud</td></tr>
+<tr><td>Bing Maps (aerial)</td><td>yes</td><td><strong>deprecated</strong>: Bing Maps for Enterprise is being retired and free keys have ended</td></tr>
+</tbody></table>
+<p><strong>Your own basemap:</strong> add an XYZ, WMS or WMTS service, for example the district's own imagery server.</p>
+<p><strong>API keys</strong> are stored encrypted, can't be viewed once saved, and are never shown in the app. Use <strong>Add key</strong> or <strong>Replace key</strong> to change one. For Google keys, restrict the key to this site's address in Google Cloud, because browsers that show the map can see it.</p>
+<h3>Offline use (field devices)</h3>
+<p>Field devices (from Phase 9) can store basemap tiles for offline work, <strong>but only for sources whose licence allows it</strong>:</p>
+<ul>
+<li>OpenStreetMap, Esri, Google and Bing tiles <strong>may not</strong> be stored offline under their terms, and the platform refuses to package them.</li>
+<li>For your own imagery (e.g. a drone survey) or imagery licensed for offline use, tick "We own this imagery or its licence allows offline use" when adding it.</li>
+</ul>
+<h2 id="import-export">Importing and exporting data</h2>
+<p><em>Physical planners and district administrators.</em></p>
+<h3>Importing</h3>
+<p>In a project, choose <strong>Import data</strong>.</p>
+<ol>
+<li><strong>Choose a file.</strong> Accepted: Shapefile (zip the .shp together with its .shx, .dbf and .prj), GeoPackage, GeoJSON, KML/KMZ, DXF, DWG (if the server supports it) and CSV with coordinate columns (x/y, lon/lat or easting/northing). Up to 500 MB.</li>
+<li><strong>Check what's in it.</strong> For each layer in the file you'll see its features, shape types and fields, and the coordinate system the file says it uses.</li>
+<li><strong>Decide:</strong></li>
+</ol>
+<ul>
+<li><strong>Coordinates are in:</strong> the coordinate system of the file's coordinates. If the file doesn't say, or it's a DXF, DWG or CSV file (these never reliably record it), you must choose one <strong>and tick the confirmation</strong>. Nothing is guessed.</li>
+<li><strong>Import into:</strong> a new layer, which keeps the file's coordinate system unchanged, or an existing layer. If the existing layer uses a different system, the coordinates are converted and the report names the transformation and its accuracy.</li>
+<li><strong>Fields:</strong> what each field in the file becomes. Shapefiles cut names to 10 characters (e.g. <code>property_i</code>); give them their full names here. Files exported from this platform restore them automatically.</li>
+<li><strong>Invalid shapes:</strong> skip them, try to repair them, or stop the whole import.</li>
+<li><strong>Duplicates</strong>, and <strong>values that don't fit</strong> a field's rules: keep/leave empty, or skip.</li>
+<li><strong>CAD layers</strong> (DXF/DWG): which drawing layers to take.</li>
+</ul>
+<ol>
+<li><strong>Import.</strong> Progress is shown. At the end, a report lists how many features were imported or skipped, and why, row by row.</li>
+</ol>
+<p>An import either completes or changes nothing: if it fails or you chose "stop the import", no features are added.</p>
+<h3>Exporting</h3>
+<p>In a project, choose <strong>Export</strong>, then pick layers (or tick <strong>Only the selected feature</strong>), a format and a coordinate system.</p>
+<table><thead><tr><th>Format</th><th>Notes</th></tr></thead><tbody>
+<tr><td>GeoPackage</td><td>best all-round choice; keeps everything</td></tr>
+<tr><td>Shapefile</td><td>field names cut to 10 characters; <code>&lt;layer&gt;_fields.csv</code> in the zip lists the full names</td></tr>
+<tr><td>GeoJSON</td><td>in each layer's own system unless you choose one</td></tr>
+<tr><td>KML / KMZ</td><td>always WGS 84 (Google Earth)</td></tr>
+<tr><td>DXF / DWG</td><td>CAD: shapes and layer names only, no attribute values; DWG only if the server supports it</td></tr>
+</tbody></table>
+<p>Exports keep <strong>each layer's own coordinate system</strong> unless you choose another. Coordinates then come out exactly as stored. Every download includes a <code>README.txt</code> stating the coordinate system, and naming any conversion with its accuracy.</p>
+<h2 id="editing-and-boundaries">Editing features and making the planning area</h2>
+<p><em>Physical planners and district administrators.</em></p>
+<h3>Editing on the map</h3>
+<p>Select a layer's name in the Layers panel. The <strong>Editing</strong> bar appears above its table.</p>
+<table><thead><tr><th>Tool</th><th>What it does</th></tr></thead><tbody>
+<tr><td><strong>Draw</strong></td><td>click to add points or corners; double-click to finish a line or polygon</td></tr>
+<tr><td><strong>Edit vertices</strong></td><td>click a feature, then drag its corners; click an edge to add a corner</td></tr>
+<tr><td><strong>Move</strong></td><td>click a feature and drag it</td></tr>
+<tr><td><strong>Split</strong></td><td>first click the feature with Identify, then choose Split and draw a line across it</td></tr>
+<tr><td><strong>Select to merge</strong></td><td>shift-click touching features, then <strong>Merge</strong>; the first one keeps its values</td></tr>
+<tr><td><strong>Delete</strong></td><td>click a feature (you're asked to confirm)</td></tr>
+</tbody></table>
+<p><strong>Snapping:</strong> while drawing or editing, the pointer jumps to nearby corners and edges of the layers ticked under <strong>Snap to</strong>, within the distance you set (in screen pixels). Use it to make parcels meet exactly.</p>
+<p><strong>Undo / Redo</strong> step back and forward through your edits in this session. Every step is saved, so nothing is lost.</p>
+<p>Layers with more than 2,000 features can't be edited on the map in this version.</p>
+<h3>History</h3>
+<p>Click a feature (Identify), then <strong>History</strong>. You'll see every version: when, who, and what changed. <strong>Restore this version</strong> makes an earlier version current again. The restore is recorded as a new version, so the history is never rewritten.</p>
+<h3>The planning area</h3>
+<p>The <strong>Planning area</strong> panel shows the project's boundary and checks it:</p>
+<ul>
+<li><strong>Area</strong> in hectares, acres and m², and <strong>perimeter</strong> in metres and, for feet-based projects, Gold Coast feet.</li>
+<li><strong>Neighbours:</strong> overlaps with other planning areas in the district (with the overlapping area), and gaps under 2 m that suggest the boundaries should meet.</li>
+<li><strong>District:</strong> whether any part falls outside the district boundary. A system administrator must load that boundary first.</li>
+</ul>
+<p>Ways to make the boundary:</p>
+<ul>
+<li><strong>Draw</strong> it on the map (snapping helps you follow existing parcels).</li>
+<li><strong>Enter coordinates:</strong> type or paste the corners, one per line, in any coordinate system. They're converted to the project's.</li>
+<li><strong>Bearings and distances:</strong> enter the start point and each leg as the surveyor booked it (e.g. <code>N 45 30 00 E</code> and a distance in the project's units). You'll see the <strong>misclosure</strong> and the <strong>accuracy ratio</strong> (e.g. <em>1 in 20,000</em>). Tick <strong>Adjust (Bowditch)</strong> to spread the misclosure over the legs, as surveyors do. A ratio below about 1 in 5,000 is flagged as suspicious.</li>
+<li><strong>Import</strong> it from a file (Import data), as a polygon in the Planning area layer.</li>
+</ul>
+<h4>Status</h4>
+<p><strong>Draft → Agreed with stakeholders → Approved.</strong></p>
+<ul>
+<li>Planners mark a valid boundary as agreed.</li>
+<li>Only district administrators approve it, or reopen an approved one.</li>
+<li>While a boundary is agreed or approved it can't be changed, not even through the Planning area layer, until it's moved back to draft.</li>
+</ul>
+<h2 id="imagery">Drone and satellite imagery</h2>
+<p><em>Physical planners and district administrators.</em></p>
+<p>The Assembly's own images can be loaded into a project: a drone orthophoto as a background map, and an elevation model for contour lines. Open <strong>Imagery</strong> at the top of the project.</p>
+<h3>What you can upload</h3>
+<p>A <strong>GeoTIFF</strong> (<code>.tif</code>), up to 500 MB. It must be:</p>
+<ul>
+<li><strong>georeferenced:</strong> the file itself says where on the ground it is. Drone software (Pix4D, DroneDeploy, WebODM, Agisoft) exports this as "orthomosaic GeoTIFF";</li>
+<li><strong>north-up</strong> (not rotated);</li>
+<li>in a <strong>known coordinate system</strong>. If the file doesn't say which, choose it in the upload form.</li>
+</ul>
+<p>Ordinary photos (JPEG from the drone's card) can't be used: they must be processed into an orthomosaic first.</p>
+<h3>Uploading</h3>
+<ol>
+<li>Choose the file and the <strong>kind</strong>: orthophoto, or elevation model.</li>
+<li>Give it a name, the date it was <strong>captured</strong>, and who captured it. If the file carries a capture date, it is filled in for you.</li>
+<li>Choose <strong>Upload</strong>. The image is checked and converted in the background; the list shows <strong>Ready</strong> when it is done, or <strong>Failed</strong> with the reason.</li>
+</ol>
+<p>The image is stored in its own coordinate system and is not altered. The map draws it in place alongside your layers.</p>
+<h3>Using an orthophoto</h3>
+<ul>
+<li><strong>As a basemap:</strong> it appears in the project's <strong>Basemap</strong> list as "<em>name</em> (imagery)", for everyone in the district.</li>
+<li><strong>In the field, offline:</strong> because it is the Assembly's own data, it may be stored on phones. When a field officer downloads the project, the image is offered as an <strong>offline basemap</strong>, covering the planning area. Set the planning area first.</li>
+<li><strong>On the readiness checklist:</strong> the "Recent imagery" item shows how many images the project has, the newest capture date and the pixel size. It can be marked ready when the newest image is under 12 months old. Correct a wrong capture date in the imagery list.</li>
+</ul>
+<h3>Elevation models and contours</h3>
+<p>Upload a single-band elevation GeoTIFF (a DSM or DTM from the drone software) as kind <strong>Elevation model</strong>. When it is ready, enter a <strong>contour interval</strong> (in the model's height units, usually metres) and choose <strong>Make contours</strong>.</p>
+<p>The lines go into a layer called <strong>Topography (contours)</strong>, in the project's coordinate system, each with its elevation. Making contours again replaces the earlier lines. The checklist's topography item picks the layer up by its name.</p>
+<p>A drone surface model includes roofs and trees, so its contours follow them. For ground contours, use a terrain model (DTM) if your software produces one.</p>
+<h3>If an upload fails</h3>
+<table><thead><tr><th>Message</th><th>What to do</th></tr></thead><tbody>
+<tr><td>"The image isn't georeferenced…"</td><td>Export it from the drone software as a GeoTIFF orthomosaic.</td></tr>
+<tr><td>"The image doesn't say which coordinate system it uses…"</td><td>Upload again and choose the coordinate system.</td></tr>
+<tr><td>"The image is rotated…"</td><td>Export it north-up.</td></tr>
+<tr><td>"An elevation model has one band…"</td><td>You uploaded a colour image as an elevation model. Choose kind Orthophoto.</td></tr>
+<tr><td>"…isn't enabled on this server" (when making contours)</td><td>A system administrator must enable that coordinate system.</td></tr>
+</tbody></table>
+<h3>Who can do this</h3>
+<p>Planners and district administrators upload, edit and delete imagery. Everyone in the district can see it.</p>
+<h2 id="readiness-checklist">The readiness checklist</h2>
+<p><em>Physical planners and district administrators; everyone in the district can view it.</em></p>
+<p>Every project has a checklist of what must be in place before the local plan can be prepared. It has five groups: authority and set-up, planning area, base map, existing situation, and people and standards. Open it with <strong>Readiness checklist</strong> at the top of the project's map. Open <strong>Readiness</strong> in the main menu to see every project in the district.</p>
+<h3>Items</h3>
+<p>Click an item's title to see its details. Each item has:</p>
+<ul>
+<li>a <strong>status</strong>: not started, in progress, ready, or verified;</li>
+<li>an <strong>owner</strong> and a <strong>due date</strong>. District administrators pick the owner from the members list; planners can make themselves the owner;</li>
+<li><strong>notes</strong>, saved when you click away from the box;</li>
+<li><strong>documents</strong>, such as the Assembly resolution or the public notice. Attach them with the file button.</li>
+</ul>
+<p>There are three kinds of item:</p>
+<ul>
+<li><strong>Document or decision</strong> items, which you mark ready yourself.</li>
+<li><strong>Map layer</strong> items. These are linked to a layer and measured automatically (see below). A layer named exactly like the item is linked on its own.</li>
+<li><strong>The planning area</strong>, which follows the boundary's status in the workspace.</li>
+</ul>
+<h3>Automatic measures (map-layer items)</h3>
+<table><thead><tr><th>Measure</th><th>Meaning</th></tr></thead><tbody>
+<tr><td>Features</td><td>how many features the linked layer has</td></tr>
+<tr><td>Coverage</td><td>how much of the planning area has data. The area is divided into about 100 squares; this is the share of the area whose squares hold at least one feature. It needs the planning-area boundary.</td></tr>
+<tr><td>Attributes</td><td>how complete the attributes are. It counts the required fields, or every field if none is marked required.</td></tr>
+<tr><td>Newest</td><td>the age of the most recently changed feature, in days</td></tr>
+<tr><td>Verified</td><td>the share of features confirmed or corrected in the field (see <strong>Send to field</strong> below).</td></tr>
+</tbody></table>
+<p>The measures are recalculated every time the checklist opens, so imports and edits show up straight away.</p>
+<h3>Completion rules</h3>
+<p>Map-layer items can have rules, for example "buildings: coverage at least 90% and attributes at least 80%".</p>
+<ul>
+<li>You can only mark an item <strong>ready</strong> or <strong>verified</strong> when its rules are met. If you try earlier, the checklist tells you what's missing.</li>
+<li>Only <strong>district administrators</strong> can mark an item verified, or change an item that is already verified.</li>
+<li>An item counts as <strong>complete</strong> when it is ready or verified and its rules are still met.</li>
+<li>The <strong>score</strong> is the share of complete items.</li>
+</ul>
+<h3>Blockers</h3>
+<p>The Blockers list shows:</p>
+<ul>
+<li>items marked ready whose rules are no longer met (for example, after data was deleted);</li>
+<li>items that are past their due date;</li>
+<li>a missing planning area, because most other items can't be measured without it.</li>
+</ul>
+<h3>Actions on map-layer items</h3>
+<table><thead><tr><th>Action</th><th>What it opens</th></tr></thead><tbody>
+<tr><td><strong>Import</strong></td><td>the import wizard, already set to the item's layer. If the item has no layer yet, the wizard makes a new layer named after the item, in the item's domain.</td></tr>
+<tr><td><strong>Export</strong></td><td>the export dialog with the item's layer ticked</td></tr>
+<tr><td><strong>Draw</strong></td><td>the editing tools on the item's layer. If the item has no layer yet, one is made first.</td></tr>
+<tr><td><strong>Send to field</strong></td><td>makes a ground-truthing task for every unverified feature in the item's layer. Field officers get them at their next sync. See field data in the office.</td></tr>
+</tbody></table>
+<h3>Exports</h3>
+<p><strong>Export CSV</strong> gives a spreadsheet of every item with its measures and problems. <strong>Export PDF</strong> gives a printable report.</p>
+<h3>The district's template</h3>
+<p>New projects copy the district's template. District administrators edit it on the <strong>Readiness</strong> page:</p>
+<ul>
+<li>Choose <strong>Customise for this district</strong> to make the district's own copy of the platform default. Then add, edit or remove items and set their rules.</li>
+<li>Existing projects don't change when the template changes. To pick up items added since a project started, choose <strong>Add new template items</strong> on that project's checklist.</li>
+<li><strong>Revert to the platform default</strong> removes the district's own template.</li>
+</ul>
+<h2 id="relationships">Relationships between features</h2>
+<p><em>Physical planners and district administrators; everyone in the district can view them.</em></p>
+<p>The platform works out how the features of a project relate to one another, so you can ask questions like "which properties flood?", "which buildings are too close to their boundary?" and "which communities have no school nearby?". Open <strong>Relationships</strong> at the top of the project.</p>
+<h3>The twelve relationships</h3>
+<table><thead><tr><th>From</th><th>Link</th><th>To</th><th>How it is worked out</th></tr></thead><tbody>
+<tr><td>Property</td><td>belongs to</td><td>Community</td><td>the community that covers most of it</td></tr>
+<tr><td>Property</td><td>falls within</td><td>Local plan</td><td>the plan that covers at least half of it</td></tr>
+<tr><td>Property</td><td>falls within</td><td>Structure plan</td><td>the same</td></tr>
+<tr><td>Community</td><td>contains</td><td>Infrastructure</td><td>facilities inside the community</td></tr>
+<tr><td>Property</td><td>is located on</td><td>Street</td><td>the nearest street within 100 m</td></tr>
+<tr><td>Property</td><td>is served by</td><td>Road</td><td>a road within 30 m</td></tr>
+<tr><td>Property</td><td>is affected by</td><td>Flood risk</td><td>it touches a flood-prone area</td></tr>
+<tr><td>Property</td><td>is connected to</td><td>Drain</td><td>the nearest drain within 15 m: <strong>a guess, to be confirmed</strong></td></tr>
+<tr><td>Property</td><td>has</td><td>Development permit</td><td>the permit names the property's id, or sits on it</td></tr>
+<tr><td>Development</td><td>violates</td><td>Planning regulation</td><td>it breaks the district's standard for its zone</td></tr>
+<tr><td>Infrastructure</td><td>serves</td><td>Population</td><td>population units within 1 km of the facility</td></tr>
+<tr><td>Project</td><td>addresses</td><td>Development need</td><td>a need of the same kind within 500 m: <strong>a guess, to be confirmed</strong></td></tr>
+</tbody></table>
+<p>Distances and areas here are measured in metres for analysis. They are not survey measurements.</p>
+<h3>1. Say which layer holds what</h3>
+<p>Layers can be called anything, so the project has to say which one holds the properties, the streets, the flood-prone areas and so on. Under <strong>Which layer holds what</strong>, the platform suggests layers from their names. Check them, change any that are wrong, and choose <strong>Save</strong>. Parts you leave as "Not in this project" are skipped.</p>
+<h3>2. Run</h3>
+<p>Choose <strong>Run now</strong>. The table shows what each step found, and which steps were skipped because a layer isn't set. The relationships are also worked out again <strong>every night</strong>, and shortly <strong>after edits</strong> (a changed property is refreshed on its own; a changed street or flood area refreshes the project).</p>
+<p>A run changes as little as possible: links that are still true are left exactly as they were.</p>
+<h3>3. Check the guesses</h3>
+<p>Each link records how it was made:</p>
+<table><thead><tr><th>How it was made</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><strong>Calculated</strong></td><td>Follows from the geometry or the attributes (a building touches a flood area).</td></tr>
+<tr><td><strong>Inferred</strong></td><td>Likely but not certain, with how sure the platform is (the nearest drain is probably the one the property uses).</td></tr>
+<tr><td><strong>Confirmed by a person</strong></td><td>Someone checked it.</td></tr>
+</tbody></table>
+<p>Under <strong>Links</strong>, pick a kind of link and tick <strong>Only those to check</strong> to see the guesses. For each, choose <strong>Confirm</strong> or <strong>Reject</strong>. From then on no run will change or remake that link. <strong>Undo</strong> hands it back to the platform.</p>
+<h3>Development standards</h3>
+<p>District administrators set what is allowed in each zone under <strong>Development standards</strong>: minimum setback from the plot boundary, maximum floors, maximum plot coverage, minimum plot size, whether a permit is required, and whether building in a flood-prone area is allowed.</p>
+<ul>
+<li>A standard's <strong>zone</strong> is matched to the parcel's land use (or to the zoning layer, if the project has one).</li>
+<li>The standard with an empty zone is the district's <strong>default</strong>, used for any other zone.</li>
+<li>With no standards at all, a 3 m setback is checked.</li>
+<li>Standards apply to every project in the district, from the next run.</li>
+</ul>
+<p>Breaches appear under <strong>Links</strong> as "Properties violates a planning standard", with what was measured and what is required. A breach is a flag for a planner to look into, not a legal finding.</p>
+<h3>Totals</h3>
+<p><strong>Totals</strong> summarises the project and each community: how many properties, how many in flood-prone areas, without road access, with no drain nearby, breaking a standard, and how many facilities each community has. The headline figures also appear on the readiness checklist.</p>
+<h3>On the map</h3>
+<p>Click any feature: its details list what it is <strong>linked to</strong> ("is located on Main Street", "is affected by F-001"), including links pointing at it from other features.</p>
+<h3>Who can do this</h3>
+<p>Planners and district administrators set the layers, run, and confirm or reject links. District administrators set the standards.</p>
+<h2 id="field-app">The field app (Android)</h2>
+<p><em>Field officers, planners and district administrators.</em></p>
+<p>The field app lets you take a project out of the office, see its layers with no connection, and record new features with the phone's GPS, a form and photos.</p>
+<p>What you capture is saved on the phone straight away and sent to the office when you <strong>sync</strong>. Nothing is lost if there is no connection: it waits on the phone.</p>
+<h3>Before you go out</h3>
+<p>You need a connection for these steps.</p>
+<ol>
+<li>Open the app. Enter the <strong>server address</strong> your administrator gave you, your <strong>email</strong> and <strong>password</strong>, and sign in.</li>
+<li>Choose <strong>Download a project</strong>. Pick the project, tick the layers you need, and choose <strong>Download</strong>.</li>
+<li>If an <strong>offline basemap</strong> is listed, download it too.</li>
+</ol>
+<p>Only features inside the project's planning area are downloaded. If the project has no planning area yet, all features come.</p>
+<p>After you have signed in once with a connection, the same email and password also work with no connection.</p>
+<h3>The offline background map</h3>
+<p>Google, Bing, Esri and OpenStreetMap don't allow their maps to be stored on a phone. The Assembly's own imagery can be: when the office has uploaded a drone image for the project, it is offered as an <strong>offline basemap</strong> after you download the project. Without one, your layers show on a plain background when there is no connection. When you do have a connection and no offline basemap, OpenStreetMap shows behind your layers.</p>
+<h3>On the map</h3>
+<ul>
+<li><strong>Tap a feature</strong> to see its details. <strong>Details and photos</strong> opens its form.</li>
+<li><strong>Layers</strong> (top right) shows or hides layers.</li>
+<li><strong>Measure</strong> gives a distance or an area as you tap points. These are measured on the phone, for guidance.</li>
+</ul>
+<h3>Capturing</h3>
+<p>Choose <strong>Capture</strong>, pick the layer, then how:</p>
+<table><thead><tr><th>Method</th><th>Use it for</th><th>What happens</th></tr></thead><tbody>
+<tr><td><strong>From GPS</strong></td><td>a point</td><td>The app takes 5 readings and averages them, counting the more accurate ones for more. Stand still until it finishes.</td></tr>
+<tr><td><strong>Walk it with GPS</strong></td><td>a line or the edge of an area</td><td>Walk the line. A point is recorded every 2 m. You can pause, undo the last point, and finish.</td></tr>
+<tr><td><strong>Draw on the map</strong></td><td>anything</td><td>Tap where the point is, or tap each corner in order.</td></tr>
+</tbody></table>
+<p>Readings worse than ±50 m are ignored. If every reading is that poor, move into the open and try again.</p>
+<p>Then fill in the <strong>form</strong>. Fields marked * are required. Add <strong>notes</strong> and <strong>photos</strong> if useful, and choose <strong>Save on this device</strong>.</p>
+<p>Each GPS capture stores its accuracy, the time and how many readings it used. Each photo stores where it was taken.</p>
+<h3>Sending your work to the office (sync)</h3>
+<p>When you have a connection, choose <strong>Sync</strong> on the project (projects screen), or <strong>Send to the office now</strong> in the captured list. Sync does three things:</p>
+<ol>
+<li>sends your new captures, your changes and your ground-truthing answers;</li>
+<li>uploads photos;</li>
+<li>brings back what changed in the office, including features deleted there and new features to check.</li>
+</ol>
+<p>If the connection drops partway, just sync again. It carries on from where it stopped: nothing is sent twice, and a photo resumes from the part already uploaded.</p>
+<p>The list button (top right of the map) shows what is still waiting on the phone:</p>
+<table><thead><tr><th>Shown as</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><strong>new</strong> / <strong>changed</strong></td><td>Not sent yet. Sync when you have a connection.</td></tr>
+<tr><td><strong>conflict: with the office</strong></td><td>Someone in the office changed the same feature before your change arrived. Your version is safe with the office, and a planner decides which to keep. The phone gets the result at a later sync.</td></tr>
+<tr><td><strong>Refused: …</strong></td><td>The server wouldn't accept it, for the reason shown (for example a required answer is missing). Open it, fix it, and sync again.</td></tr>
+</tbody></table>
+<p>You can open anything in the list to correct the form, add photos, or delete a capture you made by mistake (before it is sent).</p>
+<h3>Checking features on the ground</h3>
+<p>The office can ask for features to be checked. They arrive when you sync, and the clipboard button on the map lists them. For each one, go to the feature and choose:</p>
+<table><thead><tr><th>Button</th><th>When</th></tr></thead><tbody>
+<tr><td><strong>Correct as recorded</strong></td><td>It is there and the details are right.</td></tr>
+<tr><td><strong>Needs correcting</strong></td><td>It is there but something is wrong. Fix the form and save.</td></tr>
+<tr><td><strong>Not found</strong></td><td>It isn't there.</td></tr>
+</tbody></table>
+<p>Your answers go to the office at the next sync. Features you confirm or correct are marked as verified.</p>
+<h3>Storage</h3>
+<p><strong>Device</strong> (on the projects screen) shows free space and how much the packages, basemaps and photos use. The app warns you when space is low. A project can't be removed from the phone while it holds anything that hasn't been sent.</p>
+<h3>Positions and coordinates</h3>
+<p>The app shows positions in the project's coordinate system (for example Ghana National Grid). These are for you to read in the field. The official coordinates are worked out on the server from the GPS position when captures are sent.</p>
+<h2 id="field-sync">Field data in the office: sync, conflicts and ground-truthing</h2>
+<p><em>Physical planners and district administrators.</em></p>
+<p>Field officers capture data on the field app and sync it. This page covers what you see in the web app.</p>
+<h3>What arrives from the field</h3>
+<p>New features appear in their layer as soon as the officer syncs. Click one on the map: its details show that it was <strong>recorded in the field</strong>, by whom, when, how (GPS point, GPS walk, or drawn) and the GPS accuracy, with links to its <strong>photos</strong>.</p>
+<p>GPS positions arrive as latitude and longitude. The server converts them to the layer's coordinate system, with the same conversion used everywhere else on the platform.</p>
+<h3>Using a walked boundary as the planning area</h3>
+<p>If an officer walked the edge of the community with GPS (as a polygon in any polygon layer), click that feature and choose <strong>Use as the planning area</strong>. It becomes the project's draft boundary, recorded as made from a GPS walk. Check its accuracy before you rely on it: phone GPS is usually good to a few metres, not to survey standard.</p>
+<h3>Conflicts</h3>
+<p>A conflict happens when an officer changes a feature on the phone, and someone changes the same feature in the office before the officer syncs. The platform never guesses: the office's version stays as it is, and the officer's version waits for a decision.</p>
+<p>Open <strong>Field conflicts</strong> at the top of the project (the number shows how many are waiting) and choose <strong>Compare</strong>. Each field shows the office value and the field value side by side; the ones that differ are highlighted.</p>
+<table><thead><tr><th>Choice</th><th>Result</th></tr></thead><tbody>
+<tr><td><strong>Keep the office version</strong></td><td>Nothing changes. The field version is set aside.</td></tr>
+<tr><td><strong>Keep the field version</strong></td><td>The officer's values replace the office's.</td></tr>
+<tr><td><strong>Save the values picked above</strong></td><td>For each field that differs, pick office or field, then save. Tick the shape box to take the officer's shape as well.</td></tr>
+</tbody></table>
+<p>Whatever you choose is saved as a new version, so the feature's history keeps both sides. The officer's phone picks up the result at their next sync. Planners and district administrators can resolve conflicts; everyone in the district can see them.</p>
+<h3>Ground-truthing: sending features to be checked</h3>
+<p>On the readiness checklist, open a map-layer item and choose <strong>Send to field</strong>. This makes a task for every feature in the item's layer that isn't verified yet. Officers receive the tasks at their next sync and answer each one:</p>
+<ul>
+<li><strong>Confirmed</strong> or <strong>corrected:</strong> the feature is marked verified (a correction also arrives as a normal change to the feature).</li>
+<li><strong>Not found:</strong> the feature is left as it is for you to look into.</li>
+</ul>
+<p>The item's <strong>Verified</strong> measure rises as answers come in. Choosing <strong>Send to field</strong> again only sends features that still aren't verified and aren't already out.</p>
+<h3>If something looks wrong</h3>
+<ul>
+<li><strong>A capture hasn't arrived:</strong> the officer may not have synced, or the server refused it (the phone shows the reason). Nothing is lost on the phone until it is sent.</li>
+<li><strong>A photo is missing:</strong> photos upload after the feature, in pieces. On a poor connection they can take a few syncs.</li>
+<li><strong>A feature was deleted in the office:</strong> phones remove it at their next sync, unless the officer has unsent changes to it.</li>
+</ul>
+<h2 id="project-files">Project files (.spp)</h2>
+<p><em>Physical planners and district administrators.</em></p>
+<p>A <code>.spp</code> file is a whole project in one protected file. Use it to keep a copy of an unfinished plan, to move a project to another office's server, or to hand a project to a colleague in another district.</p>
+<p>Only this platform can open a <code>.spp</code> file, and only on a server that holds your organisation's key. Other programs (QGIS, a zip tool, a database viewer) can't read anything in it. To give data to other software, use <strong>Export</strong> instead (see Importing and exporting data).</p>
+<h3>Your work is saved as you go</h3>
+<p>Every change you make in a project is saved on the server straight away, so there is no "save" step and nothing is lost if you close the browser. A <code>.spp</code> file is a copy of the project at the moment you save the file.</p>
+<h3>What a file contains</h3>
+<ul>
+<li>every layer with its features, in the layer's own coordinate system, exactly as stored;</li>
+<li>attributes, field definitions and styles;</li>
+<li>each feature's earlier versions (its history);</li>
+<li>the planning area and its status;</li>
+<li>the readiness checklist: statuses, notes, due dates and attached documents;</li>
+<li>the list of basemaps the district uses.</li>
+</ul>
+<p>It does <strong>not</strong> contain basemap API keys, user accounts or passwords.</p>
+<h3>Saving a file</h3>
+<p>Open the project and choose <strong>Save as .spp</strong> at the top. The file downloads with the project's name and the date and time.</p>
+<h3>Opening a file</h3>
+<ol>
+<li>Go to <strong>Projects</strong>.</li>
+<li>Under <strong>Open a project file (.spp)</strong>, choose the file.</li>
+<li>When it finishes, a summary shows what was created, with a link to the project.</li>
+</ol>
+<p>Opening always makes a <strong>new project</strong> in the district you're working in. Nothing that already exists is changed.</p>
+<ul>
+<li>If a project with the same name is already there, the new one gets a number after its name, for example "Kasoa local plan (2)".</li>
+<li>If the project used a custom coordinate system that this district doesn't have, it is added to the district.</li>
+<li>Basemaps the district doesn't have are added if you are a district administrator. Otherwise the summary lists them so an administrator can add them. Basemaps that need a key must have the key entered again.</li>
+<li>Checklist owners are kept when the same person (by email) is a member of this district.</li>
+</ul>
+<h3>If a file won't open</h3>
+<table><thead><tr><th>Message</th><th>What it means</th></tr></thead><tbody>
+<tr><td>"…protected with the organisation key '…', which this server doesn't have"</td><td>The file was saved on a server with a different key. Ask your system administrator: the two servers need to share a key.</td></tr>
+<tr><td>"The file's key couldn't be unlocked…"</td><td>This server has a key with the same name, but it isn't the same key.</td></tr>
+<tr><td>"The file is damaged or has been altered…"</td><td>The file changed after it was saved (a bad copy or download, or someone edited it). Get a fresh copy.</td></tr>
+<tr><td>"This isn't a .spp project file."</td><td>The file is something else, such as a shapefile or a zip. Use <strong>Import data</strong> for those.</td></tr>
+<tr><td>"…made by a newer version of the platform"</td><td>Update this server, then open the file again.</td></tr>
+<tr><td>"…uses EPSG:…, which isn't enabled on this server"</td><td>A system administrator must enable that coordinate system first.</td></tr>
+</tbody></table>
+<h3>Who can do this</h3>
+<p>Planners and district administrators can save and open files. Every save and open is recorded with who did it and when.</p>
+<h2 id="audit-log">The audit log</h2>
+<p><em>For district administrators and system administrators.</em></p>
+<p>Every change to members, districts, regions and user accounts is recorded automatically by the database: who made it, when, and the values before and after. Nobody can edit or delete entries, not even administrators.</p>
+<p>Open <strong>Audit log</strong>, filter by record type or kind of change, and click an entry to see exactly which fields changed. District administrators see their own district's entries; system administrators see all of them.</p>
+<p>Passwords are never recorded, not even in scrambled form.</p>
+<h2 id="members">Managing district members</h2>
+<p><em>For district administrators.</em></p>
+<p>Open <strong>Members</strong> to see everyone with access to the current district.</p>
+<h3>Roles</h3>
+<table><thead><tr><th>Role</th><th>Can</th></tr></thead><tbody>
+<tr><td>District administrator</td><td>everything in the district, including members and the audit log</td></tr>
+<tr><td>Physical planner</td><td>work on plans (from Phase 3)</td></tr>
+<tr><td>Field officer</td><td>capture data in the field (from Phase 9)</td></tr>
+<tr><td>Viewer</td><td>look, but not change</td></tr>
+</tbody></table>
+<h3>Adding someone</h3>
+<p>Enter their email, optionally their name, choose a role and select <strong>Add member</strong>.</p>
+<ul>
+<li>If they don't have an account yet, one is created and they're emailed a link to set a password.</li>
+<li>If they already have an account (for example in another district), they simply gain access to this district.</li>
+</ul>
+<h3>Changing a role or removing someone</h3>
+<p>Change the role in the list, or choose <strong>Remove</strong>. Removing someone keeps their history in the audit log; <strong>Restore</strong> gives them access again.</p>
+<p>A district must always keep at least one district administrator, so you can't remove or demote the last one.</p>
+<h2 id="system-admin">System administration</h2>
+<p><em>For system administrators.</em></p>
+<h3>Regions and districts</h3>
+<p><strong>Regions &amp; districts</strong> lists every Assembly (MMDA). Add regions first, then districts. A district can be deactivated, which hides it from its members, but never deleted, so its history is kept.</p>
+<h3>Users</h3>
+<p><strong>Users</strong> lists every account.</p>
+<ul>
+<li><strong>Create and invite:</strong> creates an account and emails a link to set a password. To give someone access to a district, add them from that district's <strong>Members</strong> page (you can open any district as system administrator).</li>
+<li><strong>Unlock</strong> clears a sign-in lock after too many wrong passwords.</li>
+<li><strong>Send password reset</strong> emails a fresh link.</li>
+<li><strong>Deactivate</strong> stops someone from signing in, without deleting their history.</li>
+<li><strong>System admin</strong> gives full access to every district. You can't remove your own system admin rights or deactivate yourself.</li>
+</ul>
+<h2 id="data-protection">Data protection</h2>
+<p><em>District administrators, system administrators and the Assembly's data protection contact.</em></p>
+<p>The platform holds personal data: who owns or claims a parcel, occupants' names, phone numbers on permit applications, photographs of people's homes, and staff accounts. Ghana's <strong>Data Protection Act, 2012 (Act 843)</strong> applies to the Assembly as a data controller. This page says what the platform does to help, and what remains the Assembly's responsibility. It is not legal advice.</p>
+<h3>What the platform does</h3>
+<table><thead><tr><th>Principle</th><th>In the platform</th></tr></thead><tbody>
+<tr><td>Only those who need personal data see it</td><td>A layer field can be marked <strong>Restricted</strong>. Its values are then hidden from viewers and field officers everywhere: feature details, attribute tables, map tiles, history, the field app and sync. Planners and district administrators see them.</td></tr>
+<tr><td>Districts are separate</td><td>Each Assembly sees only its own data. The database itself enforces this (row-level security), not only the screens.</td></tr>
+<tr><td>Accountability</td><td>Every change is recorded in the audit log: who, when, what it was before and after. District administrators can read their district's log.</td></tr>
+<tr><td>Security</td><td>Passwords are hashed; accounts lock after repeated wrong passwords; sign-in attempts and uploads are rate limited; API keys are encrypted at rest; <code>.spp</code> project files are encrypted with a key only the server holds; HTTPS is expected in production.</td></tr>
+<tr><td>Access by role</td><td>Five roles with a documented permission matrix (<code>docs/dev/permissions.md</code>).</td></tr>
+<tr><td>Getting data out</td><td>Data can be exported in standard formats at any time (planners and administrators only).</td></tr>
+</tbody></table>
+<h3>Marking fields as restricted</h3>
+<p>When a layer is created or imported, open its <strong>Fields</strong> and tick <strong>Restricted</strong> for every field that identifies a person or their property rights: owner or claimant names, phone numbers, ID numbers, tenancy details. This is a decision for the district, layer by layer; the platform doesn't guess.</p>
+<p>A restricted field can't be required, so that people who can't see it can still add features.</p>
+<p>Free-text <strong>notes</strong> and <strong>photos</strong> captured in the field are not restricted fields. Tell field officers not to write personal details in notes, and to avoid photographing people.</p>
+<h3>What stays the Assembly's responsibility</h3>
+<ul>
+<li><strong>Registration</strong> with the Data Protection Commission as a data controller, and renewing it.</li>
+<li><strong>A lawful purpose and notice:</strong> telling residents what is collected and why, for example at the public notice of the plan.</li>
+<li><strong>Who gets an account</strong>, and removing accounts when staff leave (deactivate the membership; the audit trail of what they did stays).</li>
+<li><strong>Requests from data subjects</strong> to see or correct their data: a planner can find and correct a record; the audit log shows its history.</li>
+<li><strong>Agreements with processors:</strong> whoever hosts the server, and anyone given exports or <code>.spp</code> files.</li>
+<li><strong>Exports and project files leave the platform's protection.</strong> A shapefile or a printed checklist is as safe as wherever it is kept.</li>
+</ul>
+<h3>How long data is kept (retention)</h3>
+<p>The platform keeps data until someone deletes it. A reasonable policy to adopt, adjusting to the Assembly's records rules:</p>
+<table><thead><tr><th>Data</th><th>Keep</th><th>How</th></tr></thead><tbody>
+<tr><td>Plan data (layers, boundaries, checklists)</td><td>For the life of the plan and its review; archive the project afterwards</td><td>Project status "archived"</td></tr>
+<tr><td>Audit log</td><td>At least 7 years, as a record of planning decisions</td><td><code>make prune-audit DAYS=2555</code> removes older entries</td></tr>
+<tr><td>Field photos and documents</td><td>With the feature or checklist item they belong to</td><td>Deleting the feature or item removes them; <code>make clean-media</code> removes leftovers</td></tr>
+<tr><td>Staff accounts</td><td>While employed; deactivate on leaving</td><td>Members page</td></tr>
+<tr><td>Backups</td><td>14 days by default</td><td><code>KEEP_DAYS</code> in <code>scripts/backup.sh</code>; remember that deleted data lives on in backups until they expire</td></tr>
+</tbody></table>
+<p>Deleting a feature removes it from the map and from phones at their next sync. Its earlier versions remain in the audit log until that is pruned.</p>
+<h3>If something goes wrong</h3>
+<p>A lost phone, a leaked export, or an account used by the wrong person may be a breach that must be reported. Act the same day:</p>
+<ol>
+<li>Deactivate the account concerned (Members), or ask a system administrator.</li>
+<li>If an <code>.spp</code> key may have leaked, rotate it (organisation keys).</li>
+<li>Use the audit log to see what the account changed. Reads are not logged; assume anything that account could see was seen.</li>
+<li>Tell the Assembly's data protection contact, who decides on notifying the Commission and the people affected.</li>
+</ol>
+</body>
+</html>

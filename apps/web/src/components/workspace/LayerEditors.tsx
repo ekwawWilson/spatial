@@ -185,6 +185,7 @@ export function SchemaEditor({
             <th>Label</th>
             <th>Type</th>
             <th>Required</th>
+            <th title="Personal data such as owners' names: hidden from viewers and field officers">Restricted</th>
             <th>Choices (comma-separated)</th>
             <th aria-label="Remove" />
           </tr>
@@ -210,7 +211,17 @@ export function SchemaEditor({
                   type="checkbox"
                   aria-label={`Field ${i + 1} required`}
                   checked={field.required}
+                  disabled={Boolean(field.sensitive)}
                   onChange={(e) => update(i, { required: e.target.checked })}
+                />
+              </td>
+              <td>
+                <input
+                  type="checkbox"
+                  aria-label={`Field ${i + 1} restricted`}
+                  checked={Boolean(field.sensitive)}
+                  // A restricted field can't be required: people who can't see it must still be able to add features.
+                  onChange={(e) => update(i, e.target.checked ? { sensitive: true, required: false } : { sensitive: false })}
                 />
               </td>
               <td>

@@ -27,6 +27,7 @@ from .serializers import (
     RefreshTokenSerializer,
 )
 from .tenancy import set_db_context
+from .throttling import LoginThrottle
 
 # Same message whether the email is unknown, the password wrong or the account
 # locked, so responses don't reveal which accounts exist.
@@ -40,6 +41,7 @@ def revoke_refresh_tokens(user: User) -> None:
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [LoginThrottle]
 
     @extend_schema(
         request=LoginSerializer,
@@ -103,6 +105,7 @@ class ChangePasswordView(APIView):
 
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [LoginThrottle]
 
     @extend_schema(request=PasswordResetRequestSerializer, responses={204: None})
     def post(self, request: Request) -> Response:
@@ -118,6 +121,7 @@ class PasswordResetRequestView(APIView):
 
 class PasswordResetConfirmView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [LoginThrottle]
 
     @extend_schema(request=PasswordResetConfirmSerializer, responses={204: None})
     def post(self, request: Request) -> Response:

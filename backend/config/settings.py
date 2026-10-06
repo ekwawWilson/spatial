@@ -47,6 +47,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "core.tenancy.ResetDbContextMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    # Serves the admin's static files in production (collected into STATIC_ROOT).
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -112,6 +114,21 @@ TIME_ZONE = "Africa/Accra"
 USE_I18N = True
 USE_TZ = True
 
+# --- Behind HTTPS in production -------------------------------------------------
+# The proxy in front ends TLS and says so with X-Forwarded-Proto.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+HTTPS_ONLY: bool = env.bool("HTTPS_ONLY", default=False)
+SECURE_SSL_REDIRECT = HTTPS_ONLY
+SESSION_COOKIE_SECURE = HTTPS_ONLY
+CSRF_COOKIE_SECURE = HTTPS_ONLY
+# Tell browsers to use HTTPS only, for this long. Start small; a year is 31536000.
+SECURE_HSTS_SECONDS: int = env.int("HSTS_SECONDS", default=0)
+SECURE_REFERRER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+# The health check is called inside the server over plain HTTP.
+SECURE_REDIRECT_EXEMPT = [r"^api/health/$"]
+
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
@@ -125,6 +142,19 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 50,
+    "DEFAULT_THROTTLE_CLASSES": ["core.throttling.AnonThrottle", "core.throttling.UserThrottle"],
+    # How many proxies sit in front of the app (1 behind nginx), so limits are
+    # per client address, not per proxy. None: use the connecting address.
+    "NUM_PROXIES": env.int("NUM_PROXIES", default=0) or None,
+}
+
+# Rate limits (core/throttling.py). Counted in the cache (Redis).
+API_THROTTLING: bool = env.bool("API_THROTTLING", default=True)
+API_THROTTLE_RATES: dict[str, str | None] = {
+    "anon": env("THROTTLE_ANON", default="120/min"),
+    "user": env("THROTTLE_USER", default="3000/min"),
+    "login": env("THROTTLE_LOGIN", default="10/min"),
+    "upload": env("THROTTLE_UPLOAD", default="120/hour"),
 }
 
 SIMPLE_JWT = {

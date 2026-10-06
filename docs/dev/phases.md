@@ -30,7 +30,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 10 | Sync, conflicts, ground-truthing | **complete except the on-device test and background retry** (decision 2026-10-06): gate passed in CI (`dd932eb`); open items in `docs/qa/phase-10-sync-on-device.md` and the Phase 10 notes |
 | 11 | Drone and raster imagery | **complete except the offline basemap on a device** (decision 2026-10-06): gate passed in CI (`5b34526`); the device check is in `docs/qa/phase-9-field-app-on-device.md` |
 | 12 | Relationship layer and procedures | **complete** (decision 2026-10-06): gate passed in CI (`1ce4708`) |
-| 13 | Hardening and release | not started |
+| 13 | Hardening and release | in progress on branch `phase-13` |
 
 ## Open items carried forward
 - **Phase 3:** Martin (vector tiles) connects as the app role, so row-level security hides tenant tables from it until tile requests carry a district context (e.g. per-district function sources, or tiles served through the API). Design this in Phase 3; don't grant Martin BYPASSRLS.
@@ -130,3 +130,16 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 - **Standards** are per district and zone (`DevelopmentStandard`), falling back to the district default (empty zone), then to the platform's 3 m setback.
 - **Runs** are all-or-nothing and record a per-procedure report and the totals. Triggers: on request, nightly (`CELERY_BEAT_SCHEDULE`; the docker-compose worker runs with `-B`), and after edits (a signal on feature saves, collapsed to one refresh per 20 seconds; a property is refreshed alone, anything else refreshes the project).
 - **Not built:** drainage links are confirmed in the web app, not yet as a field task; needs are a layer the planner supplies (the platform doesn't derive needs from gaps in service).
+
+## Phase 13 notes
+- **Gate, and where each part is proved:**
+  - *Restore test:* `scripts/qa-phase-13-restore.sh` backs up the running stack, restores into an empty second stack and compares every feature, the audit log and every file. Runs in the CI e2e job.
+  - *Load test:* `core/tests/test_load.py` (500,000 features, with time targets for tiles, lists, the field package, a pull and a relationship run) in the backend job; `scripts/load-sync.py` (20 simulated devices syncing at once, some batches sent twice) in the e2e job.
+  - *Security:* `docs/ops/security-review.md`. A review by the developer against the code and tests, **not an independent penetration test**. No high or critical findings open; five lower ones accepted with reasons.
+- **Restricted fields** (`projects/privacy.py`): a schema flag, redacted for roles without `data.sensitive` in every output. The per-request flag is a context variable set by the authenticator and cleared by the middleware.
+- **Rate limits** (`core/throttling.py`) read their rates from settings on each request; off in tests except `test_throttling.py`.
+- **Production** (`docker-compose.prod.yml`): gunicorn from the image, nginx serving the built web app, log rotation, no published database port. The server refuses to start with example secrets (`core/checks.py`). A CI job starts it and runs `scripts/qa-phase-13-production.sh`.
+- **Housekeeping:** `make prune-audit DAYS=…` (never less than a year) and `make clean-media`, both as the database owner.
+- **Field app:** `build-apk.sh --aab` and signing with the Assembly's own key.
+- **Not done, and said so in the guides:** an iOS build (needs a Mac and an Apple account); testing with an external RTK receiver; an independent security test; read-access logging; two-factor sign-in; background sync on the phone.
+- **Manual and training:** `docs/manual/user-manual.html` is built from the user guides by `scripts/build-manual.py`; courses are in `docs/training/`.

@@ -32,6 +32,7 @@ A person can hold a different role in each district they belong to. System admin
 | `checklist.edit` | district_admin, planner |
 | `checklist.verify` | district_admin |
 | `checklist.template` | district_admin |
+| `field.package` | district_admin, planner, field_officer |
 
 ## System administrator only
 - Set the system default coordinate system, add coordinate systems for every district, and pin the transformation used between two systems.

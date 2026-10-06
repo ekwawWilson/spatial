@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "transfer",
     "readiness",
     "spp",
+    "field",
 ]
 
 MIDDLEWARE = [

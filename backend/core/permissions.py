@@ -33,6 +33,7 @@ PERMISSIONS: dict[str, frozenset[Role]] = {
     "checklist.edit": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
     "checklist.verify": frozenset({Role.DISTRICT_ADMIN}),
     "checklist.template": frozenset({Role.DISTRICT_ADMIN}),
+    "field.package": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER, Role.FIELD_OFFICER}),
 }
 
 

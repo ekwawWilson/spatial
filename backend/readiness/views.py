@@ -21,6 +21,7 @@ from rest_framework.views import APIView
 from core.models import Membership
 from core.permissions import district_permission, has_permission, request_user, require_district_id
 from core.schema import DISTRICT_HEADER
+from core.throttling import UploadThrottle
 from projects import boundary as boundaries
 from projects.models import PlanProject
 
@@ -345,6 +346,10 @@ class ItemViewSet(
     serializer_class = ItemUpdateSerializer
     queryset = Item.objects.none()
     http_method_names = ["get", "patch", "post", "head", "options"]
+
+    def get_throttles(self) -> list[Any]:
+        throttles = super().get_throttles()
+        return [*throttles, UploadThrottle()] if self.action in ("attachments",) else throttles
 
     def get_permissions(self) -> list[BasePermission]:
         if self.action == "retrieve":

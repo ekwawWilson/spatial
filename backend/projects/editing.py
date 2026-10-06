@@ -10,6 +10,7 @@ from django.db import connection
 from core.models import AuditLog, User
 
 from . import geometry as geo
+from . import privacy
 from .models import ACCEPTED_GEOJSON_TYPES, Feature, Layer
 
 
@@ -44,6 +45,7 @@ def history(feature: Feature) -> list[dict[str, Any]]:
             id__in={first.user_id for first, _, _ in versions if first.user_id}
         ).values_list("id", "email")
     )
+    hidden = privacy.hidden_fields(feature.layer)
     geometries: dict[int, Any] = {}
     with connection.cursor() as cursor:
         for _, last, _ in versions:
@@ -59,7 +61,9 @@ def history(feature: Feature) -> list[dict[str, Any]]:
             "at": first.occurred_at.isoformat(),
             "user_email": emails.get(first.user_id) if first.user_id else None,
             "changed_fields": sorted(f for f in changed if f not in ("updated_at", "version")),
-            "properties": (last.after or {}).get("properties"),
+            "properties": privacy.redact((last.after or {}).get("properties"), hidden)
+            if (last.after or {}).get("properties") is not None
+            else None,
             "geometry": geometries.get(last.pk),
         }
         for first, last, changed in versions

@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 
 from core.permissions import district_permission, request_user, require_district_id
 from core.schema import DISTRICT_HEADER
+from projects import privacy
 from projects.models import Feature, Layer, PlanProject
 
 from . import procedures, services
@@ -238,10 +239,9 @@ def labels_for(links: list[Relationship], project_ids: set[int]) -> dict[int, tu
     features = Feature.objects.filter(pk__in=ids).select_related("layer")
     for feature in features:
         config = config_of.get(feature.layer_id, {})
-        result[feature.pk] = (
-            feature.layer.name,
-            services.label_of(feature.pk, feature.properties, config),
-        )
+        # A restricted value (an owner's name) must not become a label.
+        visible = privacy.redact(feature.properties, privacy.hidden_fields(feature.layer))
+        result[feature.pk] = (feature.layer.name, services.label_of(feature.pk, visible, config))
     return result
 
 

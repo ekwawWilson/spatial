@@ -25,6 +25,7 @@ from core.permissions import (
     require_district_id,
 )
 from core.schema import DISTRICT_HEADER
+from core.throttling import UploadThrottle, UserThrottle
 from projects.models import PlanProject
 from transfer.safety import MAX_UPLOAD_BYTES
 
@@ -116,6 +117,7 @@ class OpenView(APIView):
     must have been protected with an organisation key this server holds."""
 
     parser_classes = [MultiPartParser]
+    throttle_classes = [UserThrottle, UploadThrottle]
 
     def get_permissions(self) -> list[BasePermission]:
         return [

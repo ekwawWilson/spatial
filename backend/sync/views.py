@@ -21,6 +21,7 @@ from rest_framework.views import APIView
 from core.permissions import district_permission, request_user, require_district_id
 from core.schema import DISTRICT_HEADER
 from projects import geometry as geo
+from projects import privacy
 from projects.models import Feature, PlanProject
 from readiness.models import Item
 
@@ -316,16 +317,19 @@ def conflict_json(conflict: Conflict, *, detail: bool = False) -> dict[str, Any]
         "resolved_at": conflict.resolved_at.isoformat() if conflict.resolved_at else None,
     }
     if detail:
+        hidden = privacy.hidden_fields(feature.layer)
         row.update(
             {
-                "schema": feature.layer.schema,
+                "schema": privacy.visible_schema(feature.layer),
                 "office": {
                     "version": feature.version,
-                    "properties": feature.properties,
+                    "properties": privacy.redact(feature.properties, hidden),
                     "geometry": geo.read_geometries([feature.pk], native=False)[feature.pk],
                 },
                 "field": {
-                    "properties": conflict.field_properties,
+                    "properties": privacy.redact(conflict.field_properties, hidden)
+                    if conflict.field_properties is not None
+                    else None,
                     "geometry": conflict.field_geometry,
                     "capture": conflict.capture,
                 },

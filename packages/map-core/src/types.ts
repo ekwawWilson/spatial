@@ -30,7 +30,8 @@ export type Permission =
   | "field.sync"
   | "sync.resolve"
   | "relations.edit"
-  | "standards.manage";
+  | "standards.manage"
+  | "data.sensitive";
 
 export interface DistrictBrief {
   id: number;
@@ -210,6 +211,8 @@ export interface SchemaField {
   required: boolean;
   choices?: (string | number)[];
   default?: unknown;
+  /** Personal data: hidden from roles without data.sensitive. */
+  sensitive?: boolean;
 }
 
 export interface Symbol {

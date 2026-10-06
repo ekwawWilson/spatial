@@ -16,6 +16,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core import privacy as core_privacy
 from core.permissions import (
     district_permission,
     has_permission,
@@ -27,7 +28,7 @@ from crs.models import CoordinateSystem
 from crs.services import resolve_default, transform_geojson
 
 from . import boundary as boundaries
-from . import editing, traverse
+from . import editing, privacy, traverse
 from . import geometry as geo
 from . import schema as schema_rules
 from .models import Feature, Layer, PlanProject
@@ -154,13 +155,19 @@ class ProjectViewSet(viewsets.ModelViewSet[PlanProject]):  # boundary actions: P
 # --- Layers --------------------------------------------------------------------------
 
 
-def feature_json(feature: Feature, geometry: dict[str, Any] | None) -> dict[str, Any]:
+def feature_json(
+    feature: Feature, geometry: dict[str, Any] | None, layer: Layer | None = None
+) -> dict[str, Any]:
+    """`layer`: pass it when serialising many features of one layer."""
+    hidden = privacy.hidden_fields(layer or feature.layer)
     return {
         "type": "Feature",
         "id": feature.pk,
         "geometry": geometry,
-        "properties": feature.properties,
+        "properties": privacy.redact(feature.properties, hidden),
         "meta": {
+            # Fields this caller's role may not see (their values are left out).
+            "restricted": hidden,
             "uuid": str(feature.uuid),
             "version": feature.version,
             "origin": feature.origin,
@@ -332,7 +339,7 @@ class LayerViewSet(viewsets.ModelViewSet[Layer]):
                 "numberMatched": total,
                 "numberReturned": len(page),
                 "next_offset": offset + limit if offset + limit < total else None,
-                "features": [feature_json(f, geometries.get(f.pk)) for f in page],
+                "features": [feature_json(f, geometries.get(f.pk), layer) for f in page],
             }
         )
 
@@ -340,6 +347,7 @@ class LayerViewSet(viewsets.ModelViewSet[Layer]):
         data = FeatureWriteSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         try:
+            privacy.check_write(layer, data.validated_data.get("properties"))
             properties = schema_rules.validate_properties(
                 layer.schema, data.validated_data.get("properties", {})
             )
@@ -424,6 +432,7 @@ class FeatureViewSet(
                 )
             try:
                 if "properties" in data.validated_data:
+                    privacy.check_write(layer, data.validated_data["properties"])
                     changes = schema_rules.validate_properties(
                         layer.schema, data.validated_data["properties"], partial=True
                     )
@@ -450,7 +459,7 @@ TILE_SQL = """
 WITH bounds AS (SELECT ST_TileEnvelope(%(z)s, %(x)s, %(y)s) AS geom),
 tile AS (
     SELECT f.id,
-           f.properties,
+           f.properties - %(hidden)s::text[] AS properties,
            ST_AsMVTGeom(ST_Transform(f.geom_4326, 3857), bounds.geom, 4096, 64, true) AS geom
     FROM projects_feature f, bounds
     WHERE f.layer_id = %(layer)s
@@ -482,14 +491,17 @@ class LayerTileView(APIView):
         etag = (
             '"'
             + hashlib.sha256(
-                f"{layer.pk}/{z}/{x}/{y}/{stamp['n']}/{stamp['t']}".encode()
+                f"{layer.pk}/{z}/{x}/{y}/{stamp['n']}/{stamp['t']}/{core_privacy.allowed()}".encode()
             ).hexdigest()[:32]
             + '"'
         )
         if request.headers.get("If-None-Match") == etag:
             return HttpResponse(status=304, headers={"ETag": etag})
         with connection.cursor() as cursor:
-            cursor.execute(TILE_SQL, {"z": z, "x": x, "y": y, "layer": layer.pk})
+            cursor.execute(
+                TILE_SQL,
+                {"z": z, "x": x, "y": y, "layer": layer.pk, "hidden": privacy.hidden_fields(layer)},
+            )
             data = bytes(cursor.fetchone()[0] or b"")
         headers = {"ETag": etag, "Cache-Control": "private, no-cache"}
         if not data:

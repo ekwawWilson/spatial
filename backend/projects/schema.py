@@ -103,6 +103,15 @@ def validate_schema(schema: Any) -> list[dict[str, Any]]:
             "type": kind,
             "required": bool(raw.get("required", False)),
         }
+        if raw.get("sensitive"):
+            # Personal data (Act 843): hidden from roles without data.sensitive.
+            if field["required"]:
+                errors.append(
+                    f"{where}: a restricted field can't be required (people who can't"
+                    " see it must still be able to add features)."
+                )
+                continue
+            field["sensitive"] = True
         if kind == "choice":
             choices = raw.get("choices")
             if (
@@ -131,7 +140,7 @@ def validate_schema(schema: Any) -> list[dict[str, Any]]:
     return normalised
 
 
-_KEYS = {"name", "label", "type", "required", "choices", "default"}
+_KEYS = {"name", "label", "type", "required", "choices", "default", "sensitive"}
 
 
 def validate_properties(

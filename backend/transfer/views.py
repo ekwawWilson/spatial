@@ -17,6 +17,7 @@ from rest_framework.response import Response
 
 from core.permissions import district_permission, request_user, require_district_id
 from core.schema import DISTRICT_HEADER
+from core.throttling import UploadThrottle
 from projects.models import PlanProject
 
 from . import gdal_io
@@ -91,6 +92,10 @@ class DataJobViewSet(
 
     serializer_class = DataJobSerializer
     queryset = DataJob.objects.none()  # schema hint; get_queryset() is used
+
+    def get_throttles(self) -> list[Any]:
+        throttles = super().get_throttles()
+        return [*throttles, UploadThrottle()] if self.action in ("upload",) else throttles
 
     def get_permissions(self) -> list[BasePermission]:
         code = "data.export" if self.action in ("export", "download") else "data.import"

@@ -112,3 +112,10 @@ def _celery_runs_inline():
 @pytest.fixture(autouse=True)
 def _media_in_tmp(settings, tmp_path):
     settings.MEDIA_ROOT = tmp_path / "media"
+
+
+@pytest.fixture(autouse=True)
+def _no_rate_limits(settings):
+    """Rate limits are off in tests (they would count requests across tests);
+    core/tests/test_throttling.py turns them on to test them."""
+    settings.API_THROTTLING = False

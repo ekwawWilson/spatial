@@ -17,6 +17,7 @@ from rest_framework.response import Response
 
 from core.permissions import district_permission, request_user, require_district_id
 from core.schema import DISTRICT_HEADER
+from core.throttling import UploadThrottle
 from projects.models import PlanProject
 from transfer.safety import MAX_UPLOAD_BYTES
 
@@ -95,6 +96,10 @@ class ImageryViewSet(
     queryset = Imagery.objects.none()
     pagination_class = None  # a project has a handful of images
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+
+    def get_throttles(self) -> list[Any]:
+        throttles = super().get_throttles()
+        return [*throttles, UploadThrottle()] if self.action in ("create",) else throttles
 
     def get_permissions(self) -> list[BasePermission]:
         if self.action in ("list", "retrieve", "tile"):

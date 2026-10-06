@@ -30,6 +30,8 @@ from django.core.exceptions import ValidationError
 from django.db import connection
 from django.utils import timezone
 from osgeo import ogr, osr
+from pyproj import CRS
+from pyproj.exceptions import CRSError
 
 from basemaps.models import BasemapSource
 from core.models import AuditLog, District, Membership, User
@@ -336,6 +338,22 @@ def unpack(package: Path, workdir: Path) -> tuple[Path, dict[str, Any]]:
     return root, manifest
 
 
+def _same_custom_system(wkt: str) -> CoordinateSystem | None:
+    """A custom system visible here with the same definition. Compared as
+    coordinate systems, not as text: registering rewrites the WKT slightly."""
+    try:
+        wanted = CRS.from_wkt(wkt)
+    except CRSError as exc:
+        raise BadPackage("one of its coordinate systems can't be read.") from exc
+    for system in CoordinateSystem.objects.filter(is_active=True, is_builtin=False):
+        try:
+            if system.wkt == wkt or CRS.from_wkt(system.wkt) == wanted:
+                return system
+        except CRSError:
+            continue
+    return None
+
+
 def _coordinate_systems(
     rows: list[dict[str, Any]], district_id: int, user: User, report: dict[str, Any]
 ) -> dict[str, CoordinateSystem]:
@@ -352,7 +370,7 @@ def _coordinate_systems(
                     " server. Ask a system administrator to add it, then open the file again."
                 )
         else:
-            system = CoordinateSystem.objects.filter(wkt=row["wkt"], is_active=True).first()
+            system = _same_custom_system(row["wkt"])
             if system is None:
                 try:
                     system = register_custom(

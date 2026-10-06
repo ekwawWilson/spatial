@@ -157,7 +157,7 @@ function ImageryRow(props: { image: Imagery; canEdit: boolean; canContour: boole
             type="button"
             className="link"
             aria-label={`Delete ${image.name}`}
-            onClick={() => window.confirm(`Delete "${image.name}"? Its basemap goes too.`) && props.run(() => api.deleteImagery(image.id), "Deleted.")}
+            onClick={() => window.confirm(`Delete "${image.name}"? Its basemap is switched off too.`) && props.run(() => api.deleteImagery(image.id), "Deleted.")}
           >
             Delete
           </button>

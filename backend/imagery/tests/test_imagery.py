@@ -235,7 +235,9 @@ def test_editing_and_deleting(planner, project, ortho_file, django_capture_on_co
     assert directory.exists()
     assert planner.delete(url).status_code == 204
     assert not directory.exists()
-    assert not BasemapSource.objects.filter(pk=item["basemap"]).exists()
+    # Its basemap is switched off, so it leaves the map's list.
+    assert BasemapSource.objects.get(pk=item["basemap"]).is_active is False
+    assert all(b["id"] != item["basemap"] for b in planner.get(reverse("basemap-list")).json())
 
 
 # --- Offline in the field --------------------------------------------------------------------------

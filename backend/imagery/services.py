@@ -116,12 +116,14 @@ def _fail(imagery_id: int, district_id: int, user_id: int | None, message: str) 
 
 
 def remove(imagery: Imagery) -> None:
-    """Deletes the imagery, its files and its basemap."""
+    """Deletes the imagery and its files, and switches its basemap off
+    (basemaps are deactivated, not deleted: only system admins remove them)."""
     directory = folder(imagery)
     basemap = imagery.basemap
     imagery.delete()
     if basemap is not None:
-        basemap.delete()
+        basemap.is_active = False
+        basemap.save(update_fields=["is_active"])
     shutil.rmtree(directory, ignore_errors=True)
 
 

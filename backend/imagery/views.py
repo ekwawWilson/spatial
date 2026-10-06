@@ -59,7 +59,7 @@ class ImagerySerializer(serializers.ModelSerializer[Imagery]):
         return services.tile_url(obj) if obj.status == Imagery.Status.READY else None
 
 
-class UploadSerializer(serializers.Serializer[Any]):
+class ImageryUploadSerializer(serializers.Serializer[Any]):
     project = serializers.IntegerField()
     file = serializers.FileField()
     name = serializers.CharField(max_length=200, required=False, allow_blank=True)
@@ -117,12 +117,12 @@ class ImageryViewSet(
         return qs
 
     @extend_schema(
-        request={"multipart/form-data": UploadSerializer}, responses={201: ImagerySerializer}
+        request={"multipart/form-data": ImageryUploadSerializer}, responses={201: ImagerySerializer}
     )
     def create(self, request: Request) -> Response:
         """Uploads a GeoTIFF. Processing runs in the background; poll the item
         until its status is ready or failed."""
-        data = UploadSerializer(data=request.data)
+        data = ImageryUploadSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         values = data.validated_data
         upload = values["file"]

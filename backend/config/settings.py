@@ -145,6 +145,7 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "DistrictKindEnum": "core.models.District.Kind",
         "CrsKindEnum": "crs.models.CoordinateSystem.Kind",
+        "ImageryKindEnum": "imagery.models.Imagery.Kind",
     },
     "DESCRIPTION": "Community planning GIS platform for Ghanaian MMDAs.",
     "VERSION": "0.1.0",

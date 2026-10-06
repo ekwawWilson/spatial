@@ -214,10 +214,10 @@ def test_an_edit_on_an_older_version_goes_to_the_conflict_queue(officer, planner
     assert current["properties"]["storeys"] == 2 and current["properties"]["use"] == "house"
 
     listed = planner.get(
-        reverse("sync-conflicts-list"), {"project": project["id"], "status": "open"}
+        reverse("sync-conflict-list"), {"project": project["id"], "status": "open"}
     ).json()
     assert [c["id"] for c in listed] == [result["conflict"]]
-    detail = planner.get(reverse("sync-conflicts-detail", args=[result["conflict"]])).json()
+    detail = planner.get(reverse("sync-conflict-detail", args=[result["conflict"]])).json()
     assert (detail["base_version"], detail["server_version"]) == (1, 2)
     assert detail["office"]["properties"]["storeys"] == 2
     assert detail["field"]["properties"] == {"use": "shop", "storeys": 3, "owner": "Ama"}
@@ -243,7 +243,7 @@ def test_an_edit_on_an_older_version_goes_to_the_conflict_queue(officer, planner
 def test_each_way_of_resolving_a_conflict(officer, planner, project, body, expected, version):
     """Gate: keep office, keep field, and merge field by field all work."""
     feature, result = conflicting_edit(officer, planner, project)
-    url = reverse("sync-conflicts-resolve", args=[result["conflict"]])
+    url = reverse("sync-conflict-resolve", args=[result["conflict"]])
     assert officer.post(url, body, format="json").status_code == 403  # officers don't resolve
     response = planner.post(url, body, format="json")
     assert response.status_code == 200, response.content
@@ -272,7 +272,7 @@ def test_keeping_the_field_shape(officer, planner, project):
     )
     assert result["status"] == "conflict"
     planner.post(
-        reverse("sync-conflicts-resolve", args=[result["conflict"]]),
+        reverse("sync-conflict-resolve", args=[result["conflict"]]),
         {"resolution": "merged", "properties": {}, "use_field_geometry": True},
         format="json",
     )

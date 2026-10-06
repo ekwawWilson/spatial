@@ -167,7 +167,9 @@ class PhotoViewSet(viewsets.GenericViewSet[Photo]):
         return Photo.objects.filter(district_id=require_district_id(self.request))
 
     @extend_schema(
-        parameters=[OpenApiParameter("feature", int, required=True)], responses=OpenApiTypes.OBJECT
+        operation_id="sync_photos_list",
+        parameters=[OpenApiParameter("feature", int, required=True)],
+        responses=OpenApiTypes.OBJECT,
     )
     def list(self, request: Request) -> Response:
         feature = request.query_params.get("feature", "")
@@ -357,7 +359,7 @@ class ConflictViewSet(
             qs = qs.filter(status=state)
         return qs
 
-    @extend_schema(responses=OpenApiTypes.OBJECT)
+    @extend_schema(operation_id="sync_conflicts_list", responses=OpenApiTypes.OBJECT)
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return Response([conflict_json(c) for c in self.get_queryset()[:500]])
 

@@ -54,6 +54,9 @@ def test_a_district_with_half_a_million_features(planner, district_a):
     with connection.cursor() as cursor:
         # Bulk load without one audit row per feature (an import of this size
         # would be audited; loading it isn't what is being timed).
+        # A table can't be altered while it has checks waiting for the end of
+        # the transaction, so they run as each statement finishes.
+        cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
         cursor.execute("ALTER TABLE projects_feature DISABLE TRIGGER projects_feature_audit")
         cursor.execute(
             """
@@ -80,6 +83,7 @@ def test_a_district_with_half_a_million_features(planner, district_a):
             },
         )
         cursor.execute("ALTER TABLE projects_feature ENABLE TRIGGER projects_feature_audit")
+        cursor.execute("SET CONSTRAINTS ALL DEFERRED")
         cursor.execute("ANALYZE projects_feature")
         # The middle of the grid, in degrees.
         cursor.execute(

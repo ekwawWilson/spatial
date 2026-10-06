@@ -96,7 +96,8 @@ def inspect(path: Path, assigned_crs: str = "") -> dict[str, Any]:
         "resolution_m": resolution,
         "bounds": bounds,
         "max_zoom": max_zoom,
-        "min_zoom": max(0, max_zoom - 10),
+        # From zoom 0: the image is tiny when zoomed far out, but it is there.
+        "min_zoom": 0,
         "has_crs": ds.GetSpatialRef() is not None,
         # Some drone software writes these tags; used when the uploader gave none.
         "capture_date": ds.GetMetadataItem("CAPTURE_DATE") or "",

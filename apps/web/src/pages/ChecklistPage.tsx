@@ -188,6 +188,17 @@ function Measures({ item }: { item: ChecklistItem }) {
       </span>
     );
   }
+  if (m !== null && "imagery_count" in m) {
+    return (
+      <span className="small">
+        {m.imagery_count === 0
+          ? "No imagery uploaded"
+          : `${m.imagery_count} image(s)${m.newest_capture ? ` · newest captured ${m.newest_capture} (${m.age_days} d ago)` : " · no capture date"}${
+              m.best_resolution_m ? ` · ${m.best_resolution_m < 1 ? `${Math.round(m.best_resolution_m * 100)} cm` : `${m.best_resolution_m.toFixed(1)} m`} pixels` : ""
+            }`}
+      </span>
+    );
+  }
   if (isBoundaryMetrics(m)) {
     return (
       <span className="small">
@@ -353,6 +364,7 @@ function ItemRows(props: {
                     Send to field
                   </button>
                 )}
+                {item.rules.imagery_max_age_days !== undefined && <Link to={`/projects/${props.projectId}/imagery`}>Upload or review imagery</Link>}
                 {item.kind === "boundary" && (
                   <Link to={`/projects/${props.projectId}`}>Open the planning area in the workspace</Link>
                 )}

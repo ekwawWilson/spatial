@@ -50,6 +50,8 @@ import type {
   FieldTaskSummary,
   SyncConflict,
   SyncConflictDetail,
+  ContourResult,
+  Imagery,
 } from "./types";
 
 export interface ServiceStatus {
@@ -468,6 +470,35 @@ export function createApiClient(options: ApiClientOptions = {}) {
     sendToField: (itemId: number) =>
       request<{ created: number; already_open: number; verified: number }>("POST", `/api/checklist-items/${itemId}/send-to-field/`),
     fieldTasks: (projectId: number) => request<FieldTaskSummary>("GET", `/api/sync/tasks/${query({ project: projectId })}`),
+
+    // --- Drone and raster imagery ------------------------------------------------------
+    listImagery: (projectId: number) => request<Imagery[]>("GET", `/api/imagery/${query({ project: projectId })}`),
+    getImagery: (id: number) => request<Imagery>("GET", `/api/imagery/${id}/`),
+    /** Uploads a GeoTIFF; processing runs in the background (poll getImagery). */
+    async uploadImagery(data: { project: number; file: File; name?: string; kind: "ortho" | "dem"; capture_date?: string; source?: string; crs?: string }): Promise<Imagery> {
+      const form = new FormData();
+      for (const [key, value] of Object.entries(data)) {
+        if (value !== undefined && value !== "") form.set(key, value instanceof File ? value : String(value));
+      }
+      const send = () => doFetch(`${root}/api/imagery/`, { method: "POST", headers: headers(false), body: form });
+      let response = await send();
+      if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
+      if (!response.ok) throw await toApiError(response);
+      return (await response.json()) as Imagery;
+    },
+    updateImagery: (id: number, data: Partial<Pick<Imagery, "name" | "capture_date" | "source">>) =>
+      request<Imagery>("PATCH", `/api/imagery/${id}/`, data),
+    deleteImagery: (id: number) => request<void>("DELETE", `/api/imagery/${id}/`),
+    makeContours: (id: number, interval: number) => request<ContourResult>("POST", `/api/imagery/${id}/contours/`, { interval }),
+    /** A tile of the district's own imagery (null when the tile is empty). */
+    async ownTile(path: string): Promise<Blob | null> {
+      const send = () => doFetch(`${root}${path}`, { headers: headers(false) });
+      let response = await send();
+      if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
+      if (response.status === 204) return null;
+      if (!response.ok) throw await toApiError(response);
+      return response.blob();
+    },
 
     // --- Audit log ---------------------------------------------------------------
     listAudit: (filters: AuditFilters = {}) =>

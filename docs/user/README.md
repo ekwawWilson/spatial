@@ -8,6 +8,7 @@ Written for physical planners, district administrators and field officers. Secti
 - [Coordinate systems](coordinate-systems.md)
 - [Projects, layers and the map](projects-and-layers.md)
 - [Basemaps](basemaps.md)
+- [Drone and satellite imagery](imagery.md)
 - [Importing and exporting data](import-export.md)
 - [Editing features and making the planning area](editing-and-boundaries.md)
 - [The readiness checklist](readiness-checklist.md)

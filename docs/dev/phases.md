@@ -28,7 +28,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 8 | `.spp` project files | **complete** (decision 2026-10-06): gate passed in CI (`23e1624`), including the two-server check; saving and opening run inside one request (500 MB limit) |
 | 9 | Android field app (offline) | **complete except the on-device test** (decision 2026-10-06): CI passed (`f87aa90`) and the APK builds; open item in `docs/qa/phase-9-field-app-on-device.md` |
 | 10 | Sync, conflicts, ground-truthing | **complete except the on-device test and background retry** (decision 2026-10-06): gate passed in CI (`dd932eb`); open items in `docs/qa/phase-10-sync-on-device.md` and the Phase 10 notes |
-| 11 | Drone and raster imagery | not started |
+| 11 | Drone and raster imagery | in progress on branch `phase-11` |
 | 12 | Relationship layer and procedures | not started |
 | 13 | Hardening and release | not started |
 
@@ -111,3 +111,13 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 - **Device:** unsent work is never overwritten by a pull. A feature's change id is renewed on every local save. Sync runs when the user asks; there is no background service yet, so "retries in the background" from the plan is not met: the app retries when the user syncs again.
 - **GPS-walk boundary** (Phase 6, method 5): "Use as the planning area" on a field polygon in the web app.
 - **Gate:** the server-side gate tests are in `sync/tests/test_sync.py`. The device side (sync on a real phone, cutting the network mid-upload) is a manual check: `docs/qa/phase-10-sync-on-device.md`.
+
+## Phase 11 notes
+- **Tiles are served by Django**, not TiTiler (`imagery/raster.py`: `gdal.Warp` from the COG to a 256-pixel Web Mercator PNG). The same reason as Phase 3: tiles are district data, and TiTiler has no way to apply the tenant rules. TiTiler stays in docker-compose, unused.
+- **The stored image is never resampled:** the COG keeps the upload's CRS and pixel grid. Only tiles are warped.
+- **Basemap:** a ready orthophoto gets a district `BasemapSource` (XYZ, relative URL, `offline_cache_allowed=True`). The web map loads those tiles through the signed-in API (`basemapSource(..., loadOwnTile)`).
+- **Offline:** `field.mbtiles.local_tiles` renders the district's own imagery directly, so the Phase 9 offline-basemap flow now has something to package. No outside service is contacted.
+- **Contours** are derived features (`origin=derived`) in the project CRS, converted from the DEM's CRS with the platform's operation. The DEM's CRS must be enabled in the registry.
+- **Checklist:** the imagery item's rule `imagery_max_age_days` (365) is evaluated from the newest ready orthophoto's capture date. A migration adds the rule to the default template and to existing project items that had none.
+- **Gate:** alignment is tested by finding a building's edges in rendered tiles of the fixture image: within 1 m (one source pixel) on all four sides. The MBTiles content is tested on the server; opening it on a device is part of `docs/qa/phase-9-field-app-on-device.md`.
+- **Limits:** 500 MB per upload; images must be north-up; DEM tiles are drawn as a grey stretch (no hillshade).

@@ -42,3 +42,18 @@ describe("basemapSource", () => {
     ).rejects.toThrow("Couldn't read the WMTS capabilities (HTTP 404)");
   });
 });
+
+describe("the district's own imagery", () => {
+  it("is recognised by its address", async () => {
+    const { isOwnImagery } = await import("./basemap");
+    expect(isOwnImagery("/api/imagery/3/tiles/{z}/{x}/{y}.png")).toBe(true);
+    expect(isOwnImagery("https://tile.openstreetmap.org/{z}/{x}/{y}.png")).toBe(false);
+  });
+
+  it("loads its tiles through the signed-in API, not as plain images", async () => {
+    const own = { ...base, url: "/api/imagery/3/tiles/{z}/{x}/{y}.png" };
+    const withLoader = (await basemapSource(own, fetch, async () => null)) as XYZ;
+    const plain = (await basemapSource(base, fetch, async () => null)) as XYZ;
+    expect(withLoader.getTileLoadFunction()).not.toBe(plain.getTileLoadFunction());
+  });
+});

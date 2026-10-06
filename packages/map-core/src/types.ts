@@ -468,6 +468,7 @@ export interface ChecklistRules {
   min_verified?: number;
   boundary_status?: BoundaryStatus;
   no_overlaps?: boolean;
+  imagery_max_age_days?: number;
 }
 
 export interface LayerMetrics {
@@ -481,6 +482,14 @@ export interface LayerMetrics {
   newest: string | null;
   age_days: number | null;
   verified: number | null;
+}
+
+export interface ImageryMetrics {
+  imagery_count: number;
+  undated: number;
+  newest_capture: string | null;
+  age_days: number | null;
+  best_resolution_m: number | null;
 }
 
 export interface BoundaryMetrics {
@@ -521,7 +530,7 @@ export interface ChecklistItem {
   notes: string;
   linked_layer: number | null;
   attachments: ChecklistAttachment[];
-  metrics: LayerMetrics | BoundaryMetrics | null;
+  metrics: LayerMetrics | BoundaryMetrics | ImageryMetrics | null;
   checks: ChecklistCheck[];
   rules_met: boolean;
   complete: boolean;
@@ -668,4 +677,40 @@ export interface SyncConflictDetail extends SyncConflict {
 export interface FieldTaskSummary {
   counts: { open: number; confirmed: number; corrected: number; not_found: number };
   tasks: { id: number; feature: number; feature_uuid: string; layer: number; status: "open" | "done"; outcome: string; item: string; notes: string; completed_by: string | null; completed_at: string | null }[];
+}
+
+// --- Drone and raster imagery (Phase 11) -----------------------------------------------------
+
+export interface Imagery {
+  id: number;
+  project: number;
+  name: string;
+  kind: "ortho" | "dem";
+  status: "queued" | "processing" | "ready" | "failed";
+  error: string;
+  original_name: string;
+  capture_date: string | null;
+  source: string;
+  crs: string;
+  width: number | null;
+  height: number | null;
+  bands: number | null;
+  resolution_m: number | null;
+  bounds: [number, number, number, number] | null;
+  value_range: [number, number] | null;
+  min_zoom: number;
+  max_zoom: number;
+  size_bytes: number;
+  basemap: number | null;
+  tile_url: string | null;
+  created_at: string;
+}
+
+export interface ContourResult {
+  layer: number;
+  layer_name: string;
+  contours: number;
+  replaced: number;
+  interval: number;
+  converted_from: string | null;
 }

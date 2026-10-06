@@ -24,6 +24,13 @@
 | 13 | Device screen | Free space, package size and photo size are shown | |
 | 14 | Try to remove the project | Refused, because it holds unsent captures | |
 
+## Offline basemap from drone imagery (Phase 11)
+| # | Step | Expected | Result |
+|---|---|---|---|
+| 15 | In the web app, upload a drone orthophoto to the project (Imagery) and set the planning area | The image is Ready | |
+| 16 | On the phone, download the project again; choose the offline basemap offered | It downloads; the size is shown | |
+| 17 | Airplane mode; open the map | The drone image shows behind the layers, lined up with them | |
+
 Also run steps 1–7 and 10–11 on an emulator (GPS can be simulated there).
 
 ## Record

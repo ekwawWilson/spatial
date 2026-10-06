@@ -11,6 +11,7 @@ import { CrsPage } from "./pages/CrsPage";
 import { DistrictsPage } from "./pages/DistrictsPage";
 import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPages";
 import { HomePage } from "./pages/HomePage";
+import { ImageryPage } from "./pages/ImageryPage";
 import { LoginPage } from "./pages/LoginPage";
 import { MembersPage } from "./pages/MembersPage";
 import { ProjectWorkspace } from "./pages/ProjectWorkspace";
@@ -58,6 +59,14 @@ export function App() {
           element={
             <RequirePermission permission="project.view">
               <ChecklistPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="projects/:projectId/imagery"
+          element={
+            <RequirePermission permission="project.view">
+              <ImageryPage />
             </RequirePermission>
           }
         />

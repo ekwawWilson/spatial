@@ -209,7 +209,7 @@ export function MapView(props: MapViewProps) {
       return;
     }
     let cancelled = false;
-    basemapSource(config)
+    basemapSource(config, fetch, (path) => latest.current.api.ownTile(path))
       .then((source) => {
         if (cancelled) return;
         let reported = false;

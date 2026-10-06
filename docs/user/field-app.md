@@ -17,7 +17,7 @@ Only features inside the project's planning area are downloaded. If the project 
 After you have signed in once with a connection, the same email and password also work with no connection.
 
 ## The offline background map
-Google, Bing, Esri and OpenStreetMap don't allow their maps to be stored on a phone. So with no connection, your layers show on a plain background unless the Assembly has its own imagery (for example drone photos) that an administrator has added and marked as allowed offline. When you do have a connection and no offline basemap, OpenStreetMap shows behind your layers.
+Google, Bing, Esri and OpenStreetMap don't allow their maps to be stored on a phone. The Assembly's own imagery can be: when the office has [uploaded a drone image](imagery.md) for the project, it is offered as an **offline basemap** after you download the project. Without one, your layers show on a plain background when there is no connection. When you do have a connection and no offline basemap, OpenStreetMap shows behind your layers.
 
 ## On the map
 - **Tap a feature** to see its details. **Details and photos** opens its form.

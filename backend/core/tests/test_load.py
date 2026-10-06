@@ -142,7 +142,10 @@ def test_a_district_with_half_a_million_features(planner, district_a):
     response, timings["pull"] = timed(
         lambda: planner.get(reverse("sync-pull"), {"project": project["id"], "since": since})
     )
-    assert [f["properties"]["property_id"] for f in response.json()["features"]] == ["edited"]
+    # The pull looks a few seconds further back than asked, so the planning
+    # area drawn just before the package comes too; of the buildings, only the edit.
+    pulled = [f for f in response.json()["features"] if f["layer"] == layer["id"]]
+    assert [f["properties"]["property_id"] for f in pulled] == ["edited"]
 
     # Relationships: a flood-prone area over part of the district.
     flood = planner.post(

@@ -28,7 +28,7 @@ make demo-phase-0
 backend/            Django + GeoDjango API, Celery worker
 packages/map-core/  shared TypeScript: API client, map, editing, forms
 apps/web/           planner web app (React + OpenLayers)
-apps/mobile/        Android field app (Capacitor), from Phase 9
+apps/mobile/        Android field app (Expo / React Native), from Phase 9
 fixtures/           shared test datasets
 db/init/            database bootstrap (roles, extensions)
 docs/               developer, user and QA documentation

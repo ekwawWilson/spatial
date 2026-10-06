@@ -89,3 +89,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 - **Gate item "two instances":** `scripts/qa-phase-8-two-servers.sh` starts a second stack with its own database and runs in the CI e2e job.
 - **Limits:** files are built and opened inside the request (no background job yet), with the 500 MB upload limit. Very large projects may need the job queue later.
 - **Demo scripts** (`make demo-phase-N`) need Python 3.12 or newer on the host. Their summary lines had a quoting mistake in every phase until this one (they were never run: no local Docker, and CI doesn't run demos). Fixed and syntax-checked here; a real run of each is still to do.
+
+## Phase 9 notes
+- **Expo, not Capacitor** (decision 2026-10-06): the field app is an Expo (React Native) project laid out like the user's hirepurchase mobile app, with a prebuilt `android/` folder and a local `build-apk.sh`. The earlier plan was a Capacitor wrapper around the web map.
+- **What this changes:** the web app's OpenLayers map and editing tools can't be reused on the device (they need a browser). The field app gets its own map (MapLibre React Native) and its own capture screens. The API client, types and CRS maths in `@spatial/map-core` are plain TypeScript and are shared.

@@ -2,6 +2,8 @@
 # Phase 13: the production configuration starts and behaves. Expects the
 # stack started with docker-compose.prod.yml and a .env made by
 # scripts/make-production-env.sh.
+# For a new, empty stack only: step 4 adds the demo districts and accounts
+# (with a password made up here, shown nowhere).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -32,8 +34,8 @@ CODE=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/api/projects/")
 echo "  data needs a sign-in (401 without one)"
 
 step "4. Sign in and use it"
-$COMPOSE exec -T backend python manage.py seed_demo >/dev/null
-PASSWORD="${DEMO_PASSWORD:-Demo-Pass-2026!}"
+PASSWORD="Check-$(head -c 18 /dev/urandom | base64 | tr -d '/+=')-9a"
+$COMPOSE exec -T backend python manage.py seed_demo --force --password "$PASSWORD" >/dev/null
 TOKEN=$(curl -fsS -X POST "$SITE/api/auth/login/" -H 'Content-Type: application/json' -d "{\"email\":\"sma.planner@example.test\",\"password\":\"$PASSWORD\"}" | python3 -c 'import sys,json; print(json.load(sys.stdin)["access"])')
 DISTRICT=$(curl -fsS "$SITE/api/auth/me/" -H "Authorization: Bearer $TOKEN" | python3 -c 'import sys,json; print(json.load(sys.stdin)["memberships"][0]["district"]["id"])')
 curl -fsS -X POST "$SITE/api/projects/" -H "Authorization: Bearer $TOKEN" -H "X-District-ID: $DISTRICT" -H 'Content-Type: application/json' -d '{"name":"Production check"}' | python3 -c 'import sys,json; print("  created project", json.load(sys.stdin)["id"])'

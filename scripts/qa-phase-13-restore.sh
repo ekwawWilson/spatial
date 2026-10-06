@@ -66,12 +66,14 @@ echo "  signed in; $COUNT project(s) in the district"
 [ "$COUNT" -gt 0 ] || fail "the restored server lists no projects"
 
 step "6. A damaged backup is refused"
+# Signing in above was recorded, so compare with the stack as it is now.
+SETTLED=$( (export_b; fingerprint $B_COMPOSE) )
 cp -r "$BACKUP" "$WORK/damaged"
 printf 'x' >> "$WORK/damaged/media.tar"
 if (export_b; COMPOSE="$B_COMPOSE" SERVICES="db redis backend" scripts/restore.sh "$WORK/damaged" --yes) >/dev/null 2>&1; then
   fail "a backup whose checksum doesn't match was restored"
 fi
 echo "  refused (checksum mismatch); the restored stack was left alone"
-[ "$( (export_b; fingerprint $B_COMPOSE) )" = "$BEFORE" ] || fail "a refused restore changed the stack"
+[ "$( (export_b; fingerprint $B_COMPOSE) )" = "$SETTLED" ] || fail "a refused restore changed the stack"
 
 printf '\n\033[1mPhase 13 restore gate: passed\033[0m\n'

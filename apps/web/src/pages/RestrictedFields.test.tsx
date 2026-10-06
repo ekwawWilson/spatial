@@ -60,7 +60,7 @@ function backend(restricted: boolean, extra: Parameters<typeof fakeBackend>[0] =
 describe("restricted fields", () => {
   it("shows 'restricted' in place of a value the user's role may not see", async () => {
     renderApp(backend(true).fetch, { tokens: signedIn, route: "/projects/5" });
-    await userEvent.click(await screen.findByRole("button", { name: "Parcels", exact: true }));
+    await userEvent.click(await screen.findByRole("button", { name: "Parcels" }));
     const table = await screen.findByRole("region", { name: "Attributes of Parcels" });
     const row = (await within(table).findByRole("cell", { name: "P-1" })).closest("tr")!;
     expect(within(row).getByText("restricted")).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe("restricted fields", () => {
 
   it("shows the value to those who may see it", async () => {
     renderApp(backend(false).fetch, { tokens: signedIn, route: "/projects/5" });
-    await userEvent.click(await screen.findByRole("button", { name: "Parcels", exact: true }));
+    await userEvent.click(await screen.findByRole("button", { name: "Parcels" }));
     const table = await screen.findByRole("region", { name: "Attributes of Parcels" });
     expect(await within(table).findByRole("cell", { name: "Ama Mensah" })).toBeInTheDocument();
   });

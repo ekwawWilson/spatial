@@ -7,7 +7,7 @@ import { Button, Chip, HelperText, SegmentedButtons, TextInput } from "react-nat
 import { errorText, Notice, styles } from "../../components/ui";
 import { useAuth } from "../../contexts/AuthContext";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
-import { deleteCapture, deletePhoto, getFeature, insertCapture, insertPhoto, listLayers, listPhotos, updateAttributes } from "../../services/db";
+import { completeTask, deleteCapture, deletePhoto, getFeature, insertCapture, insertPhoto, listLayers, listPhotos, updateAttributes } from "../../services/db";
 import { deleteFile, formatBytes, isStorageLow, takePhoto, type StoredPhoto } from "../../services/files";
 import { currentFix } from "../../services/gps";
 import type { LocalFeature, LocalLayer, LocalPhoto, SchemaField } from "../../types";
@@ -108,6 +108,7 @@ export default function CaptureFormScreen({ navigation, route }: Props) {
         });
       } else {
         await updateAttributes(uuid, result.properties, notes.trim(), me.email);
+        if (params.taskId !== undefined) await completeTask(params.taskId, "corrected", notes.trim());
       }
       for (const photo of pending) {
         await insertPhoto({ featureUuid: uuid, path: photo.path, width: photo.width, height: photo.height, bytes: photo.bytes, latitude: photo.latitude, longitude: photo.longitude, accuracyM: photo.accuracyM, takenAt: photo.takenAt });
@@ -154,6 +155,11 @@ export default function CaptureFormScreen({ navigation, route }: Props) {
           </Text>
         )}
         {feature?.state === "synced" && <Text style={styles.muted}>From the office. Saving marks it as changed on this device.</Text>}
+        {feature?.state === "conflict" && (
+          <Notice kind="warning">The office changed this feature too. Your version is with the office to settle; saving again sends a new change.</Notice>
+        )}
+        {feature?.syncError ? <Notice kind="error">The server refused this: {feature.syncError}</Notice> : null}
+        {params.mode === "edit" && params.taskId !== undefined && <Notice>Correct what is wrong, then save. The task is reported as corrected.</Notice>}
         {layer.schema.length === 0 && <Text style={styles.muted}>This layer has no fields to fill in.</Text>}
 
         {layer.schema.map((field) => (

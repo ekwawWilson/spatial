@@ -2,6 +2,7 @@
 // offline lives here: downloaded projects, layers and features, and what was
 // captured on the device.
 
+import * as Crypto from "expo-crypto";
 import * as SQLite from "expo-sqlite";
 
 import type {
@@ -13,8 +14,12 @@ import type {
   LocalLayer,
   LocalPhoto,
   LocalProject,
+  LocalTask,
   OfflineBasemap,
+  PullResponse,
+  TaskOutcome,
 } from "../types";
+import { serverMayReplace } from "../utils/syncPlan";
 
 let handle: Promise<SQLite.SQLiteDatabase> | null = null;
 
@@ -84,10 +89,40 @@ CREATE TABLE IF NOT EXISTS photos (
 CREATE INDEX IF NOT EXISTS photos_feature ON photos (feature_uuid);
 `;
 
+// Changes to the database after its first version, applied once each, in order.
+// Version 2 (sync): change ids, refusal messages, photo upload state, tasks.
+const MIGRATIONS: string[] = [
+  `ALTER TABLE features ADD COLUMN change_id TEXT;
+   ALTER TABLE features ADD COLUMN sync_error TEXT;
+   ALTER TABLE photos ADD COLUMN uuid TEXT;
+   ALTER TABLE photos ADD COLUMN uploaded INTEGER NOT NULL DEFAULT 0;
+   CREATE TABLE IF NOT EXISTS tasks (
+     id INTEGER PRIMARY KEY NOT NULL,
+     project_id INTEGER NOT NULL,
+     feature_uuid TEXT NOT NULL,
+     layer_id INTEGER NOT NULL,
+     item TEXT NOT NULL DEFAULT '',
+     status TEXT NOT NULL DEFAULT 'open',
+     outcome TEXT NOT NULL DEFAULT '',
+     notes TEXT NOT NULL DEFAULT '',
+     pending INTEGER NOT NULL DEFAULT 0,
+     change_id TEXT
+   );
+   CREATE INDEX IF NOT EXISTS tasks_project ON tasks (project_id, status);`,
+];
+
 export function db(): Promise<SQLite.SQLiteDatabase> {
   handle ??= (async () => {
     const database = await SQLite.openDatabaseAsync("spatial-field.db");
     await database.execAsync(SCHEMA);
+    const row = await database.getFirstAsync<{ user_version: number }>("PRAGMA user_version");
+    for (let version = row?.user_version ?? 0; version < MIGRATIONS.length; version++) {
+      await database.execAsync(`${MIGRATIONS[version]}\nPRAGMA user_version = ${version + 1};`);
+    }
+    // Captures made before sync existed get the ids sync needs.
+    await database.runAsync("UPDATE features SET change_id = lower(hex(randomblob(16))) WHERE change_id IS NULL AND state <> 'synced'");
+    const old = await database.getAllAsync<{ id: number }>("SELECT id FROM photos WHERE uuid IS NULL");
+    for (const photo of old) await database.runAsync("UPDATE photos SET uuid = ? WHERE id = ?", [Crypto.randomUUID(), photo.id]);
     return database;
   })();
   return handle;
@@ -186,6 +221,8 @@ interface FeatureRow {
   fix_time: string | null;
   readings: number | null;
   notes: string;
+  change_id: string | null;
+  sync_error: string | null;
 }
 
 function toFeature(row: FeatureRow): LocalFeature {
@@ -207,6 +244,8 @@ function toFeature(row: FeatureRow): LocalFeature {
     fixTime: row.fix_time,
     readings: row.readings,
     notes: row.notes,
+    changeId: row.change_id,
+    syncError: row.sync_error,
   };
 }
 
@@ -301,6 +340,7 @@ export async function removeProject(projectId: number): Promise<{ removed: boole
   if (unsent > 0) return { removed: false, unsent };
   await database.withExclusiveTransactionAsync(async (txn) => {
     await txn.runAsync("DELETE FROM features WHERE project_id = ?", [projectId]);
+    await txn.runAsync("DELETE FROM tasks WHERE project_id = ?", [projectId]);
     await txn.runAsync("DELETE FROM layers WHERE project_id = ?", [projectId]);
     await txn.runAsync("DELETE FROM projects WHERE id = ?", [projectId]);
   });
@@ -361,9 +401,10 @@ export interface NewCapture {
 
 export async function insertCapture(capture: NewCapture): Promise<void> {
   await (await db()).runAsync(
-    `INSERT INTO features (uuid, layer_id, project_id, geometry_json, properties_json, version, state, captured_at, captured_by, method, accuracy_m, fix_time, readings, notes)
-     VALUES (?, ?, ?, ?, ?, 0, 'new', ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO features (change_id, uuid, layer_id, project_id, geometry_json, properties_json, version, state, captured_at, captured_by, method, accuracy_m, fix_time, readings, notes)
+     VALUES (?, ?, ?, ?, ?, ?, 0, 'new', ?, ?, ?, ?, ?, ?, ?)`,
     [
+      Crypto.randomUUID(),
       capture.uuid,
       capture.layerId,
       capture.projectId,
@@ -384,9 +425,10 @@ export async function insertCapture(capture: NewCapture): Promise<void> {
  * "edited" (its base version is kept for sync); a new one stays "new". */
 export async function updateAttributes(uuid: string, properties: Record<string, unknown>, notes: string, by: string): Promise<void> {
   await (await db()).runAsync(
-    `UPDATE features SET properties_json = ?, notes = ?, captured_by = ?, captured_at = ?,
-       state = CASE WHEN state = 'synced' THEN 'edited' ELSE state END WHERE uuid = ?`,
-    [JSON.stringify(properties), notes, by, new Date().toISOString(), uuid],
+    // A new change id each time: the server must not mistake this for a send it already has.
+    `UPDATE features SET properties_json = ?, notes = ?, captured_by = ?, captured_at = ?, change_id = ?, sync_error = NULL,
+       state = CASE WHEN state IN ('synced', 'conflict') THEN 'edited' ELSE state END WHERE uuid = ?`,
+    [JSON.stringify(properties), notes, by, new Date().toISOString(), Crypto.randomUUID(), uuid],
   );
 }
 
@@ -414,6 +456,8 @@ interface PhotoRow {
   longitude: number | null;
   accuracy_m: number | null;
   taken_at: string;
+  uuid: string;
+  uploaded: number;
 }
 
 function toPhoto(row: PhotoRow): LocalPhoto {
@@ -428,6 +472,8 @@ function toPhoto(row: PhotoRow): LocalPhoto {
     longitude: row.longitude,
     accuracyM: row.accuracy_m,
     takenAt: row.taken_at,
+    uuid: row.uuid,
+    uploaded: row.uploaded === 1,
   };
 }
 
@@ -436,10 +482,10 @@ export async function listPhotos(featureUuid: string): Promise<LocalPhoto[]> {
   return rows.map(toPhoto);
 }
 
-export async function insertPhoto(photo: Omit<LocalPhoto, "id">): Promise<void> {
+export async function insertPhoto(photo: Omit<LocalPhoto, "id" | "uuid" | "uploaded">): Promise<void> {
   await (await db()).runAsync(
-    "INSERT INTO photos (feature_uuid, path, width, height, bytes, latitude, longitude, accuracy_m, taken_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    [photo.featureUuid, photo.path, photo.width, photo.height, photo.bytes, photo.latitude, photo.longitude, photo.accuracyM, photo.takenAt],
+    "INSERT INTO photos (uuid, feature_uuid, path, width, height, bytes, latitude, longitude, accuracy_m, taken_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    [Crypto.randomUUID(), photo.featureUuid, photo.path, photo.width, photo.height, photo.bytes, photo.latitude, photo.longitude, photo.accuracyM, photo.takenAt],
   );
 }
 
@@ -450,4 +496,174 @@ export async function deletePhoto(id: number): Promise<void> {
 export async function photoBytes(): Promise<number> {
   const row = await (await db()).getFirstAsync<{ n: number | null }>("SELECT sum(bytes) AS n FROM photos");
   return row?.n ?? 0;
+}
+
+// --- Sync ------------------------------------------------------------------------------------------
+
+/** A stable id for this installation, sent with every push. */
+export async function deviceId(): Promise<string> {
+  let id = await getMeta("device_id");
+  if (!id) {
+    id = Crypto.randomUUID();
+    await setMeta("device_id", id);
+  }
+  return id;
+}
+
+export const lastPull = (projectId: number) => getMeta(`last_pull.${projectId}`);
+export const setLastPull = (projectId: number, serverTime: string) => setMeta(`last_pull.${projectId}`, serverTime);
+
+export async function markSynced(uuid: string, serverId: number, version: number): Promise<void> {
+  await (await db()).runAsync("UPDATE features SET state = 'synced', server_id = ?, version = ?, change_id = NULL, sync_error = NULL WHERE uuid = ?", [serverId, version, uuid]);
+}
+
+/** The server has the feature but not the latest values: next push sends them as an edit. */
+export async function markResendAsEdit(uuid: string, serverId: number, version: number): Promise<void> {
+  await (await db()).runAsync("UPDATE features SET state = 'edited', server_id = ?, version = ?, change_id = ?, sync_error = NULL WHERE uuid = ?", [
+    serverId,
+    version,
+    Crypto.randomUUID(),
+    uuid,
+  ]);
+}
+
+export async function markConflict(uuid: string): Promise<void> {
+  await (await db()).runAsync("UPDATE features SET state = 'conflict', sync_error = NULL WHERE uuid = ?", [uuid]);
+}
+
+export async function markRejected(uuid: string, message: string): Promise<void> {
+  await (await db()).runAsync("UPDATE features SET sync_error = ? WHERE uuid = ?", [message, uuid]);
+}
+
+/** Photos whose feature is on the server and that haven't been uploaded yet. */
+export async function photosToUpload(projectId: number): Promise<LocalPhoto[]> {
+  const rows = await (await db()).getAllAsync<PhotoRow>(
+    `SELECT p.* FROM photos p JOIN features f ON f.uuid = p.feature_uuid
+     WHERE f.project_id = ? AND f.server_id IS NOT NULL AND p.uploaded = 0 ORDER BY p.id`,
+    [projectId],
+  );
+  return rows.map(toPhoto);
+}
+
+export async function countPhotosWaiting(projectId: number): Promise<number> {
+  const row = await (await db()).getFirstAsync<{ n: number }>(
+    "SELECT count(*) AS n FROM photos p JOIN features f ON f.uuid = p.feature_uuid WHERE f.project_id = ? AND p.uploaded = 0",
+    [projectId],
+  );
+  return row?.n ?? 0;
+}
+
+export async function markPhotoUploaded(id: number): Promise<void> {
+  await (await db()).runAsync("UPDATE photos SET uploaded = 1 WHERE id = ?", [id]);
+}
+
+/** Applies what the server sent. Nothing captured or changed on this device
+ * and not yet sent is ever replaced or removed. */
+export async function applyPull(projectId: number, pulled: PullResponse): Promise<{ received: number; removed: number }> {
+  const database = await db();
+  let received = 0;
+  let removed = 0;
+  await database.withExclusiveTransactionAsync(async (txn) => {
+    for (const layer of pulled.layers) {
+      await txn.runAsync("UPDATE layers SET name = ?, domain = ?, schema_json = ?, style_json = ?, sort = ? WHERE id = ?", [
+        layer.name,
+        layer.domain,
+        JSON.stringify(layer.schema),
+        JSON.stringify(layer.style),
+        layer.order,
+        layer.id,
+      ]);
+    }
+    for (const feature of pulled.features) {
+      const row = await txn.getFirstAsync<FeatureRow>("SELECT * FROM features WHERE uuid = ?", [feature.uuid]);
+      const local = row ? toFeature(row) : undefined;
+      if (!serverMayReplace(local)) continue;
+      // Our own send coming back unchanged isn't news.
+      if (local && local.state === "synced" && local.version === feature.version && local.verified === feature.verified) continue;
+      if (local) {
+        await txn.runAsync(
+          "UPDATE features SET server_id = ?, layer_id = ?, geometry_json = ?, properties_json = ?, version = ?, verified = ?, state = 'synced', change_id = NULL, sync_error = NULL WHERE uuid = ?",
+          [feature.id, feature.layer, JSON.stringify(feature.geometry), JSON.stringify(feature.properties), feature.version, feature.verified ? 1 : 0, feature.uuid],
+        );
+      } else {
+        await txn.runAsync(
+          "INSERT INTO features (uuid, server_id, layer_id, project_id, geometry_json, properties_json, version, verified, state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'synced')",
+          [feature.uuid, feature.id, feature.layer, projectId, JSON.stringify(feature.geometry), JSON.stringify(feature.properties), feature.version, feature.verified ? 1 : 0],
+        );
+      }
+      received += 1;
+    }
+    for (const uuid of pulled.deleted) {
+      const result = await txn.runAsync("DELETE FROM features WHERE uuid = ? AND state IN ('synced', 'conflict')", [uuid]);
+      removed += result.changes;
+    }
+    for (const task of pulled.tasks) {
+      // A result recorded here and not yet sent stays as it is.
+      await txn.runAsync(
+        `INSERT INTO tasks (id, project_id, feature_uuid, layer_id, item, status, outcome) VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET status = excluded.status, outcome = excluded.outcome, item = excluded.item WHERE tasks.pending = 0`,
+        [task.id, projectId, task.feature_uuid, task.layer, task.item, task.status, task.outcome],
+      );
+    }
+  });
+  return { received, removed };
+}
+
+// --- Ground-truthing tasks -------------------------------------------------------------------------
+
+interface TaskRow {
+  id: number;
+  project_id: number;
+  feature_uuid: string;
+  layer_id: number;
+  item: string;
+  status: string;
+  outcome: string;
+  notes: string;
+  pending: number;
+  change_id: string | null;
+}
+
+function toTask(row: TaskRow): LocalTask {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    featureUuid: row.feature_uuid,
+    layerId: row.layer_id,
+    item: row.item,
+    status: row.status as LocalTask["status"],
+    outcome: row.outcome as LocalTask["outcome"],
+    notes: row.notes,
+    pending: row.pending === 1,
+    changeId: row.change_id,
+  };
+}
+
+/** Tasks still to do (and those done here but not yet sent, so they can be reviewed). */
+export async function listTasks(projectId: number): Promise<LocalTask[]> {
+  const rows = await (await db()).getAllAsync<TaskRow>("SELECT * FROM tasks WHERE project_id = ? AND (status = 'open' OR pending = 1) ORDER BY pending, id", [projectId]);
+  return rows.map(toTask);
+}
+
+export async function pendingTasks(projectId: number): Promise<LocalTask[]> {
+  const rows = await (await db()).getAllAsync<TaskRow>("SELECT * FROM tasks WHERE project_id = ? AND pending = 1 ORDER BY id", [projectId]);
+  return rows.map(toTask);
+}
+
+export async function countOpenTasks(projectId: number): Promise<number> {
+  const row = await (await db()).getFirstAsync<{ n: number }>("SELECT count(*) AS n FROM tasks WHERE project_id = ? AND status = 'open' AND pending = 0", [projectId]);
+  return row?.n ?? 0;
+}
+
+/** Records what was found on the ground; sent at the next sync. */
+export async function completeTask(id: number, outcome: TaskOutcome, notes: string): Promise<void> {
+  await (await db()).runAsync("UPDATE tasks SET status = 'done', outcome = ?, notes = ?, pending = 1, change_id = ? WHERE id = ?", [outcome, notes, Crypto.randomUUID(), id]);
+}
+
+export async function reopenTask(id: number): Promise<void> {
+  await (await db()).runAsync("UPDATE tasks SET status = 'open', outcome = '', pending = 0, change_id = NULL WHERE id = ? AND pending = 1", [id]);
+}
+
+export async function markTaskSent(id: number): Promise<void> {
+  await (await db()).runAsync("UPDATE tasks SET pending = 0, change_id = NULL WHERE id = ?", [id]);
 }

@@ -1,7 +1,9 @@
 // Calls to the platform's server. Mirrors the web app's client: bearer token,
 // X-District-ID, and one refresh attempt on a 401.
 
-import type { FieldPackage, Me, ServerLayer, ServerProject, Tokens } from "../types";
+import { fetch as binaryFetch } from "expo/fetch";
+
+import type { FieldPackage, Me, PullResponse, RemotePhoto, ServerLayer, ServerProject, SyncChange, SyncResult, Tokens } from "../types";
 
 export class ApiError extends Error {
   constructor(
@@ -102,6 +104,46 @@ export function createApi(session: Session) {
     layers: (projectId: number) => request<ServerLayer[]>("GET", `/api/layers/?project=${projectId}`),
     fieldPackage: (projectId: number, layerIds: number[]) =>
       request<FieldPackage>("GET", `/api/projects/${projectId}/field-package/?layers=${layerIds.join(",")}`),
+    // --- Sync ---------------------------------------------------------------------------------
+    push: (deviceId: string, changes: SyncChange[]) => request<{ results: SyncResult[] }>("POST", "/api/sync/push/", { device_id: deviceId, changes }),
+    pull(projectId: number, layerIds: number[], since: string | null): Promise<PullResponse> {
+      const sinceParam = since ? `&since=${encodeURIComponent(since)}` : "";
+      return request<PullResponse>("GET", `/api/sync/pull/?project=${projectId}&layers=${layerIds.join(",")}${sinceParam}`);
+    },
+    /** Starts a photo upload, or returns how far an earlier attempt got. */
+    startPhoto: (photo: { uuid: string; feature_uuid: string; size: number; sha256: string; latitude: number | null; longitude: number | null; accuracy_m: number | null; taken_at: string }) =>
+      request<RemotePhoto>("POST", "/api/sync/photos/", photo),
+    photoStatus: (uuid: string) => request<RemotePhoto>("GET", `/api/sync/photos/${uuid}/`),
+    /** Sends one chunk. On 409 the server says where to resume: `{ resumeFrom }`. */
+    async photoChunk(uuid: string, offset: number, bytes: Uint8Array): Promise<RemotePhoto | { resumeFrom: number }> {
+      const doSend = async () => {
+        const headers: Record<string, string> = { "Content-Type": "application/octet-stream" };
+        if (session.tokens) headers.Authorization = `Bearer ${session.tokens.access}`;
+        if (session.districtId) headers["X-District-ID"] = String(session.districtId);
+        try {
+          return await binaryFetch(`${session.server}/api/sync/photos/${uuid}/chunk/?offset=${offset}`, { method: "PUT", headers, body: bytes as unknown as BodyInit }); // expo/fetch sends typed arrays as they are
+        } catch {
+          throw new OfflineError();
+        }
+      };
+      let response = await doSend();
+      if (response.status === 401 && (await refresh())) response = await doSend();
+      if (response.status === 409) {
+        const body = (await response.json()) as { received?: number };
+        return { resumeFrom: body.received ?? 0 };
+      }
+      if (!response.ok) {
+        let parsed: unknown = null;
+        try {
+          parsed = await response.json();
+        } catch {
+          // not JSON
+        }
+        throw new ApiError(messageFrom(parsed, response.status), response.status);
+      }
+      return (await response.json()) as RemotePhoto;
+    },
+
     /** Where to download an offline basemap from, with the headers it needs (a fresh token). */
     async basemapRequest(projectId: number, sourceId: number, maxZoom?: number): Promise<{ url: string; headers: Record<string, string> }> {
       await refresh(); // downloads can't retry on a 401, so start with a fresh token

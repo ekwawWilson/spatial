@@ -13,7 +13,12 @@ Laid out like the hirepurchase mobile app: `App.tsx`, then `src/screens`, `servi
 - Photos from the camera, shrunk and compressed, tagged with where they were taken. Notes.
 - Storage: free space, package and photo sizes, and a warning when space is low.
 
-**Not yet:** sending captures to the office (sync) is Phase 10. Until then captures stay on the device.
+## Sync (Phase 10)
+- **Sync** on a project sends captures, changes and ground-truthing answers, uploads photos in resumable pieces, then pulls what changed in the office.
+- Unsent work is never overwritten. Conflicts are settled in the office and come back at a later sync.
+- Features the office wants checked appear under the clipboard button on the map.
+
+Sync runs when the user asks. There is no background service yet.
 
 ## Build an APK
 ```bash
@@ -40,7 +45,8 @@ This folder is a standalone npm project. It is not part of the repository's pnpm
 |---|---|
 | `src/services/api.ts` | calls to the server |
 | `src/services/db.ts` | the phone's database (SQLite) |
+| `src/services/sync.ts` | sync with the server |
 | `src/services/gps.ts`, `files.ts` | GPS, photos, offline basemap files |
-| `src/utils/geo.ts`, `forms.ts`, `verifier.ts`, `mapStyle.ts` | logic with unit tests in `__tests__/` |
+| `src/utils/geo.ts`, `forms.ts`, `verifier.ts`, `mapStyle.ts`, `syncPlan.ts` | logic with unit tests in `__tests__/` |
 | `src/screens/map/MapScreen.tsx` | the map, identify, measure, capture |
 | `src/screens/capture/CaptureFormScreen.tsx` | the form, notes and photos |

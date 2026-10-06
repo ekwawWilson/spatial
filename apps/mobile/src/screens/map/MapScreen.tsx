@@ -269,6 +269,7 @@ export default function MapScreen({ navigation, route }: Props) {
       <View style={local.topRight}>
         <IconButton mode="contained" icon="layers" accessibilityLabel="Layers" onPress={() => setShowLayers(true)} />
         <IconButton mode="contained" icon="format-list-bulleted" accessibilityLabel="Captured on this device" onPress={() => navigation.navigate("Captured", { projectId })} />
+        <IconButton mode="contained" icon="clipboard-check-outline" accessibilityLabel="Features to check on the ground" onPress={() => navigation.navigate("Tasks", { projectId })} />
         {gpsWanted && lastFix && (
           <IconButton mode="contained" icon="crosshairs-gps" accessibilityLabel="Centre on my position" onPress={() => cameraRef.current?.easeTo({ center: [lastFix.longitude, lastFix.latitude], zoom: 18, duration: 400 })} />
         )}
@@ -501,7 +502,14 @@ export default function MapScreen({ navigation, route }: Props) {
 function FeatureSheet(props: { feature: LocalFeature; layer: LocalLayer | undefined; project: LocalProject; onClose(): void; onEdit(): void }) {
   const { feature, layer, project } = props;
   const first = positions(feature.geometry)[0];
-  const stateText = feature.state === "new" ? "Captured on this device, not yet sent" : feature.state === "edited" ? "Changed on this device, not yet sent" : "From the office";
+  const stateText =
+    feature.state === "new"
+      ? "Captured on this device, not yet sent"
+      : feature.state === "edited"
+        ? "Changed on this device, not yet sent"
+        : feature.state === "conflict"
+          ? "Changed here and in the office: the office is settling it"
+          : "In step with the office";
   return (
     <View style={{ gap: 4 }}>
       <View style={[ui.row, { justifyContent: "space-between" }]}>

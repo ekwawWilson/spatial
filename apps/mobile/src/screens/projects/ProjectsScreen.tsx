@@ -8,13 +8,17 @@ import { errorText, Notice, styles } from "../../components/ui";
 import { useAuth } from "../../contexts/AuthContext";
 import { countUnsent, listProjects, removeProject } from "../../services/db";
 import { deleteFile, formatBytes, freeBytes, isStorageLow } from "../../services/files";
+import { syncProject } from "../../services/sync";
+import { describe } from "../../utils/syncPlan";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 import type { LocalProject } from "../../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Projects">;
 
 export default function ProjectsScreen({ navigation }: Props) {
-  const { me, offline, districtId, setDistrict, can } = useAuth();
+  const { api, me, offline, districtId, setDistrict, can } = useAuth();
+  const [syncing, setSyncing] = useState<number | null>(null);
+  const [syncNote, setSyncNote] = useState<string | null>(null);
   const [projects, setProjects] = useState<(LocalProject & { unsent: number })[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +36,20 @@ export default function ProjectsScreen({ navigation }: Props) {
       void reload();
     }, [reload]),
   );
+
+  async function sync(projectId: number) {
+    setSyncing(projectId);
+    setError(null);
+    try {
+      setSyncNote(describe(await syncProject(api, projectId, setSyncNote)));
+    } catch (err) {
+      setSyncNote(null);
+      setError(errorText(err));
+    } finally {
+      setSyncing(null);
+      void reload();
+    }
+  }
 
   function confirmRemove(project: LocalProject & { unsent: number }) {
     if (project.unsent > 0) {
@@ -68,6 +86,7 @@ export default function ProjectsScreen({ navigation }: Props) {
               <Notice kind="warning">This device is low on storage ({formatBytes(freeBytes())} free). Free some space before capturing photos.</Notice>
             )}
             {error && <Notice kind="error">{error}</Notice>}
+            {syncNote && <Notice>{syncNote}</Notice>}
             {me && me.memberships.length > 1 && (
               <View style={styles.row}>
                 {me.memberships.map((m) => (
@@ -98,14 +117,17 @@ export default function ProjectsScreen({ navigation }: Props) {
             <Text style={styles.muted}>
               Package {formatBytes(item.packageBytes)}
               {item.basemapPath ? ` · offline basemap ${formatBytes(item.basemapBytes)}` : " · no offline basemap"}
-              {item.unsent ? ` · ${item.unsent} captured, not yet sent` : ""}
+              {item.unsent ? ` · ${item.unsent} not yet sent` : " · everything sent"}
             </Text>
             <View style={styles.row}>
               <Button mode="contained-tonal" icon="map" onPress={() => navigation.navigate("Map", { projectId: item.id })}>
                 Open
               </Button>
+              <Button mode="text" icon="sync" loading={syncing === item.id} disabled={offline || syncing !== null} onPress={() => sync(item.id)}>
+                Sync
+              </Button>
               <Button mode="text" disabled={offline} onPress={() => navigation.navigate("Download", { projectId: item.id })}>
-                Update
+                Layers
               </Button>
               <Button mode="text" textColor="#b3261e" onPress={() => confirmRemove(item)}>
                 Remove

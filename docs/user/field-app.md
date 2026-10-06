@@ -4,7 +4,7 @@
 
 The field app lets you take a project out of the office, see its layers with no connection, and record new features with the phone's GPS, a form and photos.
 
-**In this version, what you capture stays on the phone.** Sending it to the office (sync) comes in the next version. Until then, don't uninstall the app or clear its data, or the captures are lost.
+What you capture is saved on the phone straight away and sent to the office when you **sync**. Nothing is lost if there is no connection: it waits on the phone.
 
 ## Before you go out
 You need a connection for these steps.
@@ -39,11 +39,37 @@ Then fill in the **form**. Fields marked * are required. Add **notes** and **pho
 
 Each GPS capture stores its accuracy, the time and how many readings it used. Each photo stores where it was taken.
 
-## Seeing what you've captured
-The list button (top right of the map) shows everything captured or changed on the phone that hasn't been sent yet. You can open any of them to correct the form, add photos, or delete a capture you made by mistake.
+## Sending your work to the office (sync)
+When you have a connection, choose **Sync** on the project (projects screen), or **Send to the office now** in the captured list. Sync does three things:
+1. sends your new captures, your changes and your ground-truthing answers;
+2. uploads photos;
+3. brings back what changed in the office, including features deleted there and new features to check.
+
+If the connection drops partway, just sync again. It carries on from where it stopped: nothing is sent twice, and a photo resumes from the part already uploaded.
+
+The list button (top right of the map) shows what is still waiting on the phone:
+
+| Shown as | Meaning |
+|---|---|
+| **new** / **changed** | Not sent yet. Sync when you have a connection. |
+| **conflict: with the office** | Someone in the office changed the same feature before your change arrived. Your version is safe with the office, and a planner decides which to keep. The phone gets the result at a later sync. |
+| **Refused: …** | The server wouldn't accept it, for the reason shown (for example a required answer is missing). Open it, fix it, and sync again. |
+
+You can open anything in the list to correct the form, add photos, or delete a capture you made by mistake (before it is sent).
+
+## Checking features on the ground
+The office can ask for features to be checked. They arrive when you sync, and the clipboard button on the map lists them. For each one, go to the feature and choose:
+
+| Button | When |
+|---|---|
+| **Correct as recorded** | It is there and the details are right. |
+| **Needs correcting** | It is there but something is wrong. Fix the form and save. |
+| **Not found** | It isn't there. |
+
+Your answers go to the office at the next sync. Features you confirm or correct are marked as verified.
 
 ## Storage
-**Device** (on the projects screen) shows free space and how much the packages, basemaps and photos use. The app warns you when space is low. A project can't be removed from the phone while it holds captures that haven't been sent.
+**Device** (on the projects screen) shows free space and how much the packages, basemaps and photos use. The app warns you when space is low. A project can't be removed from the phone while it holds anything that hasn't been sent.
 
 ## Positions and coordinates
 The app shows positions in the project's coordinate system (for example Ghana National Grid). These are for you to read in the field. The official coordinates are worked out on the server from the GPS position when captures are sent.

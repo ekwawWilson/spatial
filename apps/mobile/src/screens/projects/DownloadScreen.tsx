@@ -5,7 +5,7 @@ import { ActivityIndicator, Button, Checkbox, RadioButton } from "react-native-p
 
 import { errorText, Notice, styles } from "../../components/ui";
 import { useAuth } from "../../contexts/AuthContext";
-import { getProject, savePackage, setBasemap } from "../../services/db";
+import { getProject, savePackage, setBasemap, setLastPull } from "../../services/db";
 import { deleteFile, downloadBasemap, formatBytes, freeBytes } from "../../services/files";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 import type { OfflineBasemap, ServerLayer, ServerProject } from "../../types";
@@ -52,6 +52,8 @@ export default function DownloadScreen({ navigation, route }: Props) {
       const bytes = JSON.stringify(pkg).length;
       setBusy("Saving to this device…");
       const { kept } = await savePackage(pkg, bytes);
+      // Later syncs only need what changed after this package was made.
+      await setLastPull(pkg.project.id, pkg.generated_at);
       setDone({ bytes, features: pkg.feature_total, kept, basemaps: pkg.offline_basemaps, clipped: pkg.clipped_to_boundary });
     } catch (err) {
       setError(errorText(err));

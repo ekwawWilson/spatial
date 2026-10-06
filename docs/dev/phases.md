@@ -24,10 +24,10 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 4 | Basemaps | **complete except live-key QA** (decision 2026-09-24): gate passed in CI (`e17bc7b`); open item in `docs/qa/phase-4-basemap-keys.md` |
 | 5 | Import and export | **complete except manual QGIS check and DWG verification** (decision 2026-09-24): gate passed in CI (`37e8604`); open items in `docs/qa/phase-5-qgis-exports.md` and the Phase 5 notes |
 | 6 | Editing and boundary creation | **complete** (decision 2026-09-24): gate passed in CI (`1e796b6`) |
-| 7 | Readiness checklist | **complete except "Send to field"** (decision 2026-10-06): gate passed in CI (`f1c733e`); the action is enabled in Phase 10 |
+| 7 | Readiness checklist | **complete** (decision 2026-10-06): gate passed in CI (`f1c733e`); "Send to field" was enabled in Phase 10 |
 | 8 | `.spp` project files | **complete** (decision 2026-10-06): gate passed in CI (`23e1624`), including the two-server check; saving and opening run inside one request (500 MB limit) |
 | 9 | Android field app (offline) | **complete except the on-device test** (decision 2026-10-06): CI passed (`f87aa90`) and the APK builds; open item in `docs/qa/phase-9-field-app-on-device.md` |
-| 10 | Sync, conflicts, ground-truthing | not started |
+| 10 | Sync, conflicts, ground-truthing | in progress on branch `phase-10` |
 | 11 | Drone and raster imagery | not started |
 | 12 | Relationship layer and procedures | not started |
 | 13 | Hardening and release | not started |
@@ -100,3 +100,14 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 - **Offline sign-in:** a PBKDF2-SHA256 hash of the password (30,000 rounds, random salt) is kept in the phone's secure storage after an online sign-in. The app asks for the password each time it starts.
 - **Offline basemap:** no provider preset may be stored offline, so until the Assembly has its own imagery (Phase 11) the offline map has a plain background. With a connection and no offline basemap, OpenStreetMap is shown live.
 - **Gate:** the airplane-mode test on a real device and an emulator is a manual check, `docs/qa/phase-9-field-app-on-device.md`. CI covers the server side and the app's logic (type check, unit tests, Expo's project checks).
+
+## Phase 10 notes
+- **Push** (`POST /api/sync/push/`): each change has an id and is applied once in its own savepoint; a repeat returns the first result. A create for a feature UUID the server already has is reported as a duplicate, not added again. Rejected changes aren't recorded, so a corrected change can reuse the id.
+- **Positions:** devices send WGS 84; `sync.services._native` converts to the layer's CRS with the platform's operation. The round trip back to WGS 84 is exact (Phase 2), so the device's map and the server agree.
+- **Conflicts:** an update whose base version isn't the server's goes to `sync_conflict`, never applied automatically. Resolutions: keep office, keep field, merge by field (and optionally the field's shape). Each writes a new version.
+- **Pull** is incremental by `updated_at` with a 10-second look-back, and includes tombstones. A trigger on `projects_feature` leaves a tombstone for every delete, whichever code path deletes.
+- **Photos:** chunked `PUT` at an explicit offset; the server accepts a chunk only at the size it has on disk and verifies SHA-256 before marking the photo complete.
+- **Ground-truthing:** `FieldTask` per feature (one open task per feature). Confirmed and corrected set `verified` and bump `updated_at` but not `version`, so pending edits don't conflict.
+- **Device:** unsent work is never overwritten by a pull. A feature's change id is renewed on every local save. Sync runs when the user asks; there is no background service yet, so "retries in the background" from the plan is not met: the app retries when the user syncs again.
+- **GPS-walk boundary** (Phase 6, method 5): "Use as the planning area" on a field polygon in the web app.
+- **Gate:** the server-side gate tests are in `sync/tests/test_sync.py`. The device side (sync on a real phone, cutting the network mid-upload) is a manual check: `docs/qa/phase-10-sync-on-device.md`.

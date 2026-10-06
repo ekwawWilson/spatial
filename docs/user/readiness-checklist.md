@@ -23,7 +23,7 @@ There are three kinds of item:
 | Coverage | how much of the planning area has data. The area is divided into about 100 squares; this is the share of the area whose squares hold at least one feature. It needs the planning-area boundary. |
 | Attributes | how complete the attributes are. It counts the required fields, or every field if none is marked required. |
 | Newest | the age of the most recently changed feature, in days |
-| Verified | the share of features confirmed in the field. This fills in once field ground-truthing arrives. |
+| Verified | the share of features confirmed or corrected in the field (see **Send to field** below). |
 
 The measures are recalculated every time the checklist opens, so imports and edits show up straight away.
 
@@ -46,7 +46,7 @@ The Blockers list shows:
 | **Import** | the import wizard, already set to the item's layer. If the item has no layer yet, the wizard makes a new layer named after the item, in the item's domain. |
 | **Export** | the export dialog with the item's layer ticked |
 | **Draw** | the editing tools on the item's layer. If the item has no layer yet, one is made first. |
-| **Send to field** | makes ground-truthing tasks for field officers. It is disabled until the field app and sync are available. |
+| **Send to field** | makes a ground-truthing task for every unverified feature in the item's layer. Field officers get them at their next sync. See [field data in the office](field-sync.md). |
 
 ## Exports
 **Export CSV** gives a spreadsheet of every item with its measures and problems. **Export PDF** gives a printable report.

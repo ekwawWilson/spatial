@@ -7,6 +7,7 @@ import { useAuth } from "../contexts/AuthContext";
 import LoginScreen from "../screens/auth/LoginScreen";
 import CaptureFormScreen from "../screens/capture/CaptureFormScreen";
 import CapturedListScreen from "../screens/capture/CapturedListScreen";
+import TasksScreen from "../screens/capture/TasksScreen";
 import MapScreen from "../screens/map/MapScreen";
 import DownloadScreen from "../screens/projects/DownloadScreen";
 import ProjectsScreen from "../screens/projects/ProjectsScreen";
@@ -28,8 +29,9 @@ export type RootStackParamList = {
         fixTime: string | null;
         readings: number | null;
       }
-    | { mode: "edit"; projectId: number; layerId: number; uuid: string };
+    | { mode: "edit"; projectId: number; layerId: number; uuid: string; /** Saving also reports this ground-truthing task as corrected. */ taskId?: number };
   Captured: { projectId: number };
+  Tasks: { projectId: number };
   Settings: undefined;
 };
 
@@ -58,6 +60,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Map" component={MapScreen} options={{ title: "Map" }} />
       <Stack.Screen name="CaptureForm" component={CaptureFormScreen} options={{ title: "Details" }} />
       <Stack.Screen name="Captured" component={CapturedListScreen} options={{ title: "Captured on this device" }} />
+      <Stack.Screen name="Tasks" component={TasksScreen} options={{ title: "To check on the ground" }} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: "Device and account" }} />
     </Stack.Navigator>
   );

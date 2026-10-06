@@ -164,8 +164,9 @@ export interface LocalLayer {
   visible: boolean;
 }
 
-/** synced: as downloaded. new: captured here. edited: a downloaded feature changed here. */
-export type FeatureState = "synced" | "new" | "edited";
+/** synced: same as the server. new: captured here. edited: a server feature
+ * changed here. conflict: the office changed it too; waiting for the office to decide. */
+export type FeatureState = "synced" | "new" | "edited" | "conflict";
 export type CaptureMethod = "gps" | "gps_track" | "drawn";
 
 export interface LocalFeature {
@@ -187,6 +188,10 @@ export interface LocalFeature {
   fixTime: string | null;
   readings: number | null;
   notes: string;
+  /** Identifies this pending change to the server; renewed whenever the feature is saved here. */
+  changeId: string | null;
+  /** Why the server refused it, if it did. */
+  syncError: string | null;
 }
 
 export interface LocalPhoto {
@@ -200,6 +205,74 @@ export interface LocalPhoto {
   longitude: number | null;
   accuracyM: number | null;
   takenAt: string;
+  uuid: string;
+  uploaded: boolean;
+}
+
+export type TaskOutcome = "confirmed" | "corrected" | "not_found";
+
+/** A ground-truthing task: check one feature on the ground. */
+export interface LocalTask {
+  id: number;
+  projectId: number;
+  featureUuid: string;
+  layerId: number;
+  item: string;
+  status: "open" | "done";
+  outcome: TaskOutcome | "";
+  notes: string;
+  /** Done on this device, not yet sent. */
+  pending: boolean;
+  changeId: string | null;
+}
+
+// --- Sync messages (see backend/sync) ----------------------------------------------------------
+
+export type SyncChange =
+  | {
+      change_id: string;
+      op: "create";
+      layer: number;
+      feature_uuid: string;
+      geometry: Geometry;
+      properties: Record<string, unknown>;
+      capture: Record<string, unknown>;
+    }
+  | {
+      change_id: string;
+      op: "update";
+      feature_uuid: string;
+      base_version: number;
+      properties: Record<string, unknown>;
+      capture: Record<string, unknown>;
+    }
+  | { change_id: string; op: "task"; task: { id: number; outcome: TaskOutcome; notes: string } };
+
+export interface SyncResult {
+  change_id: string | null;
+  status: "applied" | "conflict" | "rejected";
+  feature?: { id: number; uuid: string; version: number };
+  task?: number;
+  conflict?: number;
+  duplicate?: boolean;
+  repeat?: boolean;
+  errors?: string[];
+}
+
+export interface PullResponse {
+  server_time: string;
+  full: boolean;
+  layers: Omit<PackageLayer, "feature_count">[];
+  features: (PackageFeature & { layer: number })[];
+  deleted: string[];
+  tasks: { id: number; feature_uuid: string; layer: number; status: "open" | "done"; outcome: TaskOutcome | ""; item: string }[];
+}
+
+export interface RemotePhoto {
+  uuid: string;
+  size: number;
+  received: number;
+  complete: boolean;
 }
 
 /** One GPS reading. */

@@ -54,8 +54,8 @@ export default function SettingsScreen() {
         <Text style={styles.title}>Captured, not yet sent</Text>
         <Text>{usage.unsent} item(s)</Text>
         <Text style={styles.muted}>
-          Sending to the office (sync) comes with the next version of the app. Captures stay on this device until then, and signing
-          out keeps them.
+          Use Sync on a project to send them. Until then they stay safely on this device; signing out keeps them. Items the office
+          must settle (conflicts) are counted here until it does.
         </Text>
       </View>
 

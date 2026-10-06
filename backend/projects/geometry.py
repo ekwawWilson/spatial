@@ -101,6 +101,68 @@ def write_geometry(feature: Feature, geometry: dict[str, Any] | None) -> None:
         )
 
 
+def insert_features(layer: Layer, rows: list[dict[str, Any]], user_id: int | None) -> None:
+    """Inserts complete features with known ids (opening a .spp file): native
+    geometry exactly as given, its WGS 84 copy derived here, and the version,
+    origin, verified flag and dates the features had. One audit record each.
+
+    Each row: id, uuid, geometry (GeoJSON in the layer's CRS, or None),
+    properties, version, origin, verified, created_at, updated_at.
+    """
+    wgs84 = _wgs84()
+    params = []
+    for row in rows:
+        geometry = row["geometry"]
+        if geometry is None:
+            native_json = wgs_json = None
+        else:
+            wgs, _ = transform_geojson(geometry, layer.crs, wgs84)
+            native_json, wgs_json = json.dumps(geometry), json.dumps(wgs)
+        params.append(
+            [
+                row["id"],
+                layer.district_id,
+                layer.pk,
+                str(row["uuid"]),
+                native_json,
+                layer.crs.srid,
+                wgs_json,
+                json.dumps(row["properties"]),
+                row["version"],
+                row["origin"],
+                row["verified"],
+                user_id,
+                user_id,
+                row["created_at"],
+                row["updated_at"],
+            ]
+        )
+    if not params:
+        return
+    with connection.cursor() as cursor:
+        cursor.executemany(
+            "INSERT INTO projects_feature (id, district_id, layer_id, uuid, geom_native,"
+            " geom_4326, properties, version, origin, verified, created_by_id, updated_by_id,"
+            " created_at, updated_at) VALUES (%s, %s, %s, %s,"
+            " ST_SetSRID(ST_GeomFromGeoJSON(%s), %s), ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326),"
+            " %s::jsonb, %s, %s, %s, %s, %s, %s, %s)",
+            params,
+        )
+
+
+def reserve_feature_ids(count: int) -> list[int]:
+    """Ids from the feature sequence, for rows inserted with insert_features()."""
+    if count <= 0:
+        return []
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT nextval(pg_get_serial_sequence('projects_feature', 'id'))"
+            " FROM generate_series(1, %s)",
+            [count],
+        )
+        return [row[0] for row in cursor.fetchall()]
+
+
 def read_geometries(
     feature_ids: Iterable[int], *, native: bool
 ) -> dict[int, dict[str, Any] | None]:

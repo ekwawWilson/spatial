@@ -18,6 +18,7 @@ help:
 
 env: ## Create .env from .env.example if missing
 	@test -f .env || (cp .env.example .env && echo "Created .env; review it before non-local use")
+	@./scripts/dev-spp-key.sh .env
 
 up: env ## Build and start the whole stack, wait until healthy
 	$(COMPOSE) up -d --build --wait

@@ -47,7 +47,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: cp .env.example .env
+      - run: make env
       - name: Start stack
         run: scripts/ci-step.sh docker compose up -d --build --wait
       - name: Seed demo accounts

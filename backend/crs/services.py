@@ -14,7 +14,6 @@ from typing import Any
 
 from django.core.exceptions import ValidationError
 from django.db import connection
-from django.db.models import Max
 from pyproj import CRS, Transformer
 from pyproj.enums import TransformDirection, WktVersion
 from pyproj.exceptions import CRSError, ProjError
@@ -121,10 +120,14 @@ def register_custom(
         )
     info = describe(crs)
     info["name"] = name.strip() or info["name"]
-    srid = (
-        CoordinateSystem.objects.filter(srid__gte=CUSTOM_SRID_MIN).aggregate(m=Max("srid"))["m"]
-        or CUSTOM_SRID_MIN - 1
-    ) + 1
+    with connection.cursor() as cursor:
+        # From PostGIS itself, not the registry: row-level security hides other
+        # districts' custom systems, and SRIDs are shared by the whole server.
+        cursor.execute(
+            "SELECT COALESCE(MAX(srid), %s) + 1 FROM spatial_ref_sys WHERE srid BETWEEN %s AND %s",
+            [CUSTOM_SRID_MIN - 1, CUSTOM_SRID_MIN, CUSTOM_SRID_MAX],
+        )
+        srid = cursor.fetchone()[0]
     if srid > CUSTOM_SRID_MAX:
         raise ValidationError("No custom SRIDs left.")
     with connection.cursor() as cursor:

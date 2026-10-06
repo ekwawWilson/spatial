@@ -238,6 +238,14 @@ def test_district_custom_system_is_private_to_the_district(
     )
     assert transform.status_code == 400  # unknown in district B
 
+    # District B can add its own: SRIDs are allocated server-wide, not from
+    # the systems B can see.
+    second = api(admin_b, district_b).post(
+        reverse("crs-system-list"), {"definition": LOCAL_TM, "name": "B's grid"}, format="json"
+    )
+    assert second.status_code == 201, second.data
+    assert second.json()["code"] != code
+
 
 def test_only_district_admins_add_district_systems(api, members_a, district_a):
     for role in (Role.PLANNER, Role.FIELD_OFFICER, Role.VIEWER):

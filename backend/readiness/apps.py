@@ -20,7 +20,8 @@ class ReadinessConfig(AppConfig):
 def give_new_project_a_checklist(
     sender: Any, instance: Any, created: bool, raw: bool = False, **kwargs: Any
 ) -> None:
-    if created and not raw:
+    # A project opened from a .spp file brings its own checklist.
+    if created and not raw and not getattr(instance, "skip_default_checklist", False):
         from .services import ensure_items
 
         ensure_items(instance)

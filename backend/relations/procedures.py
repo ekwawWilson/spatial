@@ -7,6 +7,7 @@ metres whatever CRS each layer is in. They are analysis values, not survey
 quantities.
 """
 
+import json
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -52,6 +53,13 @@ def _rows(sql: str, params: list[Any]) -> list[tuple[Any, ...]]:
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         return list(cursor.fetchall())
+
+
+def _obj(value: Any) -> dict[str, Any]:
+    """A JSON column from a raw query: psycopg may hand it over as text."""
+    if isinstance(value, str):
+        value = json.loads(value)
+    return value if isinstance(value, dict) else {}
 
 
 def _scope(alias: str, scope: Scope, params: list[Any]) -> str:
@@ -217,7 +225,7 @@ def flood(roles: Roles, scope: Scope) -> dict[str, list[Candidate]]:
                 "affected_by",
                 s,
                 o,
-                details={"share": round(float(share), 4), "risk": (props or {}).get(risk_field)},
+                details={"share": round(float(share), 4), "risk": _obj(props).get(risk_field)},
             )
             for s, o, share, props in _rows(sql, params)
         ]
@@ -406,7 +414,7 @@ def rules(
     for subject, parcel, share, gap, _area, parcel_area, props, parcel_props in rows:
         if float(share) < MIN_SHARE:
             continue  # not really on this parcel
-        zone = zone_of.get(subject, (parcel_props or {}).get(zone_field))
+        zone = zone_of.get(subject, _obj(parcel_props).get(zone_field))
         key = str(zone or "").lower()
         if key not in standards:
             standards[key] = standard_for(district_id, zone)
@@ -422,7 +430,7 @@ def rules(
                 required_m=setback,
                 **base,
             )
-        floors = (props or {}).get(floors_field)
+        floors = _obj(props).get(floors_field)
         limit = standard["max_floors"]
         if limit is not None and isinstance(floors, int | float) and floors > limit:
             breach(subject, "floors", standard, measured=floors, allowed=limit, **base)

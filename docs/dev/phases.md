@@ -25,7 +25,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 5 | Import and export | **complete except manual QGIS check and DWG verification** (decision 2026-09-24): gate passed in CI (`37e8604`); open items in `docs/qa/phase-5-qgis-exports.md` and the Phase 5 notes |
 | 6 | Editing and boundary creation | **complete** (decision 2026-09-24): gate passed in CI (`1e796b6`) |
 | 7 | Readiness checklist | **complete except "Send to field"** (decision 2026-10-06): gate passed in CI (`f1c733e`); the action is enabled in Phase 10 |
-| 8 | `.spp` project files | in progress on branch `phase-8` |
+| 8 | `.spp` project files | **complete** (decision 2026-10-06): gate passed in CI (`23e1624`), including the two-server check; saving and opening run inside one request (500 MB limit) |
 | 9 | Android field app (offline) | not started |
 | 10 | Sync, conflicts, ground-truthing | not started |
 | 11 | Drone and raster imagery | not started |

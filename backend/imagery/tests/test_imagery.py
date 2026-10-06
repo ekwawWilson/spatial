@@ -148,6 +148,8 @@ def test_orthophoto_becomes_a_basemap_with_its_metadata(
     assert basemap.district_id == district_a.id and basemap.offline_cache_allowed is True
     listed = planner.get(reverse("basemap-list")).json()
     assert any(b["id"] == basemap.pk and b["url"] == item["tile_url"] for b in listed)
+    # Listed after the standard basemaps, so it isn't other projects' default.
+    assert listed[-1]["id"] == basemap.pk and listed[0]["preset"] == "osm"
     assert AuditLog.objects.filter(table_name="imagery_imagery", row_id=str(item["id"])).exists()
 
 

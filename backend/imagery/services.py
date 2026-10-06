@@ -26,6 +26,7 @@ from .models import Imagery
 
 CONTOUR_LAYER = "Topography (contours)"
 MAX_CONTOURS = 20_000
+IMAGERY_BASEMAP_ORDER = 100
 
 
 def folder(imagery: Imagery) -> Path:
@@ -78,6 +79,10 @@ def process(imagery: Imagery) -> None:
             min_zoom=imagery.min_zoom,
             max_zoom=imagery.max_zoom,
             offline_cache_allowed=True,
+            # After the standard basemaps: a project without a saved choice
+            # shows the first in the list, and one project's image mustn't
+            # become every project's default.
+            order=IMAGERY_BASEMAP_ORDER,
             notes="The district's own imagery: it may be stored on devices for offline use.",
             created_by=imagery.created_by,
         )

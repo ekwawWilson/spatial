@@ -12,6 +12,7 @@ Written for physical planners, district administrators and field officers. Secti
 - [Editing features and making the planning area](editing-and-boundaries.md)
 - [The readiness checklist](readiness-checklist.md)
 - [Project files (.spp)](project-files.md)
+- [The field app (Android)](field-app.md)
 - [System administration](system-admin.md)
 
 For whoever runs the servers: [organisation keys for .spp files](../ops/spp-keys.md).

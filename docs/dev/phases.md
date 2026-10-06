@@ -26,7 +26,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 6 | Editing and boundary creation | **complete** (decision 2026-09-24): gate passed in CI (`1e796b6`) |
 | 7 | Readiness checklist | **complete except "Send to field"** (decision 2026-10-06): gate passed in CI (`f1c733e`); the action is enabled in Phase 10 |
 | 8 | `.spp` project files | **complete** (decision 2026-10-06): gate passed in CI (`23e1624`), including the two-server check; saving and opening run inside one request (500 MB limit) |
-| 9 | Android field app (offline) | not started |
+| 9 | Android field app (offline) | in progress on branch `phase-9` |
 | 10 | Sync, conflicts, ground-truthing | not started |
 | 11 | Drone and raster imagery | not started |
 | 12 | Relationship layer and procedures | not started |
@@ -93,3 +93,10 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 ## Phase 9 notes
 - **Expo, not Capacitor** (decision 2026-10-06): the field app is an Expo (React Native) project laid out like the user's hirepurchase mobile app, with a prebuilt `android/` folder and a local `build-apk.sh`. The earlier plan was a Capacitor wrapper around the web map.
 - **What this changes:** the web app's OpenLayers map and editing tools can't be reused on the device (they need a browser). The field app gets its own map (MapLibre React Native) and its own capture screens. The API client, types and CRS maths in `@spatial/map-core` are plain TypeScript and are shared.
+- **Server side:** `backend/field` builds the field package (chosen layers, forms, features that touch the planning area, in WGS 84) and an offline basemap (MBTiles) from sources whose terms allow it. The server fetches those tiles itself, so tile addresses inside its own network are refused.
+- **Captured positions are WGS 84.** The device shows project coordinates for reading only (with the server's proj4 definition). The server converts captures when they are synced (Phase 10).
+- **The app is a standalone npm project** (`apps/mobile`), outside the pnpm workspace. It has its own small API client rather than importing `@spatial/map-core`, to keep Metro's module resolution simple.
+- **`android/` is generated** by `expo prebuild` on each build and isn't committed (hirepurchase commits its `android/`). Versions live in `app.json`.
+- **Offline sign-in:** a PBKDF2-SHA256 hash of the password (30,000 rounds, random salt) is kept in the phone's secure storage after an online sign-in. The app asks for the password each time it starts.
+- **Offline basemap:** no provider preset may be stored offline, so until the Assembly has its own imagery (Phase 11) the offline map has a plain background. With a connection and no offline basemap, OpenStreetMap is shown live.
+- **Gate:** the airplane-mode test on a real device and an emulator is a manual check, `docs/qa/phase-9-field-app-on-device.md`. CI covers the server side and the app's logic (type check, unit tests, Expo's project checks).

@@ -134,8 +134,6 @@ ROLES: tuple[Role, ...] = (
     ),
 )
 ROLE_BY_CODE = {role.code: role for role in ROLES}
-# For the API schema, which needs its own name for this list (see settings).
-ROLE_CHOICES = [(role.code, role.label) for role in ROLES]
 
 
 @dataclass(frozen=True)

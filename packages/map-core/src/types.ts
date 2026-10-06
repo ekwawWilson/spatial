@@ -576,3 +576,32 @@ export interface ChecklistTemplate {
   own: boolean;
   items: TemplateItem[];
 }
+
+// --- .spp project files (Phase 8) ---------------------------------------------------------
+
+/** What opening a .spp file created. */
+export interface SppReport {
+  project: number;
+  name: string;
+  /** The file's project name, when a project with that name already existed here. */
+  renamed_from: string | null;
+  from_district: string | null;
+  saved_at: string | null;
+  saved_by: string | null;
+  layers: number;
+  features: number;
+  history_entries: number;
+  checklist_items: number;
+  attachments: number;
+  /** Features given new ids because the originals exist on this server. */
+  new_feature_ids: number;
+  crs_added: string[];
+  basemaps_added: string[];
+  basemaps_skipped: string[];
+}
+
+export interface SppKeys {
+  configured: boolean;
+  problem: string | null;
+  keys: { key_id: string; fingerprint: string; active: boolean }[];
+}

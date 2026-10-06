@@ -57,6 +57,8 @@ jobs:
       - run: corepack enable && pnpm install --frozen-lockfile
       - run: pnpm --filter @spatial/web exec playwright install --with-deps chromium
       - run: scripts/ci-step.sh pnpm --filter @spatial/web e2e
+      - name: Phase 8 gate (a .spp file opens on a second stack)
+        run: scripts/ci-step.sh scripts/qa-phase-8-two-servers.sh
       - name: Logs on failure
         if: failure()
         run: |

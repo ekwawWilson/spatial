@@ -1,3 +1,4 @@
+import type { SppReport } from "@spatial/map-core";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -15,6 +16,23 @@ export function ProjectsPage() {
   const [community, setCommunity] = useState("");
   const [crs, setCrs] = useState<number | "">("");
   const [error, setError] = useState<unknown>(null);
+  const [opening, setOpening] = useState(false);
+  const [openError, setOpenError] = useState<unknown>(null);
+  const [opened, setOpened] = useState<SppReport | null>(null);
+
+  async function openFile(file: File) {
+    setOpening(true);
+    setOpenError(null);
+    setOpened(null);
+    try {
+      setOpened(await api.openProjectFile(file));
+      projects.reload();
+    } catch (err) {
+      setOpenError(err);
+    } finally {
+      setOpening(false);
+    }
+  }
 
   async function create(event: FormEvent) {
     event.preventDefault();
@@ -56,6 +74,62 @@ export function ProjectsPage() {
         </tbody>
       </table>
       {projects.data?.results.length === 0 && <p className="muted">No projects yet.</p>}
+
+      {can("project.edit") && can("data.import") && (
+        <section className="card wide" aria-label="Open a project file">
+          <h2>Open a project file (.spp)</h2>
+          <p className="muted small">
+            A project saved from this platform, here or on another server that shares this organisation's key. It opens as
+            a new project in this district; nothing existing is changed.
+          </p>
+          <input
+            type="file"
+            accept=".spp"
+            aria-label="Project file"
+            disabled={opening}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void openFile(file);
+              e.target.value = "";
+            }}
+          />
+          {opening && <p role="status">Opening the file…</p>}
+          <ErrorMessage error={openError} />
+          {opened && (
+            <div role="status" aria-label="Opened project">
+              <p>
+                Opened <Link to={`/projects/${opened.project}`}>{opened.name}</Link>: {opened.layers} layer
+                {opened.layers === 1 ? "" : "s"}, {opened.features} features, {opened.checklist_items} checklist items,{" "}
+                {opened.attachments} document{opened.attachments === 1 ? "" : "s"}.
+              </p>
+              <ul className="small">
+                {opened.renamed_from && (
+                  <li>
+                    A project called "{opened.renamed_from}" already exists here, so this copy is named "{opened.name}".
+                  </li>
+                )}
+                {opened.from_district && (
+                  <li>
+                    Saved{opened.saved_by ? ` by ${opened.saved_by}` : ""} in {opened.from_district}
+                    {opened.saved_at ? ` on ${opened.saved_at.slice(0, 10)}` : ""}.
+                  </li>
+                )}
+                {opened.crs_added.map((c) => (
+                  <li key={c}>Added the coordinate system {c} to this district.</li>
+                ))}
+                {opened.basemaps_added.map((b) => (
+                  <li key={b}>Added the basemap {b}.</li>
+                ))}
+                {opened.basemaps_skipped.length > 0 && (
+                  <li>
+                    Basemaps not added (a district administrator can add them): {opened.basemaps_skipped.join(", ")}.
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
 
       {can("project.edit") && (
         <form className="card wide" onSubmit={create} aria-label="New project">

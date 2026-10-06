@@ -83,7 +83,7 @@ def encrypt(source: Path, target: Path) -> dict[str, Any]:
     org = keys.active()
     data_key = AESGCM.generate_key(bit_length=256)
     wrap_nonce = secrets.token_bytes(12)
-    header = {
+    header: dict[str, Any] = {
         "file_id": str(uuid.uuid4()),
         "key_id": org.key_id,
         "wrap_nonce": _b64(wrap_nonce),

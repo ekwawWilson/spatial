@@ -11,4 +11,7 @@ Written for physical planners, district administrators and field officers. Secti
 - [Importing and exporting data](import-export.md)
 - [Editing features and making the planning area](editing-and-boundaries.md)
 - [The readiness checklist](readiness-checklist.md)
+- [Project files (.spp)](project-files.md)
 - [System administration](system-admin.md)
+
+For whoever runs the servers: [organisation keys for .spp files](../ops/spp-keys.md).

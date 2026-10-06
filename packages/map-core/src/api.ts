@@ -42,6 +42,8 @@ import type {
   ChecklistTemplate,
   ReadinessDashboard,
   TemplateItem,
+  SppKeys,
+  SppReport,
 } from "./types";
 
 export interface ServiceStatus {
@@ -420,6 +422,29 @@ export function createApiClient(options: ApiClientOptions = {}) {
     updateTemplateItem: (id: number, data: Partial<Omit<TemplateItem, "id">>) =>
       request<TemplateItem>("PATCH", `/api/readiness/template-items/${id}/`, data),
     deleteTemplateItem: (id: number) => request<void>("DELETE", `/api/readiness/template-items/${id}/`),
+
+    // --- .spp project files -----------------------------------------------------------
+    /** The whole project as a protected file, with the name the server gave it. */
+    async saveProjectFile(projectId: number): Promise<{ blob: Blob; name: string }> {
+      const send = () => doFetch(`${root}/api/projects/${projectId}/spp/`, { method: "POST", headers: headers(false) });
+      let response = await send();
+      if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
+      if (!response.ok) throw await toApiError(response);
+      const name = /filename="([^"]+)"/.exec(response.headers.get("content-disposition") ?? "")?.[1];
+      return { blob: await response.blob(), name: name ?? `project-${projectId}.spp` };
+    },
+    /** Opens a .spp file as a new project in the current district. */
+    async openProjectFile(file: File): Promise<SppReport> {
+      const form = new FormData();
+      form.set("file", file);
+      const send = () => doFetch(`${root}/api/spp/open/`, { method: "POST", headers: headers(false), body: form });
+      let response = await send();
+      if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
+      if (!response.ok) throw await toApiError(response);
+      return (await response.json()) as SppReport;
+    },
+    /** Key ids and fingerprints (system administrators); never the keys. */
+    sppKeys: () => request<SppKeys>("GET", "/api/spp/keys/"),
 
     // --- Audit log ---------------------------------------------------------------
     listAudit: (filters: AuditFilters = {}) =>

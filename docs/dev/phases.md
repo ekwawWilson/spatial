@@ -25,7 +25,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 5 | Import and export | **complete except manual QGIS check and DWG verification** (decision 2026-09-24): gate passed in CI (`37e8604`); open items in `docs/qa/phase-5-qgis-exports.md` and the Phase 5 notes |
 | 6 | Editing and boundary creation | **complete** (decision 2026-09-24): gate passed in CI (`1e796b6`) |
 | 7 | Readiness checklist | **complete except "Send to field"** (decision 2026-10-06): gate passed in CI (`f1c733e`); the action is enabled in Phase 10 |
-| 8 | `.spp` project files | not started |
+| 8 | `.spp` project files | in progress on branch `phase-8` |
 | 9 | Android field app (offline) | not started |
 | 10 | Sync, conflicts, ground-truthing | not started |
 | 11 | Drone and raster imagery | not started |
@@ -75,3 +75,16 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 - **Linking:** an unlinked layer item links to the one project layer with its exact title. Import and Draw from the item create the layer under that title.
 - **Send to field** is disabled until Phase 10 (ground-truthing tasks).
 - **History fix (from Phase 6 QA):** a save writes the row and then its exact geometry, so each version produced two audit records. Feature history now shows one entry per version, with its complete state.
+
+## Phase 8 notes
+- **Two layers:** `spp/container.py` is the encrypted file (AES-256-GCM, chunked, a data key per file wrapped by the organisation key); `spp/package.py` is what's inside (a zip with a manifest, `project.json`, `data.gpkg`, feature history, attachments). Each has its own version number.
+- **Exactness:** native geometry goes through OGR as GeoJSON with 17 significant figures, the path Phase 5 proved exact, and is inserted as written. `geom_4326` is derived again on the opening server.
+- **Opening makes a new project** in the current district, in one transaction. Ids are new. Feature UUIDs are kept when free on the server and replaced when taken (found with a SECURITY DEFINER function, because row-level security hides other districts' features).
+- **History** travels with the features. Ids are reserved from the sequence, the earlier versions are written to the audit log by `app_import_feature_history` (which refuses ids that already have a feature), and the features are inserted last.
+- **Custom coordinate systems** are matched by definition or added to the opening district, with a new SRID if needed. EPSG systems must already be enabled on the opening server.
+- **Bug fixed on the way:** custom SRIDs were allocated from the systems the current district could see, so a second district's custom system clashed. They now come from `spatial_ref_sys`.
+- **Keys:** `SPP_ORG_KEYS`, first key active, others for older files. `manage.py spp_key` generates, installs and lists. `make env` adds a development key. See `docs/ops/spp-keys.md`.
+- **"Autosave of drafts":** every edit is already saved on the server through the API as it's made, so there is no separate draft store. A `.spp` file is a snapshot.
+- **Gate item "older format version still opens":** version 1 is the only package version so far. The test drives the upgrade path with a stand-in version 2.
+- **Gate item "two instances":** `scripts/qa-phase-8-two-servers.sh` starts a second stack with its own database and runs in the CI e2e job.
+- **Limits:** files are built and opened inside the request (no background job yet), with the 500 MB upload limit. Very large projects may need the job queue later.

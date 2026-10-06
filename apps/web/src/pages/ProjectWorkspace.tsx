@@ -20,7 +20,7 @@ import { AttributeTable, IdentifyPanel } from "../components/workspace/Attribute
 import { BasemapPicker } from "../components/workspace/BasemapPicker";
 import { BoundaryPanel } from "../components/workspace/BoundaryPanel";
 import { EditPanel } from "../components/workspace/EditPanel";
-import { ExportDialog } from "../components/workspace/ExportDialog";
+import { ExportDialog, saveBlob } from "../components/workspace/ExportDialog";
 import { ImportWizard, type ImportBinding } from "../components/workspace/ImportWizard";
 import { SchemaEditor, StyleEditor } from "../components/workspace/LayerEditors";
 import { LayerTree } from "../components/workspace/LayerTree";
@@ -58,6 +58,7 @@ export function ProjectWorkspace() {
   const [dataVersion, setDataVersion] = useState(0);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [error, setError] = useState<unknown>(null);
+  const [savingFile, setSavingFile] = useState(false);
   const canEditLayers = can("layer.edit");
   const basemaps = useLoad(() => api.listBasemaps(), [api, districtId]);
   const basemapKey = `spatial.basemap.${id}`;
@@ -228,6 +229,24 @@ export function ProjectWorkspace() {
         {can("data.export") && (
           <button type="button" className="secondary" onClick={() => setDialog({ kind: "export" })} disabled={layers.length === 0}>
             Export
+          </button>
+        )}
+        {can("data.export") && (
+          <button
+            type="button"
+            className="secondary"
+            disabled={savingFile}
+            title="The whole project in one protected file that only this platform can open"
+            onClick={async () => {
+              setSavingFile(true);
+              await run(async () => {
+                const { blob, name } = await api.saveProjectFile(id);
+                saveBlob(blob, name);
+              });
+              setSavingFile(false);
+            }}
+          >
+            {savingFile ? "Saving…" : "Save as .spp"}
           </button>
         )}
         <div className="tools" role="toolbar" aria-label="Map tools">

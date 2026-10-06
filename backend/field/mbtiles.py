@@ -14,6 +14,7 @@ import sqlite3
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Callable
 from pathlib import Path
 
 from django.core.exceptions import ValidationError
@@ -84,6 +85,26 @@ def fetch_tile(url: str) -> bytes | None:
         raise ValidationError(f"The basemap's server couldn't be reached: {exc}.") from exc
 
 
+def local_tiles(source: BasemapSource) -> Callable[[int, int, int], bytes | None] | None:
+    """A tile reader for a basemap backed by the district's own imagery on
+    this server (rendered directly, no HTTP), or None for remote sources."""
+    from imagery import raster
+    from imagery.models import Imagery
+    from imagery.services import cog_path
+
+    imagery = Imagery.objects.filter(basemap=source, status=Imagery.Status.READY).first()
+    if imagery is None or imagery.bounds is None:
+        return None
+    path, bounds, scale = cog_path(imagery), imagery.bounds, imagery.value_range
+
+    def read(zoom: int, x: int, y: int) -> bytes | None:
+        if not raster.tile_intersects(bounds, zoom, x, y):
+            return None
+        return raster.render_tile(path, zoom, x, y, scale=scale)
+
+    return read
+
+
 def _format(data: bytes) -> str:
     if data.startswith(b"\x89PNG"):
         return "png"
@@ -111,7 +132,9 @@ def build(
             f"That is {total:,} tiles; the limit is {MAX_TILES:,}. Choose a lower maximum zoom."
         )
     key = basemap_services.api_key(source) if source.api_key_encrypted else ""
-    check_public_url(source.url.replace("{z}", "0").replace("{x}", "0").replace("{y}", "0"))
+    local = local_tiles(source)
+    if local is None:
+        check_public_url(source.url.replace("{z}", "0").replace("{x}", "0").replace("{y}", "0"))
 
     db = sqlite3.connect(target)
     try:
@@ -132,7 +155,7 @@ def build(
                         .replace("{y}", str(y))
                         .replace("{key}", urllib.parse.quote(key))
                     )
-                    data = fetch_tile(url)
+                    data = local(zoom, x, y) if local else fetch_tile(url)
                     if not data:
                         continue
                     if stored == 0:

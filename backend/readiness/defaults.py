@@ -67,6 +67,7 @@ DEFAULT_ITEMS: list[dict[str, Any]] = [
         "kind": "document",
         "title": "Recent imagery (under 12 months old)",
         "description": "Drone or high-resolution satellite imagery of the planning area (loaded as a basemap).",
+        "rules": {"imagery_max_age_days": 365},
     },
     {
         "group": "base_map",

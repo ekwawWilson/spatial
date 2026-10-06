@@ -87,6 +87,7 @@ class TemplateItemSerializer(serializers.ModelSerializer[TemplateItem]):
             "min_verified",
             "boundary_status",
             "no_overlaps",
+            "imagery_max_age_days",
         }
         if not isinstance(rules, dict):
             raise serializers.ValidationError("Rules must be an object.")
@@ -98,7 +99,7 @@ class TemplateItemSerializer(serializers.ModelSerializer[TemplateItem]):
                 isinstance(rules[key], (int, float)) and 0 <= rules[key] <= 100
             ):
                 raise serializers.ValidationError(f"{key} must be a percentage from 0 to 100.")
-        for key in ("min_features", "max_age_days"):
+        for key in ("min_features", "max_age_days", "imagery_max_age_days"):
             if key in rules and not (isinstance(rules[key], int) and rules[key] >= 0):
                 raise serializers.ValidationError(f"{key} must be a whole number.")
         if "boundary_status" in rules and rules["boundary_status"] not in (

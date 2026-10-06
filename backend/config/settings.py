@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "spp",
     "field",
     "sync",
+    "imagery",
 ]
 
 MIDDLEWARE = [

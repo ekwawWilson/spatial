@@ -236,6 +236,23 @@ def evaluate(
             )
         return result
 
+    if "imagery_max_age_days" in rules:
+        from imagery.services import checklist_metrics
+
+        m = checklist_metrics(item.project)
+        result.metrics = m
+        limit = rules["imagery_max_age_days"]
+        result.check(m["imagery_count"] > 0, "Imagery loaded", "No imagery has been uploaded yet.")
+        if m["imagery_count"] > 0:
+            age = m["age_days"]
+            result.check(
+                age is not None and age <= limit,
+                f"Captured within {limit} days",
+                "The imagery has no capture date: set it."
+                if age is None
+                else f"The newest imagery is {age} days old; limit {limit}.",
+            )
+        return result
     if item.kind != "layer":
         return result
     if item.linked_layer is None:

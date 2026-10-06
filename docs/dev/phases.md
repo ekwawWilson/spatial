@@ -29,7 +29,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 9 | Android field app (offline) | **complete except the on-device test** (decision 2026-10-06): CI passed (`f87aa90`) and the APK builds; open item in `docs/qa/phase-9-field-app-on-device.md` |
 | 10 | Sync, conflicts, ground-truthing | **complete except the on-device test and background retry** (decision 2026-10-06): gate passed in CI (`dd932eb`); open items in `docs/qa/phase-10-sync-on-device.md` and the Phase 10 notes |
 | 11 | Drone and raster imagery | **complete except the offline basemap on a device** (decision 2026-10-06): gate passed in CI (`5b34526`); the device check is in `docs/qa/phase-9-field-app-on-device.md` |
-| 12 | Relationship layer and procedures | in progress on branch `phase-12` |
+| 12 | Relationship layer and procedures | **complete** (decision 2026-10-06): gate passed in CI (`1ce4708`) |
 | 13 | Hardening and release | not started |
 
 ## Open items carried forward

@@ -26,7 +26,9 @@ export type Permission =
   | "checklist.edit"
   | "checklist.verify"
   | "checklist.template"
-  | "field.package";
+  | "field.package"
+  | "field.sync"
+  | "sync.resolve";
 
 export interface DistrictBrief {
   id: number;

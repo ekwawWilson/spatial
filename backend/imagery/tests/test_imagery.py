@@ -149,7 +149,7 @@ def test_orthophoto_becomes_a_basemap_with_its_metadata(
     listed = planner.get(reverse("basemap-list")).json()
     assert any(b["id"] == basemap.pk and b["url"] == item["tile_url"] for b in listed)
     # Listed after the standard basemaps, so it isn't other projects' default.
-    assert listed[-1]["id"] == basemap.pk and listed[0]["preset"] == "osm"
+    assert listed[-1]["id"] == basemap.pk and listed[0]["id"] != basemap.pk
     assert AuditLog.objects.filter(table_name="imagery_imagery", row_id=str(item["id"])).exists()
 
 

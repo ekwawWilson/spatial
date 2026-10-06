@@ -73,7 +73,12 @@ ROLES: tuple[Role, ...] = (
         (("name_field", "Plan name", "name"),),
     ),
     Role(
-        "zoning", "Zoning", "J", ("polygon",), ("zoning", "zones plan"), (("zone_field", "Zone", "zone"),)
+        "zoning",
+        "Zoning",
+        "J",
+        ("polygon",),
+        ("zoning", "zones plan"),
+        (("zone_field", "Zone", "zone"),),
     ),
     Role(
         "flood_risk",

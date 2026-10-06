@@ -10,6 +10,8 @@ Targets (seconds), on the CI machine:
 """
 
 import time
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 from django.db import connection
@@ -32,7 +34,7 @@ def planner(api, members_a, district_a):
     return api(members_a[Role.PLANNER], district_a)
 
 
-def timed(call):
+def timed(call: Callable[[], Any]) -> tuple[Any, float]:
     start = time.perf_counter()
     result = call()
     return result, round(time.perf_counter() - start, 3)

@@ -122,6 +122,15 @@ export function ChecklistPage() {
         ))}
       </div>
 
+      {data.baseline && (
+        <p className="small" aria-label="Baseline">
+          From the <Link to={`/projects/${id}/relations`}>relationships</Link>: {data.baseline.properties} properties
+          {data.baseline.in_flood_area !== undefined ? ` · ${data.baseline.in_flood_area} in flood-prone areas` : ""}
+          {data.baseline.without_road_access !== undefined ? ` · ${data.baseline.without_road_access} without road access` : ""}
+          {data.baseline.with_violations !== undefined ? ` · ${data.baseline.with_violations} breaking a standard` : ""}.
+        </p>
+      )}
+
       {data.blockers.length > 0 && (
         <section aria-label="Blockers" className="blockers">
           <h2>Blockers</h2>

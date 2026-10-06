@@ -515,7 +515,7 @@ def test_an_edit_refreshes_that_propertys_links(world, django_capture_on_commit_
         )
     assert moved.status_code == 200, moved.content
     assert world.pairs("affected_by") == [("B-001", "F-001"), ("B-006", "F-001")]
-    run = Run.objects.filter(project_id=world.project).first()
+    run = Run.objects.filter(project_id=world.project).latest("id")
     assert run.trigger == "edit" and run.status == "done"
     # Links that didn't change are the same rows: a refresh doesn't churn them.
     assert {link["id"] for link in world.links(type="belongs_to")} == before
@@ -526,7 +526,7 @@ def test_nightly_run_covers_every_mapped_project(world, planner):
     world.set_roles()
     planner.post(reverse("project-list"), {"name": "Nothing mapped"}, format="json")
     assert tasks.nightly() == 1
-    run = Run.objects.filter(project_id=world.project).first()
+    run = Run.objects.filter(project_id=world.project).latest("id")
     assert run.trigger == "nightly" and run.report["flood"]["affected_by"]["added"] == 1
 
 

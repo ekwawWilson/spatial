@@ -2,6 +2,7 @@
 
 import traceback
 from collections import Counter
+from functools import partial
 from typing import Any
 
 from django.core.cache import cache
@@ -78,8 +79,8 @@ def reconcile(
         if key in decided:
             counts["kept"] += 1
             continue
-        link = machine.get(key)
-        if link is None:
+        stored = machine.get(key)
+        if stored is None:
             new.append(
                 Relationship(
                     district_id=project.district_id,
@@ -94,18 +95,18 @@ def reconcile(
                     checked_at=now,
                 )
             )
-        elif (link.method, round(link.confidence, 3), link.details) != (
+        elif (stored.method, round(stored.confidence, 3), stored.details) != (
             candidate.method,
             round(candidate.confidence, 3),
             candidate.details,
         ):
-            link.method, link.confidence, link.details = (
+            stored.method, stored.confidence, stored.details = (
                 candidate.method,
                 candidate.confidence,
                 candidate.details,
             )
-            link.checked_at = now
-            link.save(update_fields=["method", "confidence", "details", "checked_at"])
+            stored.checked_at = now
+            stored.save(update_fields=["method", "confidence", "details", "checked_at"])
             counts["updated"] += 1
     Relationship.objects.bulk_create(new, batch_size=1000)
     counts["added"] = len(new)
@@ -339,8 +340,10 @@ def feature_changed(feature: Feature) -> None:
             continue  # one is already on its way
         district_id, feature_id = feature.district_id, feature.pk if single else None
         transaction.on_commit(
-            lambda p=project_id, d=district_id, f=feature_id: refresh_project.apply_async(
-                args=[p, d, f], countdown=PENDING_SECONDS
+            partial(
+                refresh_project.apply_async,
+                args=[project_id, district_id, feature_id],
+                countdown=PENDING_SECONDS,
             )
         )
 

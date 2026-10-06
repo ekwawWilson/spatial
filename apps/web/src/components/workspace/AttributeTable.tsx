@@ -1,6 +1,7 @@
 import { ApiError, type Layer, type MapFeature, type SchemaField } from "@spatial/map-core";
 import { useMemo, useState, type KeyboardEvent } from "react";
 
+import { describeLink } from "../../pages/RelationsPage";
 import { useSession } from "../../session";
 import { errorText } from "../ErrorMessage";
 import { useLoad } from "../useLoad";
@@ -242,6 +243,8 @@ export function IdentifyPanel({
   const captures = useLoad(() => (fromField ? api.featureCaptures(featureId) : Promise.resolve([])), [api, featureId, fromField, version]);
   const photos = useLoad(() => (fromField ? api.featurePhotos(featureId) : Promise.resolve([])), [api, featureId, fromField, version]);
   const capture = captures.data?.[0];
+  // Everything the relationship layer has linked this feature to.
+  const related = useLoad(() => api.listRelationships({ feature: featureId }), [api, featureId, version]);
 
   async function openPhoto(uuid: string) {
     setError(null);
@@ -324,6 +327,26 @@ export function IdentifyPanel({
             </button>
           ))}
         </p>
+      )}
+      {related.data && related.data.results.length > 0 && (
+        <div aria-label="Linked to" role="group">
+          <strong className="small">Linked to</strong>
+          <ul className="small links">
+            {related.data.results
+              .filter((link) => link.status === "active")
+              .map((link) => {
+                const outgoing = link.subject.feature === featureId;
+                const other = outgoing ? link.object : link.subject;
+                return (
+                  <li key={link.id}>
+                    {outgoing ? link.verb : link.inverse} {other ? <strong>{other.label}</strong> : <strong>{describeLink(link)}</strong>}
+                    {other ? ` (${other.layer})` : ""}
+                    {link.method === "inferred" ? " · to be confirmed" : ""}
+                  </li>
+                );
+              })}
+          </ul>
+        </div>
       )}
       {canEditBoundary && fromField && layer.geometry_type === "polygon" && (
         <button type="button" className="link" onClick={useAsPlanningArea}>

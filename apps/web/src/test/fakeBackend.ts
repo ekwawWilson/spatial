@@ -51,6 +51,8 @@ export function makeMe(overrides: Partial<Me> = {}): Me {
           "membership.view",
           "project.edit",
           "project.view",
+          "relations.edit",
+          "standards.manage",
           "sync.resolve",
         ],
       },

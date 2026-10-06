@@ -72,6 +72,7 @@ const checklist: Checklist = {
   total: 2,
   groups: [{ group: "existing", label: "4. Existing situation", total: 2, complete: 1 }],
   items: [item(3, { title: "Population data", status: "ready", complete: true }), streets],
+  baseline: null,
   blockers: [{ item: 7, title: "Streets and access", problem: "Overdue since 2026-01-01." }],
 };
 

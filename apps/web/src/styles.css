@@ -97,13 +97,14 @@ td.actions { white-space: nowrap; }
   height: calc(100vh - 3.2rem);
   margin: -1.5rem;
 }
-.workspace-header { grid-area: head; display: flex; gap: 1rem; align-items: center; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); background: var(--surface); }
+.workspace-header { grid-area: head; display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: center; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); background: var(--surface); }
 .workspace-header h1 { margin: 0; font-size: 1.2rem; }
 .workspace-side { grid-area: side; overflow-y: auto; padding: 0.75rem; border-right: 1px solid var(--border); background: var(--surface); }
 .workspace-map { grid-area: map; position: relative; min-height: 0; }
 .workspace-table { grid-area: table; overflow: auto; padding: 0.5rem 1rem; border-top: 1px solid var(--border); background: var(--surface); }
 .map { position: absolute; inset: 0; }
-.map-status { position: absolute; left: 0.5rem; bottom: 2.2rem; display: flex; gap: 1rem; padding: 0.2rem 0.5rem; background: rgba(255, 255, 255, 0.85); border-radius: 4px; font-family: ui-monospace, monospace; font-size: 0.85rem; }
+/* A readout, not a control: clicks pass through to the map underneath. */
+.map-status { pointer-events: none; position: absolute; left: 0.5rem; bottom: 2.2rem; display: flex; gap: 1rem; padding: 0.2rem 0.5rem; background: rgba(255, 255, 255, 0.85); border-radius: 4px; font-family: ui-monospace, monospace; font-size: 0.85rem; }
 .identify { position: absolute; right: 0.5rem; top: 0.5rem; width: 18rem; max-height: 70%; overflow: auto; padding: 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
 .identify dt { font-weight: 600; }
 .identify dd { margin: 0 0 0.4rem; }

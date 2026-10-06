@@ -85,8 +85,14 @@ test("draw with snapping, undo and redo, and restore from history", async ({ pag
     [corner.x + 4, corner.y - 3],
   ] as const;
   for (const [x, y] of clicks) {
-    const onMap = await page.evaluate((p) => document.elementFromPoint(p.x, p.y)?.closest(".map") !== null, { x, y });
-    expect(onMap, `click at ${x},${y} is not on the map`).toBe(true);
+    // What is under the click: "map", or a description of whatever covers it.
+    const under = await page.evaluate((p) => {
+      const element = document.elementFromPoint(p.x, p.y);
+      if (element?.closest(".map")) return "map";
+      const box = document.querySelector(".map")?.getBoundingClientRect();
+      return `${element?.tagName.toLowerCase()}.${element?.className} "${element?.textContent?.slice(0, 40)}"; map box ${JSON.stringify(box)}`;
+    }, { x, y });
+    expect(under, `click at ${Math.round(x)},${Math.round(y)} is not on the map`).toBe("map");
     await page.mouse.click(x, y);
   }
   await page.waitForTimeout(1000);

@@ -59,7 +59,7 @@ test-backend: ## Backend tests (pytest, in the container)
 test-web: web-install ## Frontend unit tests (Vitest)
 	pnpm test
 
-e2e: web-install ## End-to-end tests against the running stack (needs `make up`)
+e2e: web-install ## End-to-end tests against the running stack (needs `make up`, and THROTTLE_LOGIN=600/min in .env)
 	pnpm --filter @spatial/web exec playwright install --with-deps chromium
 	pnpm --filter @spatial/web e2e
 

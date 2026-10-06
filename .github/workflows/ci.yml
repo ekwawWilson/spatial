@@ -62,6 +62,8 @@ jobs:
         with:
           node-version: 24
       - run: make env
+      # Every test signs in from this one machine, far more often than a person would.
+      - run: sed -i 's|^THROTTLE_LOGIN=.*|THROTTLE_LOGIN=600/min|' .env
       - name: Start stack
         run: scripts/ci-step.sh docker compose up -d --build --wait
       - name: Seed demo accounts

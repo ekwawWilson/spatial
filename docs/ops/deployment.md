@@ -2,6 +2,8 @@
 
 *Whoever runs the Assembly's server or cloud hosting.*
 
+**On DigitalOcean**, or any new Ubuntu server: one script does all of this, with HTTPS included ([installing on a DigitalOcean droplet](digitalocean.md)).
+
 The platform runs as a set of Docker containers: the database (PostgreSQL with PostGIS), a cache (Redis), the application (backend and background worker) and the web app behind nginx.
 
 ## What the server needs

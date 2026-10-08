@@ -85,6 +85,26 @@ jobs:
           docker compose logs --tail=200
           scripts/ci-service-logs.sh
 
+  # A new server installed by scripts/server-setup.sh: HTTPS through Caddy (a
+  # local certificate, as the address is localhost), then the same command
+  # again as an update.
+  server-setup:
+    runs-on: ubuntu-latest
+    needs: [backend, web]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install as on a new server
+        run: SKIP_SYSTEM=true DIR="$PWD" scripts/ci-step.sh scripts/server-setup.sh localhost
+      - name: Check it
+        run: scripts/ci-step.sh scripts/qa-server-setup.sh
+      - name: Run it again, as an update (backup first)
+        run: SKIP_SYSTEM=true DIR="$PWD" BRANCH="${{ github.ref_name }}" scripts/ci-step.sh scripts/server-setup.sh
+      - name: The update made a backup
+        run: ls backups/*/db.dump
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail=200
+
   # The production configuration: built images, gunicorn, nginx, real secrets.
   production:
     runs-on: ubuntu-latest

@@ -1,0 +1,8 @@
+# HTTPS in front of the platform (docker-compose.https.yml). Caddy gets and
+# renews the certificate from Let's Encrypt by itself; the site's address
+# (SITE_HOST in .env) must point at this server first. For "localhost" it
+# uses its own local certificate instead (the CI test).
+{$SITE_HOST} {
+	encode zstd gzip
+	reverse_proxy web:80
+}

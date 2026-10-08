@@ -461,7 +461,7 @@ def start_upload(client, name, size):
 
 def put_piece(client, upload_id, offset, data):
     url = reverse("imagery-upload-chunk", kwargs={"upload_id": upload_id})
-    return client.put(f"{url}?offset={offset}", data, content_type="application/octet-stream")
+    return client.post(f"{url}?offset={offset}", data, content_type="application/octet-stream")
 
 
 def finish(client, upload_id, capture, **details):

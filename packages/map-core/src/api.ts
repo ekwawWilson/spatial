@@ -518,7 +518,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
         const piece = file.slice(received, received + upload.chunk_size);
         let response: Response;
         try {
-          response = await sendBytes("PUT", `${base}/chunk/${query({ offset: received })}`, piece);
+          response = await sendBytes("POST", `${base}/chunk/${query({ offset: received })}`, piece);
         } catch (err) {
           // The connection dropped: wait, then the server says where to carry on.
           failures += 1;

@@ -210,7 +210,7 @@ class ImageryViewSet(
     @extend_schema(request=UploadStartSerializer, responses={201: UploadStateSerializer})
     @action(detail=False, methods=["post"], url_path="uploads")
     def start_upload(self, request: Request) -> Response:
-        """Starts uploading a GeoTIFF in pieces. Send the pieces with PUT
+        """Starts uploading a GeoTIFF in pieces. Send the pieces with POST
         .../chunk/?offset=, then POST .../finish/ with the image's details."""
         data = UploadStartSerializer(data=request.data)
         data.is_valid(raise_exception=True)
@@ -236,7 +236,7 @@ class ImageryViewSet(
         request={"application/octet-stream": OpenApiTypes.BINARY},
         responses={200: UploadStateSerializer, 409: UploadStateSerializer},
     )
-    @action(detail=False, methods=["put"], url_path=UPLOAD_PATH + "/chunk")
+    @action(detail=False, methods=["post"], url_path=UPLOAD_PATH + "/chunk")
     def upload_chunk(self, request: Request, upload_id: str) -> Response:
         """One piece of the file (the raw bytes, at most chunk_size), starting at
         ?offset=. If the offset isn't where the server's copy ends, nothing is

@@ -61,7 +61,7 @@ describe("imagery page", () => {
   it("uploads a GeoTIFF in pieces, then its details", async () => {
     const api = backend([], {
       "POST /api/imagery/uploads/": () => ({ status: 201, body: { id: "u1", file_name: "june.tif", size: 1, received: 0, chunk_size: 8 * 1024 * 1024 } }),
-      "PUT /api/imagery/uploads/u1/chunk/": () => ({ body: { id: "u1", file_name: "june.tif", size: 1, received: 1, chunk_size: 8 * 1024 * 1024 } }),
+      "POST /api/imagery/uploads/u1/chunk/": () => ({ body: { id: "u1", file_name: "june.tif", size: 1, received: 1, chunk_size: 8 * 1024 * 1024 } }),
       "POST /api/imagery/uploads/u1/finish/": () => ({ status: 201, body: image(3, { status: "queued" }) }),
     });
     renderApp(api.fetch, { tokens: signedIn, route: "/projects/5/imagery" });
@@ -73,7 +73,7 @@ describe("imagery page", () => {
     expect(await screen.findByText(/being checked and converted/)).toBeInTheDocument();
     const call = (method: string, path: string) => api.calls.find((c) => c.method === method && c.path.startsWith(path));
     expect(call("POST", "/api/imagery/uploads/")?.body).toEqual({ file_name: "june.tif", size: 1 });
-    const piece = call("PUT", "/api/imagery/uploads/u1/chunk/")!;
+    const piece = call("POST", "/api/imagery/uploads/u1/chunk/")!;
     expect(piece.path).toBe("/api/imagery/uploads/u1/chunk/?offset=0");
     expect(piece.body).toBeInstanceOf(Blob);
     // Read from the file unless chosen: no crs.

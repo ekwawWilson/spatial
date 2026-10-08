@@ -34,12 +34,17 @@ test("upload a drone orthophoto, then use it as the project's basemap", async ({
   await expect(row).toContainText("EPSG:32630");
   await expect(row.getByLabel("Capture date of Fixture flight")).toHaveValue("2026-09-01"); // from the file's tags
 
-  // It is now one of the project's basemaps, and its tiles load with the user's sign-in.
-  await page.getByRole("link", { name: "← Back to the project" }).click();
-  const tile = page.waitForResponse((r) => /\/api\/imagery\/\d+\/tiles\/\d+\/\d+\/\d+\.png/.test(r.url()) && [200, 204].includes(r.status()));
-  await page.getByRole("combobox", { name: "Basemap" }).selectOption({ label: "Fixture flight (imagery)" });
+  // "Show on map": the project opens with the image as its basemap, zoomed to it,
+  // so its tiles come back with picture in them (200), not empty (204).
+  const tile = page.waitForResponse((r) => /\/api\/imagery\/\d+\/tiles\/\d+\/\d+\/\d+\.png/.test(r.url()) && r.status() === 200);
+  await row.getByRole("button", { name: "Show on map" }).click();
+  await page.waitForURL(/\/projects\/\d+$/);
+  const basemap = page.getByRole("combobox", { name: "Basemap" });
+  await expect(basemap.locator("option:checked")).toHaveText("Fixture flight (imagery)");
   await tile;
   await expect(page.getByRole("region", { name: "Basemap" }).getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Zoom to image" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "My location" })).toBeVisible();
 
   // The checklist's imagery item now measures it.
   await page.getByRole("link", { name: "Readiness checklist" }).click();

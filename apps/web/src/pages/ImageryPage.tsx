@@ -1,6 +1,6 @@
 import type { ContourResult, CoordinateSystem, Imagery } from "@spatial/map-core";
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { ErrorMessage } from "../components/ErrorMessage";
 import { useLoad } from "../components/useLoad";
@@ -92,6 +92,7 @@ export function ImageryPage() {
 
 function ImageryRow(props: { image: Imagery; canEdit: boolean; canContour: boolean; run(action: () => Promise<unknown>, done?: string): Promise<void> }) {
   const { api } = useSession();
+  const navigate = useNavigate();
   const { image } = props;
   const [date, setDate] = useState(image.capture_date ?? "");
   const [interval, setIntervalValue] = useState("1");
@@ -127,6 +128,15 @@ function ImageryRow(props: { image: Imagery; canEdit: boolean; canContour: boole
       <td className="small">{image.crs || "—"}</td>
       <td>{image.size_bytes ? size(image.size_bytes) : "—"}</td>
       <td>
+        {image.status === "ready" && image.basemap !== null && image.bounds && (
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => navigate(`/projects/${image.project}`, { state: { showImagery: { basemap: image.basemap, bounds: image.bounds } } })}
+          >
+            Show on map
+          </button>
+        )}
         {props.canContour && image.kind === "dem" && image.status === "ready" && (
           <span className="inline-form">
             <input

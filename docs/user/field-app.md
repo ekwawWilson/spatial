@@ -22,6 +22,7 @@ Google, Bing, Esri and OpenStreetMap don't allow their maps to be stored on a ph
 ## On the map
 - **Tap a feature** to see its details. **Details and photos** opens its form.
 - **Layers** (top right) shows or hides layers.
+- **My location** (the crosshair, top right) shows where you are as a blue dot and moves the map there.
 - **Measure** gives a distance or an area as you tap points. These are measured on the phone, for guidance.
 
 ## Capturing

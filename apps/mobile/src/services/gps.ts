@@ -45,3 +45,13 @@ export async function currentFix(): Promise<Fix | null> {
     return null;
   }
 }
+
+/** One reading, to show where the phone is on the map. Throws GpsUnavailable with the reason. */
+export async function locateOnce(): Promise<Fix> {
+  await ensureGps();
+  try {
+    return toFix(await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }));
+  } catch {
+    throw new GpsUnavailable("The phone couldn't find its position. Try again in the open, away from tall buildings.");
+  }
+}

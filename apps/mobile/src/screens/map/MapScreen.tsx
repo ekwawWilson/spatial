@@ -11,7 +11,7 @@ import { colors } from "../../constants/colors";
 import { APP_CONFIG } from "../../constants/config";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 import { getFeature, getProject, listFeatures, listLayers, setLayerVisible } from "../../services/db";
-import { watchFixes } from "../../services/gps";
+import { locateOnce, watchFixes } from "../../services/gps";
 import type { CaptureMethod, Fix, LocalFeature, LocalLayer, LocalProject, Position } from "../../types";
 import { formatPosition } from "../../utils/crs";
 import { averageFixes, bounds, buildGeometry, extendTrack, formatArea, formatDistance, pathLength, positions, ringArea, usable } from "../../utils/geo";
@@ -70,6 +70,9 @@ export default function MapScreen({ navigation, route }: Props) {
   const [fixes, setFixes] = useState<Fix[]>([]); // readings for a GPS point
   const [track, setTrack] = useState<Fix[]>([]); // a walked line or area
   const [lastFix, setLastFix] = useState<Fix | null>(null);
+  // "My location" outside GPS capture: one reading, shown as a dot.
+  const [here, setHere] = useState<Fix | null>(null);
+  const [locating, setLocating] = useState(false);
   const [selected, setSelected] = useState<LocalFeature | null>(null);
   const [showLayers, setShowLayers] = useState(false);
   const [online, setOnline] = useState(false);
@@ -131,6 +134,27 @@ export default function MapScreen({ navigation, route }: Props) {
       stop?.();
     };
   }, [gpsWanted]);
+
+  const shownFix = gpsWanted ? lastFix : here;
+
+  async function showMyLocation() {
+    const centre = (fix: Fix) => cameraRef.current?.easeTo({ center: [fix.longitude, fix.latitude], zoom: 18, duration: 400 });
+    if (gpsWanted && lastFix) {
+      centre(lastFix);
+      return;
+    }
+    setLocating(true);
+    setError(null);
+    try {
+      const fix = await locateOnce();
+      setHere(fix);
+      centre(fix);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setLocating(false);
+    }
+  }
 
   const collections = useMemo(() => {
     const result: Record<number, Collection> = {};
@@ -259,8 +283,8 @@ export default function MapScreen({ navigation, route }: Props) {
           <Layer id="sketch-points" type="circle" filter={["==", ["geometry-type"], "Point"]} paint={{ "circle-radius": 4, "circle-color": "#ffffff", "circle-stroke-color": colors.accent, "circle-stroke-width": 2 }} />
         </GeoJSONSource>
 
-        {gpsWanted && lastFix && (
-          <GeoJSONSource id="gps" data={{ type: "Feature", geometry: { type: "Point", coordinates: [lastFix.longitude, lastFix.latitude] }, properties: {} }}>
+        {shownFix && (
+          <GeoJSONSource id="gps" data={{ type: "Feature", geometry: { type: "Point", coordinates: [shownFix.longitude, shownFix.latitude] }, properties: {} }}>
             <Layer id="gps-dot" type="circle" paint={{ "circle-radius": 7, "circle-color": "#1a73e8", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 }} />
           </GeoJSONSource>
         )}
@@ -270,9 +294,7 @@ export default function MapScreen({ navigation, route }: Props) {
         <IconButton mode="contained" icon="layers" accessibilityLabel="Layers" onPress={() => setShowLayers(true)} />
         <IconButton mode="contained" icon="format-list-bulleted" accessibilityLabel="Captured on this device" onPress={() => navigation.navigate("Captured", { projectId })} />
         <IconButton mode="contained" icon="clipboard-check-outline" accessibilityLabel="Features to check on the ground" onPress={() => navigation.navigate("Tasks", { projectId })} />
-        {gpsWanted && lastFix && (
-          <IconButton mode="contained" icon="crosshairs-gps" accessibilityLabel="Centre on my position" onPress={() => cameraRef.current?.easeTo({ center: [lastFix.longitude, lastFix.latitude], zoom: 18, duration: 400 })} />
-        )}
+        <IconButton mode="contained" icon="crosshairs-gps" accessibilityLabel="My location" loading={locating} disabled={locating} onPress={() => void showMyLocation()} />
       </View>
 
       <View style={local.panel}>

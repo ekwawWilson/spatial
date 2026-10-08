@@ -28,6 +28,7 @@ import { Stroke, Style } from "ol/style";
 import { useEffect, useRef } from "react";
 
 import { installEditing, installPolygonDraw, type EditCallbacks, type EditSettings } from "./editing";
+import { installLocate } from "./locate";
 
 /** Layers with more features than this are drawn from vector tiles. */
 export const GEOJSON_LIMIT = 2000;
@@ -64,6 +65,8 @@ export interface MapViewProps {
   editCallbacks?: EditCallbacks;
   /** Told whether the edit layer can be edited on the map (large tiled layers can't). */
   onEditAvailability?(available: boolean): void;
+  /** Told why "My location" couldn't find the device (null: cleared). */
+  onLocateProblem?(message: string | null): void;
   /** When set, the map draws one polygon (the planning area) and hands it over. */
   onBoundaryDrawn?: ((geometry: import("@spatial/map-core").GeoJSONGeometry) => void) | null;
 }
@@ -111,11 +114,13 @@ export function MapView(props: MapViewProps) {
       latest.current.onPointer([event.coordinate[0]!, event.coordinate[1]!]);
     });
     target.current.addEventListener("mouseleave", () => latest.current.onPointer(null));
+    const removeLocate = installLocate(olMap, (message) => latest.current.onLocateProblem?.(message));
     map.current = olMap;
     // Development builds expose the map so browser tests can find a vertex's
     // pixel position (e.g. to check snapping precision).
     if (import.meta.env.DEV) (window as unknown as { __spatialMap?: OlMap }).__spatialMap = olMap;
     return () => {
+      removeLocate();
       olMap.setTarget(undefined);
       map.current = null;
     };

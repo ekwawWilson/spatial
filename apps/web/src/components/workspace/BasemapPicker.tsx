@@ -7,6 +7,8 @@ export function BasemapPicker(props: {
   problem: string | null;
   onSelect(id: number | null): void;
   onOpacity(opacity: number): void;
+  /** Set when the chosen basemap is one of the district's own images. */
+  onZoomToImage?: (() => void) | null;
 }) {
   const selected = props.basemaps.find((b) => b.id === props.selectedId);
   return (
@@ -34,6 +36,11 @@ export function BasemapPicker(props: {
         aria-label="Basemap opacity"
         onChange={(e) => props.onOpacity(Number(e.target.value))}
       />
+      {props.onZoomToImage && (
+        <button type="button" className="secondary small" onClick={props.onZoomToImage}>
+          Zoom to image
+        </button>
+      )}
       {props.problem && (
         <p role="alert" className="error small">
           {props.problem}

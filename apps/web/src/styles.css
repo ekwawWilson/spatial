@@ -144,3 +144,5 @@ ol.history li { margin-bottom: 0.3rem; }
 
 /* Field conflicts */
 tr.differs td { background: #fff8e1; }
+.map-locate { top: 4.4em; left: 0.5em; }
+.map-problem { position: absolute; left: 3rem; top: 0.5rem; right: 0.5rem; max-width: 32rem; margin: 0; padding: 0.4rem 0.6rem; background: #fff4f2; border: 1px solid #e4572e; border-radius: 4px; font-size: 0.9rem; }

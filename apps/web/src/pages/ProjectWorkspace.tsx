@@ -74,6 +74,9 @@ export function ProjectWorkspace() {
   const [basemapConfig, setBasemapConfig] = useState<BasemapConfig | null>(null);
   const [basemapOpacity, setBasemapOpacity] = useState(1);
   const [basemapProblem, setBasemapProblem] = useState<string | null>(null);
+  const [locateProblem, setLocateProblem] = useState<string | null>(null);
+  // The project's own imagery: where each image's basemap is on the ground.
+  const imagery = useLoad(() => api.listImagery(id), [api, id, districtId]);
 
   // Default to the first available basemap until the user picks one.
   const effectiveBasemapId = basemapId === undefined ? (basemaps.data?.[0]?.id ?? null) : basemapId;
@@ -138,6 +141,17 @@ export function ProjectWorkspace() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checklistAction, layersLoad.data]);
+
+  // "Show on map" from the imagery page: that image as the basemap, zoomed to it.
+  const showImagery = (location.state as { showImagery?: { basemap: number; bounds: number[] } } | null)?.showImagery;
+  useEffect(() => {
+    if (!showImagery) return;
+    navigate(location.pathname, { replace: true, state: null });
+    chooseBasemap(showImagery.basemap);
+    setZoomTo({ extent: showImagery.bounds, seq: Date.now() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showImagery]);
+  const imageBounds = imagery.data?.find((i) => i.basemap !== null && i.basemap === effectiveBasemapId && i.bounds)?.bounds ?? null;
 
   function chooseBasemap(value: number | null) {
     setBasemapId(value);
@@ -295,6 +309,7 @@ export function ProjectWorkspace() {
           problem={basemapProblem}
           onSelect={chooseBasemap}
           onOpacity={setBasemapOpacity}
+          onZoomToImage={imageBounds ? () => setZoomTo({ extent: imageBounds, seq: Date.now() }) : null}
         />
         <LayerTree
           layers={layers}
@@ -339,6 +354,7 @@ export function ProjectWorkspace() {
           basemap={basemapConfig}
           basemapOpacity={basemapOpacity}
           onBasemapError={setBasemapProblem}
+          onLocateProblem={setLocateProblem}
           edit={editing.settings}
           editCallbacks={editing.callbacks}
           onEditAvailability={editing.setAvailable}
@@ -355,6 +371,14 @@ export function ProjectWorkspace() {
               : null
           }
         />
+        {locateProblem && (
+          <p role="alert" className="map-problem">
+            {locateProblem}{" "}
+            <button type="button" className="link" onClick={() => setLocateProblem(null)}>
+              Dismiss
+            </button>
+          </p>
+        )}
         <div className="map-status" aria-live="polite">
           <span aria-label="Pointer position">{pointerText}</span>
           {measurement && (

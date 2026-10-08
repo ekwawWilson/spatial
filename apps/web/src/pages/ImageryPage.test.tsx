@@ -56,6 +56,9 @@ describe("imagery page", () => {
     expect(row).toHaveTextContent("300.0 MB");
     expect(within(row).getByLabelText("Capture date of Kasoa flight")).toHaveValue("2026-09-01");
     expect(screen.getByRole("alert")).toHaveTextContent("isn't georeferenced");
+    // A ready image can be opened on the map, zoomed to it; a failed one can't.
+    expect(within(row).getByRole("button", { name: "Show on map" })).toBeInTheDocument();
+    expect(within(screen.getByText("Bad file").closest("tr")!).queryByRole("button", { name: "Show on map" })).not.toBeInTheDocument();
   });
 
   it("uploads a GeoTIFF in pieces, then its details", async () => {

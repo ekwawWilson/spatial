@@ -21,7 +21,7 @@ Ordinary photos (JPEG from the drone's card) can't be used: they must be process
 The image is stored in its own coordinate system and is not altered. The map draws it in place alongside your layers.
 
 ## Using an orthophoto
-- **As a basemap:** it appears in the project's **Basemap** list as "*name* (imagery)", for everyone in the district.
+- **As a basemap:** it appears in the project's **Basemap** list as "*name* (imagery)", for everyone in the district. **Show on map** in the imagery list opens the project with that image as the basemap, zoomed to where it is; in the project, **Zoom to image** under the basemap list does the same.
 - **In the field, offline:** because it is the Assembly's own data, it may be stored on phones. When a field officer downloads the project, the image is offered as an **offline basemap**, covering the planning area. Set the planning area first.
 - **On the readiness checklist:** the "Recent imagery" item shows how many images the project has, the newest capture date and the pixel size. It can be marked ready when the newest image is under 12 months old. Correct a wrong capture date in the imagery list.
 

@@ -3,7 +3,9 @@
 A basemap is the background map under your layers: streets, satellite imagery, or your district's own aerial photos.
 
 ## Choosing a basemap in a project
-In a project, the **Basemap** box at the top of the layer panel lists what's available. Pick one, or **None**, and set its opacity with the slider. Your choice is remembered for that project on this device.
+In a project, the **Basemap** box at the top of the layer panel lists what's available. Pick one, or **None**, and set its opacity with the slider. Your choice is remembered for that project on this device. When the basemap is one of the district's own images, **Zoom to image** moves the map to it.
+
+The **◎ My location** button, under the zoom buttons on the map, shows where you are (the browser asks for permission the first time) and moves the map there. The blue circle is how precise the position is: a laptop on Wi-Fi may be off by tens of metres, a phone outdoors by a few. Your position stays on your device.
 
 If a basemap can't be shown (for example, its API key is missing or no longer valid), a message appears under the list instead of a blank map. Ask your district administrator to fix the key on the **Basemaps** page.
 

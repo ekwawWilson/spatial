@@ -97,8 +97,12 @@ jobs:
         run: SKIP_SYSTEM=true DIR="$PWD" scripts/ci-step.sh scripts/server-setup.sh localhost
       - name: Check it
         run: scripts/ci-step.sh scripts/qa-server-setup.sh
+      # Piped into bash, as the server's deploy key and curl ... | bash run it.
       - name: Run it again, as an update (backup first)
-        run: SKIP_SYSTEM=true DIR="$PWD" BRANCH="${{ github.head_ref || github.ref_name }}" scripts/ci-step.sh scripts/server-setup.sh
+        run: |
+          SKIP_SYSTEM=true DIR="$PWD" BRANCH="${{ github.head_ref || github.ref_name }}" \
+            scripts/ci-step.sh bash -c 'bash < scripts/server-setup.sh' | tee update.log
+          grep -q "Updated\." update.log
       - name: The update made a backup
         run: ls backups/*/db.dump
       - name: Logs on failure

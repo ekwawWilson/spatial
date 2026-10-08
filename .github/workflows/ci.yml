@@ -97,8 +97,12 @@ jobs:
         run: SKIP_SYSTEM=true DIR="$PWD" scripts/ci-step.sh scripts/server-setup.sh localhost
       - name: Check it
         run: scripts/ci-step.sh scripts/qa-server-setup.sh
+      # Piped into bash, as the server's deploy key and curl ... | bash run it.
       - name: Run it again, as an update (backup first)
-        run: SKIP_SYSTEM=true DIR="$PWD" BRANCH="${{ github.head_ref || github.ref_name }}" scripts/ci-step.sh scripts/server-setup.sh
+        run: |
+          SKIP_SYSTEM=true DIR="$PWD" BRANCH="${{ github.head_ref || github.ref_name }}" \
+            scripts/ci-step.sh bash -c 'bash < scripts/server-setup.sh' | tee update.log
+          grep -q "Updated\." update.log
       - name: The update made a backup
         run: ls backups/*/db.dump
       - name: Logs on failure
@@ -149,4 +153,7 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           # The server runs the update for this key whatever is asked.
-          ssh -i ~/.ssh/deploy_key -o ServerAliveInterval=30 -o StrictHostKeyChecking=yes "root@$HOST"
+          ssh -i ~/.ssh/deploy_key -o ServerAliveInterval=30 -o StrictHostKeyChecking=yes "root@$HOST" 2>&1 | tee deploy.log
+          test "${PIPESTATUS[0]}" -eq 0
+          # The update ends by saying so; anything else means it stopped early.
+          grep -q "Updated\." deploy.log || { echo "::error::The update on the server didn't finish."; exit 1; }

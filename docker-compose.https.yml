@@ -1,0 +1,46 @@
+# HTTPS in front of the production stack: Caddy on ports 80 and 443, with
+# certificates from Let's Encrypt. Use with the other two files:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.https.yml up -d --build --wait
+#
+# scripts/server-setup.sh puts all three in COMPOSE_FILE in .env, so on the
+# server a plain `docker compose ...` uses them. SITE_HOST in .env is the
+# site's address.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SITE_HOST: ${SITE_HOST:?Set SITE_HOST in .env to the site's address}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "10"
+
+  # Only Caddy is reachable from outside.
+  web:
+    ports: !reset []
+
+  backend:
+    environment:
+      # Caddy, then the web app's nginx: the visitor's own address is two
+      # proxies back, which is what the rate limits count by.
+      NUM_PROXIES: "2"
+
+volumes:
+  # Certificates and the Let's Encrypt account: keep them across restarts.
+  caddy-data:
+  caddy-config:

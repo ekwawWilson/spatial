@@ -98,7 +98,7 @@ jobs:
       - name: Check it
         run: scripts/ci-step.sh scripts/qa-server-setup.sh
       - name: Run it again, as an update (backup first)
-        run: SKIP_SYSTEM=true DIR="$PWD" BRANCH="${{ github.ref_name }}" scripts/ci-step.sh scripts/server-setup.sh
+        run: SKIP_SYSTEM=true DIR="$PWD" BRANCH="${{ github.head_ref || github.ref_name }}" scripts/ci-step.sh scripts/server-setup.sh
       - name: The update made a backup
         run: ls backups/*/db.dump
       - name: Logs on failure

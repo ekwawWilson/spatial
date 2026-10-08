@@ -20,6 +20,8 @@ step "2. The web app is served, with security headers"
 HEADERS=$(curl -fsS -D - -o /dev/null "$SITE/")
 echo "$HEADERS" | grep -i "x-content-type-options: nosniff" >/dev/null || fail "no nosniff header"
 echo "$HEADERS" | grep -i "x-frame-options: deny" >/dev/null || fail "no frame-options header"
+# Map tile servers (OpenStreetMap) refuse requests that don't say which site they're from.
+echo "$HEADERS" | grep -i "referrer-policy: strict-origin-when-cross-origin" >/dev/null || fail "the referrer policy would get map tiles blocked"
 curl -fsS "$SITE/" | grep -q '<div id="root"' || fail "the page isn't the web app"
 curl -fsS "$SITE/projects/5/checklist" | grep -q '<div id="root"' || fail "deep links don't reach the web app"
 echo "  web app served; nosniff and frame-options present; deep links work"

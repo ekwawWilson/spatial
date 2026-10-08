@@ -721,6 +721,26 @@ export interface Imagery {
   created_at: string;
 }
 
+/** A GeoTIFF being uploaded in pieces. */
+export interface ImageryUpload {
+  id: string;
+  file_name: string;
+  size: number;
+  received: number;
+  /** The largest piece the server accepts, in bytes. */
+  chunk_size: number;
+}
+
+/** What is said about an image when it is uploaded. */
+export interface ImageryDetails {
+  project: number;
+  name?: string;
+  kind: "ortho" | "dem";
+  capture_date?: string;
+  source?: string;
+  crs?: string;
+}
+
 export interface ContourResult {
   layer: number;
   layer_name: string;

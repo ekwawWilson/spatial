@@ -15,7 +15,8 @@ Ordinary photos (JPEG from the drone's card) can't be used: they must be process
 ## Uploading
 1. Choose the file and the **kind**: orthophoto, or elevation model.
 2. Give it a name, the date it was **captured**, and who captured it. If the file carries a capture date, it is filled in for you.
-3. Choose **Upload**. The image is checked and converted in the background; the list shows **Ready** when it is done, or **Failed** with the reason.
+3. Choose **Upload**. The file is sent in pieces, with a progress bar: keep the page open until it reaches 100%. If the connection drops, the upload waits and carries on from where it stopped, by itself; a slow connection only makes it take longer. An upload left unfinished for a day is removed.
+4. The image is then checked and converted in the background; the list shows **Ready** when it is done, or **Failed** with the reason.
 
 The image is stored in its own coordinate system and is not altered. The map draws it in place alongside your layers.
 

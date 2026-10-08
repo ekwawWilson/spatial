@@ -52,6 +52,8 @@ import type {
   SyncConflictDetail,
   ContourResult,
   Imagery,
+  ImageryDetails,
+  ImageryUpload,
   DevelopmentStandard,
   LayerRoleRow,
   RelationsRegistry,
@@ -94,7 +96,12 @@ export interface ApiClientOptions {
   getDistrictId?: () => number | null;
   /** Called when the refresh token is rejected: the user must sign in again. */
   onSessionExpired?: () => void;
+  /** Milliseconds to wait before retry number `attempt` of a dropped upload piece. */
+  retryDelay?: (attempt: number) => number;
 }
+
+/** How often a piece of an upload is retried after the connection drops. */
+const UPLOAD_RETRIES = 8;
 
 type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -168,6 +175,20 @@ export function createApiClient(options: ApiClientOptions = {}) {
       refreshing = null;
     });
     return refreshing;
+  }
+
+  const retryDelay = options.retryDelay ?? ((attempt: number) => Math.min(30_000, 1000 * 2 ** attempt));
+
+  /** Raw bytes, authenticated (a piece of an upload). Network errors are thrown. */
+  async function sendBytes(method: Method, path: string, body: Blob): Promise<Response> {
+    const send = () => {
+      const h = headers(false);
+      h.set("Content-Type", "application/octet-stream");
+      return doFetch(`${root}${path}`, { method, headers: h, body });
+    };
+    let response = await send();
+    if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
+    return response;
   }
 
   /** An authenticated file download. */
@@ -480,19 +501,40 @@ export function createApiClient(options: ApiClientOptions = {}) {
     // --- Drone and raster imagery ------------------------------------------------------
     listImagery: (projectId: number) => request<Imagery[]>("GET", `/api/imagery/${query({ project: projectId })}`),
     getImagery: (id: number) => request<Imagery>("GET", `/api/imagery/${id}/`),
-    /** Uploads a GeoTIFF; processing runs in the background (poll getImagery). */
-    async uploadImagery(data: { project: number; file: File; name?: string; kind: "ortho" | "dem"; capture_date?: string; source?: string; crs?: string }): Promise<Imagery> {
-      const form = new FormData();
-      for (const [key, value] of Object.entries(data)) {
-        // The upload calls the image's source "captured_by".
-        const name = key === "source" ? "captured_by" : key;
-        if (value !== undefined && value !== "") form.set(name, value instanceof File ? value : String(value));
+    /**
+     * Uploads a GeoTIFF in pieces, so a slow or unsteady connection can't lose
+     * it: each piece is a short request, and after a dropped connection the
+     * upload carries on from what the server has. Processing then runs in the
+     * background (poll getImagery).
+     */
+    async uploadImagery(data: ImageryDetails & { file: File }, onProgress?: (fraction: number) => void): Promise<Imagery> {
+      const { file, source, ...details } = data;
+      const upload = await request<ImageryUpload>("POST", "/api/imagery/uploads/", { file_name: file.name, size: file.size });
+      const base = `/api/imagery/uploads/${upload.id}`;
+      let received = upload.received;
+      let failures = 0;
+      onProgress?.(0);
+      while (received < file.size) {
+        const piece = file.slice(received, received + upload.chunk_size);
+        let response: Response;
+        try {
+          response = await sendBytes("PUT", `${base}/chunk/${query({ offset: received })}`, piece);
+        } catch (err) {
+          // The connection dropped: wait, then the server says where to carry on.
+          failures += 1;
+          if (failures > UPLOAD_RETRIES) throw err;
+          await new Promise((resolve) => setTimeout(resolve, retryDelay(failures)));
+          continue;
+        }
+        if (!response.ok && response.status !== 409) throw await toApiError(response);
+        // 409: the server's copy ends elsewhere (a retried piece); carry on from there.
+        received = ((await response.json()) as ImageryUpload).received;
+        failures = 0;
+        onProgress?.(received / file.size);
       }
-      const send = () => doFetch(`${root}/api/imagery/`, { method: "POST", headers: headers(false), body: form });
-      let response = await send();
-      if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
-      if (!response.ok) throw await toApiError(response);
-      return (await response.json()) as Imagery;
+      const body: Record<string, unknown> = { ...details, captured_by: source };
+      for (const key of Object.keys(body)) if (body[key] === undefined || body[key] === "") delete body[key];
+      return request<Imagery>("POST", `${base}/finish/`, body);
     },
     updateImagery: (id: number, data: Partial<Pick<Imagery, "name" | "capture_date" | "source">>) =>
       request<Imagery>("PATCH", `/api/imagery/${id}/`, data),

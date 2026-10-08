@@ -176,6 +176,7 @@ function UploadForm(props: { projectId: number; systems: CoordinateSystem[]; onU
   const [source, setSource] = useState("");
   const [crs, setCrs] = useState("");
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -183,7 +184,8 @@ function UploadForm(props: { projectId: number; systems: CoordinateSystem[]; onU
     setBusy(true);
     props.onError(null);
     try {
-      await api.uploadImagery({ project: props.projectId, file, kind, name, capture_date: captureDate, source, crs });
+      setProgress(0);
+      await api.uploadImagery({ project: props.projectId, file, kind, name, capture_date: captureDate, source, crs }, setProgress);
       setFile(null);
       setName("");
       (event.target as HTMLFormElement).reset();
@@ -236,11 +238,20 @@ function UploadForm(props: { projectId: number; systems: CoordinateSystem[]; onU
             ))}
         </select>
       </label>
-      <p className="muted small">Up to 500 MB. The capture date feeds the readiness checklist's "recent imagery" item.</p>
+      <p className="muted small">
+        Up to 500 MB. Large files are sent in pieces: keep this page open until the upload finishes. If the connection drops, the upload
+        carries on by itself. The capture date feeds the readiness checklist's "recent imagery" item.
+      </p>
       <div className="inline-form">
         <button type="submit" disabled={!file || busy}>
           {busy ? "Uploading…" : "Upload"}
         </button>
+        {busy && (
+          <>
+            <progress aria-label="Upload progress" max={1} value={progress} />
+            <span role="status">{Math.floor(progress * 100)}%</span>
+          </>
+        )}
       </div>
     </form>
   );

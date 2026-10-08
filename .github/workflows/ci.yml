@@ -120,3 +120,33 @@ jobs:
       - name: Logs on failure
         if: failure()
         run: docker compose -f docker-compose.yml -f docker-compose.prod.yml logs --tail=200
+
+  # Deploys main to the server once every check above has passed. Needs the
+  # repository secrets DEPLOY_HOST, DEPLOY_SSH_KEY and DEPLOY_KNOWN_HOSTS
+  # (docs/ops/digitalocean.md, "Automatic deployment"); without them it
+  # only says so. On the server, that key may run nothing but the update.
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [backend, web, mobile, e2e, production, server-setup]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    timeout-minutes: 90
+    steps:
+      - name: Deploy to the server
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$HOST" ] || [ -z "$KEY" ] || [ -z "$KNOWN_HOSTS" ]; then
+            echo "::notice::The deployment secrets aren't set, so nothing was deployed."
+            exit 0
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # The server runs the update for this key whatever is asked.
+          ssh -i ~/.ssh/deploy_key -o ServerAliveInterval=30 -o StrictHostKeyChecking=yes "root@$HOST"

@@ -59,6 +59,33 @@ curl -fsSL https://raw.githubusercontent.com/ekwawWilson/spatial/main/scripts/se
 ```
 It backs up first, then fetches the newest code, rebuilds and restarts. `.env` is never replaced. Install only versions whose automatic tests passed ([CI/CD](deployment.md#automatic-testing-and-safe-updates-cicd)).
 
+## Automatic deployment
+Once set up, every change merged into `main` is deployed by itself, but only after all the automatic tests pass (the `deploy` job in `.github/workflows/ci.yml`). It does exactly what running the update by hand does: a backup, the newest code, a rebuild and restart. It needs a key that may do nothing on the server except run that update. Set it up once, from your own computer:
+
+1. Make the key:
+   ```bash
+   ssh-keygen -t ed25519 -N "" -C "github-actions-deploy spatial" -f spatial-deploy-key
+   ```
+2. Let it run the update on the droplet, and nothing else:
+   ```bash
+   printf 'command="cd /opt/spatial && git fetch -q origin main && git show origin/main:scripts/server-setup.sh | bash",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty %s\n' "$(cat spatial-deploy-key.pub)" \
+     | ssh root@<droplet IP> 'cat >> ~/.ssh/authorized_keys'
+   ```
+3. Read the droplet's own key, so GitHub can be sure it's talking to your droplet:
+   ```bash
+   ssh-keyscan -t ed25519 <droplet IP>
+   ```
+4. On GitHub, in the repository: **Settings → Secrets and variables → Actions → New repository secret**, three times:
+
+   | Name | Value |
+   |---|---|
+   | `DEPLOY_HOST` | the droplet's IP address |
+   | `DEPLOY_SSH_KEY` | everything in the file `spatial-deploy-key` (the one **without** `.pub`), including the BEGIN and END lines |
+   | `DEPLOY_KNOWN_HOSTS` | the line printed in step 3 |
+5. Delete `spatial-deploy-key` and `spatial-deploy-key.pub` from your computer; GitHub has what it needs.
+
+The next merge into `main` then deploys; the run's `deploy` job shows the update's output. To stop automatic deployment, delete the `DEPLOY_SSH_KEY` secret (the job then only notes that nothing was deployed), and remove the key's line from `/root/.ssh/authorized_keys` on the droplet.
+
 ## Day to day
 On the droplet, in `/opt/spatial`, a plain `docker compose` works with the production set-up:
 

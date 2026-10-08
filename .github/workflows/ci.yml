@@ -149,4 +149,7 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           # The server runs the update for this key whatever is asked.
-          ssh -i ~/.ssh/deploy_key -o ServerAliveInterval=30 -o StrictHostKeyChecking=yes "root@$HOST"
+          ssh -i ~/.ssh/deploy_key -o ServerAliveInterval=30 -o StrictHostKeyChecking=yes "root@$HOST" 2>&1 | tee deploy.log
+          test "${PIPESTATUS[0]}" -eq 0
+          # The update ends by saying so; anything else means it stopped early.
+          grep -q "Updated\." deploy.log || { echo "::error::The update on the server didn't finish."; exit 1; }

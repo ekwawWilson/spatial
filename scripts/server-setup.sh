@@ -124,7 +124,9 @@ main() {
 
   step "Build and start (the first build takes 10-20 minutes)"
   docker compose up -d --build --wait --remove-orphans
+  # Old images and the build cache would otherwise fill a small disk, deploy by deploy.
   docker image prune -f >/dev/null
+  docker builder prune -af >/dev/null
 
   if [ "$SKIP_SYSTEM" != true ]; then
     step "Nightly backups"

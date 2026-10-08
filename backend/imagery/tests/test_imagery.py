@@ -448,3 +448,114 @@ def test_roles_and_tenancy(
         planner.get(reverse("imagery-list"), {"project": project["id"]}).json()[0]["id"]
         == item["id"]
     )
+
+
+# --- Uploading in pieces (large files, slow connections) --------------------------------------
+
+
+def start_upload(client, name, size):
+    return client.post(
+        reverse("imagery-start-upload"), {"file_name": name, "size": size}, format="json"
+    )
+
+
+def put_piece(client, upload_id, offset, data):
+    url = reverse("imagery-upload-chunk", kwargs={"upload_id": upload_id})
+    return client.put(f"{url}?offset={offset}", data, content_type="application/octet-stream")
+
+
+def finish(client, upload_id, capture, **details):
+    with capture(execute=True):
+        return client.post(
+            reverse("imagery-finish-upload", kwargs={"upload_id": upload_id}),
+            details,
+            format="json",
+        )
+
+
+def test_a_large_file_arrives_in_pieces_and_survives_retries(
+    planner, project, ortho_file, django_capture_on_commit_callbacks
+):
+    data = ortho_file.read_bytes()
+    third = len(data) // 3
+    pieces = [data[:third], data[third : 2 * third], data[2 * third :]]
+    started = start_upload(planner, "flight.tif", len(data))
+    assert started.status_code == 201, started.content
+    upload_id = started.json()["id"]
+    assert started.json()["received"] == 0 and started.json()["chunk_size"] >= 1024 * 1024
+
+    assert put_piece(planner, upload_id, 0, pieces[0]).json()["received"] == third
+    # The same piece again (its answer was lost): refused, nothing written twice.
+    again = put_piece(planner, upload_id, 0, pieces[0])
+    assert again.status_code == 409 and again.json()["received"] == third
+    # A piece from too far ahead: refused, with where to carry on from.
+    ahead = put_piece(planner, upload_id, 2 * third, pieces[2])
+    assert ahead.status_code == 409 and ahead.json()["received"] == third
+    # Finishing early is refused.
+    early = finish(planner, upload_id, django_capture_on_commit_callbacks, project=project["id"])
+    assert early.status_code == 400 and "isn't complete" in str(early.json())
+
+    put_piece(planner, upload_id, third, pieces[1])
+    status = planner.get(reverse("imagery-upload-status", kwargs={"upload_id": upload_id}))
+    assert status.json()["received"] == 2 * third
+    assert put_piece(planner, upload_id, 2 * third, pieces[2]).json()["received"] == len(data)
+
+    done = finish(
+        planner,
+        upload_id,
+        django_capture_on_commit_callbacks,
+        project=project["id"],
+        name="Pieces",
+        capture_date=str(date.today()),
+        captured_by="Drone team",
+    )
+    item = ready(planner, done)
+    assert (item["name"], item["original_name"], item["source"]) == (
+        "Pieces",
+        "flight.tif",
+        "Drone team",
+    )
+    assert item["crs"].startswith("EPSG:32630") and item["basemap"] is not None
+    # The upload is used up.
+    gone = planner.get(reverse("imagery-upload-status", kwargs={"upload_id": upload_id}))
+    assert gone.status_code == 404
+
+
+def test_pieces_are_checked_and_belong_to_whoever_started_them(
+    planner,
+    api,
+    members_a,
+    district_a,
+    district_b,
+    make_member,
+    project,
+    django_capture_on_commit_callbacks,
+):
+    capture = django_capture_on_commit_callbacks
+    assert start_upload(planner, "notes.pdf", 10).status_code == 400
+    assert start_upload(planner, "huge.tif", 600 * 1024 * 1024).status_code == 400
+    viewer = api(members_a[Role.VIEWER], district_a)
+    assert start_upload(viewer, "flight.tif", 10).status_code == 403
+
+    # Not a TIFF inside: refused when it is finished.
+    started = start_upload(planner, "fake.tif", 10).json()
+    put_piece(planner, started["id"], 0, b"not a tiff")
+    refused = finish(planner, started["id"], capture, project=project["id"])
+    assert refused.status_code == 400 and "isn't a GeoTIFF" in str(refused.json())
+    assert planner.get(reverse("imagery-list")).json() == []
+
+    # More than declared.
+    started = start_upload(planner, "small.tif", 4).json()
+    assert put_piece(planner, started["id"], 0, b"II*\x00more").status_code == 400
+
+    # Someone else, in the same district or another, can't see or add to it.
+    colleague = api(make_member(district_a, Role.PLANNER, "a.planner2@example.test"), district_a)
+    outsider = api(make_member(district_b, Role.PLANNER, "b.planner@example.test"), district_b)
+    status_url = reverse("imagery-upload-status", kwargs={"upload_id": started["id"]})
+    for client in (colleague, outsider):
+        assert client.get(status_url).status_code == 404
+        assert put_piece(client, started["id"], 0, b"II*\x00").status_code == 404
+        finished = finish(client, started["id"], capture, project=project["id"])
+        assert finished.status_code == 404
+    # Made-up ids are simply not found.
+    assert planner.get(status_url.replace(started["id"], "0" * 32)).status_code == 404

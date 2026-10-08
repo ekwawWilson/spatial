@@ -58,22 +58,26 @@ describe("imagery page", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("isn't georeferenced");
   });
 
-  it("uploads a GeoTIFF with its details", async () => {
-    const api = backend([], { "POST /api/imagery/": () => ({ status: 201, body: image(3, { status: "queued" }) }) });
+  it("uploads a GeoTIFF in pieces, then its details", async () => {
+    const api = backend([], {
+      "POST /api/imagery/uploads/": () => ({ status: 201, body: { id: "u1", file_name: "june.tif", size: 1, received: 0, chunk_size: 8 * 1024 * 1024 } }),
+      "PUT /api/imagery/uploads/u1/chunk/": () => ({ body: { id: "u1", file_name: "june.tif", size: 1, received: 1, chunk_size: 8 * 1024 * 1024 } }),
+      "POST /api/imagery/uploads/u1/finish/": () => ({ status: 201, body: image(3, { status: "queued" }) }),
+    });
     renderApp(api.fetch, { tokens: signedIn, route: "/projects/5/imagery" });
     const form = await screen.findByRole("form", { name: "Upload imagery" });
     await userEvent.upload(within(form).getByLabelText("GeoTIFF file"), new File(["x"], "june.tif", { type: "image/tiff" }));
     await userEvent.selectOptions(within(form).getByLabelText("Kind"), "dem");
     await userEvent.type(within(form).getByLabelText("Captured on"), "2026-06-15");
     await userEvent.click(within(form).getByRole("button", { name: "Upload" }));
-    await waitFor(() => expect(api.calls.some((c) => c.method === "POST")).toBe(true));
-    const body = api.calls.find((c) => c.method === "POST")!.body as FormData;
-    expect(body.get("project")).toBe("5");
-    expect(body.get("kind")).toBe("dem");
-    expect(body.get("capture_date")).toBe("2026-06-15");
-    expect(body.get("file")).toBeInstanceOf(File);
-    expect(body.has("crs")).toBe(false); // read from the file unless chosen
-    expect(await screen.findByRole("status")).toHaveTextContent("being checked and converted");
+    expect(await screen.findByText(/being checked and converted/)).toBeInTheDocument();
+    const call = (method: string, path: string) => api.calls.find((c) => c.method === method && c.path.startsWith(path));
+    expect(call("POST", "/api/imagery/uploads/")?.body).toEqual({ file_name: "june.tif", size: 1 });
+    const piece = call("PUT", "/api/imagery/uploads/u1/chunk/")!;
+    expect(piece.path).toBe("/api/imagery/uploads/u1/chunk/?offset=0");
+    expect(piece.body).toBeInstanceOf(Blob);
+    // Read from the file unless chosen: no crs.
+    expect(call("POST", "/api/imagery/uploads/u1/finish/")?.body).toEqual({ project: 5, kind: "dem", capture_date: "2026-06-15" });
   });
 
   it("makes contours from an elevation model", async () => {

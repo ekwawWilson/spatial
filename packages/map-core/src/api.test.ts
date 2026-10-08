@@ -130,3 +130,65 @@ describe("authenticated requests", () => {
     expect(tokens.get()).toBeNull();
   });
 });
+
+describe("uploadImagery", () => {
+  /** A fake server that keeps the bytes it has; `drop` makes listed PUTs fail like a dropped connection. */
+  function server(chunkSize: number, drop: number[] = []) {
+    let stored = new Uint8Array(0);
+    let puts = 0;
+    const offsets: number[] = [];
+    const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
+      const path = url.replace(/\?.*$/, "");
+      if (path === "/api/imagery/uploads/") return json({ id: "u1", file_name: "f.tif", size: 10, received: 0, chunk_size: chunkSize }, 201);
+      if (path.endsWith("/chunk/")) {
+        puts += 1;
+        const offset = Number(new URL(url, "http://x").searchParams.get("offset"));
+        offsets.push(offset);
+        const body = new Uint8Array(await (init?.body as Blob).arrayBuffer());
+        if (drop.includes(puts)) {
+          // The bytes arrived but the answer was lost.
+          if (offset === stored.length) stored = new Uint8Array([...stored, ...body]);
+          throw new TypeError("Failed to fetch");
+        }
+        if (offset !== stored.length) return json({ id: "u1", received: stored.length }, 409);
+        stored = new Uint8Array([...stored, ...body]);
+        return json({ id: "u1", received: stored.length });
+      }
+      if (path.endsWith("/finish/")) return json({ id: 5, ...JSON.parse(String(init?.body)) }, 201);
+      throw new Error(`unexpected ${url}`);
+    });
+    return { fetchImpl, offsets, stored: () => stored };
+  }
+
+  const file = () => new File([new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])], "f.tif");
+
+  it("sends the file in pieces, reports progress, then finishes with the details", async () => {
+    const fake = server(4);
+    const progress: number[] = [];
+    const api = createApiClient({ fetch: fake.fetchImpl as typeof fetch, retryDelay: () => 0 });
+    const result = await api.uploadImagery({ project: 3, kind: "ortho", file: file(), name: "", source: "Drone team" }, (p) => progress.push(p));
+    expect(fake.offsets).toEqual([0, 4, 8]);
+    expect(Array.from(fake.stored())).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(progress).toEqual([0, 0.4, 0.8, 1]);
+    // Empty values are left out; "source" is sent as captured_by.
+    expect(result).toEqual({ id: 5, project: 3, kind: "ortho", captured_by: "Drone team" });
+    const put = fake.fetchImpl.mock.calls[1] as unknown[];
+    expect(header(put, "Content-Type")).toBe("application/octet-stream");
+  });
+
+  it("carries on after a dropped connection without sending bytes twice", async () => {
+    const fake = server(4, [2]);
+    const api = createApiClient({ fetch: fake.fetchImpl as typeof fetch, retryDelay: () => 0 });
+    await api.uploadImagery({ project: 3, kind: "ortho", file: file() });
+    // Piece 2 arrived but its answer was lost; the retry is refused (409) and the
+    // upload carries on from where the server's copy ends.
+    expect(fake.offsets).toEqual([0, 4, 4, 8]);
+    expect(Array.from(fake.stored())).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  });
+
+  it("gives up after repeated failures", async () => {
+    const fake = server(4, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    const api = createApiClient({ fetch: fake.fetchImpl as typeof fetch, retryDelay: () => 0 });
+    await expect(api.uploadImagery({ project: 3, kind: "ortho", file: file() })).rejects.toThrow("Failed to fetch");
+  });
+});

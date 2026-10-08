@@ -11,7 +11,7 @@ export function fakeBackend(routes: Record<string, Handler>) {
     const url = new URL(String(input), "http://test");
     const method = init?.method ?? "GET";
     const headers = new Headers(init?.headers);
-    const body = init?.body instanceof FormData ? init.body : init?.body ? JSON.parse(String(init.body)) : undefined;
+    const body = init?.body instanceof FormData || init?.body instanceof Blob ? init.body : init?.body ? JSON.parse(String(init.body)) : undefined;
     calls.push({ method, path: url.pathname + url.search, body, headers });
     const handler = routes[`${method} ${url.pathname}`];
     if (!handler) return new Response(JSON.stringify({ detail: "Not found." }), { status: 404 });

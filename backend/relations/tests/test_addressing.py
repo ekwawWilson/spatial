@@ -146,7 +146,12 @@ def test_properties_are_numbered_along_their_street(
     )
 
     # Nothing is on the map yet. Viewers can look; planners apply.
-    assert "house_no" not in world.features("buildings", "property_id")["B-001"]["properties"]
+    before = world.features("buildings", "property_id")["B-001"]
+    assert "house_no" not in before["properties"]
+    updates = AuditLog.objects.filter(
+        table_name="projects_feature", row_id=str(before["id"]), action="UPDATE"
+    )
+    audited = updates.count()
     viewer = api(members_a[Role.VIEWER], district_a)
     assert (
         viewer.get(url).status_code == 200
@@ -160,13 +165,9 @@ def test_properties_are_numbered_along_their_street(
         "53",
         "Main Street",
     )
-    assert building["meta"]["version"] == 2
-    assert (
-        AuditLog.objects.filter(
-            table_name="projects_feature", row_id=str(building["id"]), action="UPDATE"
-        ).count()
-        == 1
-    )
+    # One audited change to the property.
+    assert building["meta"]["version"] == before["meta"]["version"] + 1
+    assert updates.count() == audited + 1
     # Applying again changes nothing; the proposal now matches the map.
     assert planner.post(url, {}, format="json").json()["written"] == {"streets": 0, "properties": 0}
     assert planner.get(url).json()["changes"] == 0
@@ -193,4 +194,7 @@ def test_streets_without_a_code_get_the_next_free_one(world):
     assert proposal["streets"] == 5 and proposal["streets_without_a_name"] == 1
     written = world.client.post(url, {}, format="json").json()["written"]
     assert written["streets"] == 2
-    assert world.features("streets", "name")["New Road"]["properties"]["street_code"] == "DA-001"
+    # Read by code: the street without a name has no name to read it by.
+    coded = world.features("streets", "street_code")
+    assert coded["DA-001"]["properties"]["name"] == "New Road"
+    assert not coded["DA-002"]["properties"].get("name")

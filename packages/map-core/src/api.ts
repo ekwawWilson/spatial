@@ -55,6 +55,8 @@ import type {
   ImageryDetails,
   ImageryUpload,
   DevelopmentStandard,
+  AddressingOptions,
+  AddressProposal,
   AdoptReport,
   Compliance,
   CaseList,
@@ -669,6 +671,15 @@ export function createApiClient(options: ApiClientOptions = {}) {
       if (!response.ok) throw await toApiError(response);
       return { blob: await response.blob(), scale: Number(response.headers.get("X-Sheet-Scale") ?? 0) };
     },
+
+    // --- Street addressing -----------------------------------------------------------------
+    /** Proposes street codes and property numbers; changes nothing. */
+    proposeAddresses: (projectId: number, options: AddressingOptions = {}) =>
+      request<AddressProposal>("GET", `/api/projects/${projectId}/addressing/${query(options)}`),
+    addressSchedule: (projectId: number, options: AddressingOptions = {}) => blob(`/api/projects/${projectId}/addressing/${query({ ...options, type: "csv" })}`),
+    /** Writes the proposal to the map. */
+    applyAddresses: (projectId: number, options: AddressingOptions = {}) =>
+      request<{ written: { streets: number; properties: number }; numbered: number }>("POST", `/api/projects/${projectId}/addressing/`, options),
 
     // --- The district's statutory deadlines -------------------------------------------------
     compliance: () => request<Compliance>("GET", "/api/reports/compliance/"),

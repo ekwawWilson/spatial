@@ -211,3 +211,10 @@ Built from the published law and standards. What needs the Assembly's own docume
 - Tested: the helpers (frame, scale fitting, grid interval) on known values, and the endpoint on the fixture community (`projects/tests/test_sheet.py`). The drawing itself is checked by eye.
 - **Not done:** imagery or a basemap under the plan; the national colour patterns (stripes, dots); a sheet index for areas that need several sheets.
 
+## Phase 20 notes (street codes and property numbers; in progress on `main`)
+- `relations/addressing.py`: `propose` gives every street a code (kept where it has one, else the next free `<district code>-nnn`) and every property a number from its distance along its nearest street, odd on one side and even on the other. Three methods: every 10 m, every metre, or one after another. `apply` writes only the values that differ, through the audited feature table.
+- `GET /api/projects/<id>/addressing/` previews (open to `project.view`), `?type=csv` is the whole schedule, `POST` applies (`relations.edit`). No new models: the numbers live in the layers' own fields (`street_code`, `house_no`, `street`).
+- The side of the street is the turn from the street's heading to the property's bearing; numbering from the far end swaps the sides.
+- `relations/tests/test_addressing.py` checks the fixture's six buildings on Main Street against numbers worked out by hand.
+- **Not done:** street naming as a workflow (proposal, Assembly approval, gazette); a street drawn as several lines is numbered per line; address labels on the plan sheet; ghanapostgps digital addresses; the national manual's exact convention is a setting until the Assembly confirms its own.
+

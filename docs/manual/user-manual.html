@@ -45,6 +45,7 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <li><a href="#plan-sheets">Plan sheets</a></li>
 <li><a href="#relationships">Relationships between features</a></li>
 <li><a href="#zoning">Zoning and the national standards</a></li>
+<li><a href="#addressing">Street addressing</a></li>
 </ul><p class="part">Development control</p><ul>
 <li><a href="#permits">Planning and development permits</a></li>
 <li><a href="#public-data-room">The Public Data Room</a></li>
@@ -447,6 +448,43 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <p>Overdue duties are shown in red.</p>
 <h3>Who can do this</h3>
 <p>Everyone in the district can see the zones, the standards and the register. Planners and district administrators record schemes and colour the zoning layer. Only district administrators adopt or change the district's standards.</p>
+<h2 id="addressing">Street addressing</h2>
+<p><em>Everyone who can see a project can see the proposal and download the schedule. Writing it to the map needs the right to edit relationships (planners and district administrators).</em></p>
+<p>L.I. 2384 r.28 has every Assembly name its streets and number its properties. This page gives every street a <strong>code</strong> and every property a <strong>number</strong> worked out from where the property stands along its street. Open a project and choose <strong>Addressing</strong>.</p>
+<p>What you see first is a <strong>proposal</strong>. Nothing changes on the map until you choose <strong>Apply to the map</strong>.</p>
+<h3>Before you start</h3>
+<ul>
+<li>Say which layers hold the <strong>properties</strong> and the <strong>streets</strong> (Relationships, Layers).</li>
+<li>Give the streets their <strong>names</strong>. A street without a name still gets a code and its properties still get numbers, but the address has no street name in it; the page counts these for you.</li>
+<li>Draw each street as <strong>one line</strong> from end to end. A street drawn in pieces is numbered piece by piece.</li>
+</ul>
+<h3>How the numbers are worked out</h3>
+<ul>
+<li>Each property belongs to the <strong>nearest street</strong> within reach (100 m unless the project says otherwise).</li>
+<li>Its number comes from its <strong>distance from the start of the street</strong>, with <strong>odd numbers on one side and even on the other</strong>.</li>
+<li>Two properties that come out with the same number get a letter: 53, 53A, 53B.</li>
+</ul>
+<p>Choose how to number:</p>
+<table><thead><tr><th>Numbers</th><th>What it does</th><th>When to use it</th></tr></thead><tbody>
+<tr><td>By distance, every 10 m</td><td>A property 535 m along is number 53 or 54.</td><td>The usual choice. A new building between two others gets a number in between; nothing is renumbered.</td></tr>
+<tr><td>By distance, every metre</td><td>A property 535 m along is number 535 or 536.</td><td>Long roads with few properties.</td></tr>
+<tr><td>One after another</td><td>1, 3, 5 … on one side; 2, 4, 6 … on the other.</td><td>A fully built-up street that will not change.</td></tr>
+</tbody></table>
+<p><strong>Odd numbers on the:</strong> left or right, as you travel from the street's start.</p>
+<p><strong>Start each street from the end nearer:</strong> give the latitude and longitude of a place, such as the town centre, and every street is numbered from its end nearer that place. Left blank, each street starts at the end it was drawn from.</p>
+<p>Set these to the rules of the National Street Naming and Property Numbering Operational Manual as your Assembly applies them, and keep them the same across the district.</p>
+<h3>Street codes</h3>
+<p>A street with a code keeps it. A street without one is given the next free code: the district's code and a number (<code>SMA-004</code>), in order of street name.</p>
+<h3>Reading the proposal</h3>
+<ul>
+<li><strong>Properties numbered:</strong> how many of the layer's properties got a number.</li>
+<li><strong>Too far from any street:</strong> properties beyond reach of every street. Draw the missing street, or check the property is in the right place.</li>
+<li><strong>Numbers that would change:</strong> properties whose number on the map differs from the proposal. The table shows the number each has now, in red where it would change.</li>
+<li><strong>Download the schedule (CSV):</strong> every address, for checking in the field and for the signage contractor. The page shows the first few hundred.</li>
+</ul>
+<h3>Applying</h3>
+<p><strong>Apply to the map</strong> writes each street's code, and each property's number and street name, into the layers' own fields (<code>street_code</code> on streets; <code>house_no</code> and <code>street</code> on properties, added if the layers do not have them). Only values that differ are written, and every change is in the audit log with who made it.</p>
+<p>Applying twice changes nothing the second time. Changing the method later and applying again <strong>renumbers</strong> the properties: once number plates are up, treat the method as fixed.</p>
 <h2 id="permits">Planning and development permits</h2>
 <p><em>Physical Planning Department staff; the district administrator for decisions and fees.</em></p>
 <p>The platform runs a permit application from the day it is received to the certificate, in the steps and by the dates the Regulations set (L.I. 2384 r.43–46, and LUSPA's Guidelines on Development Permitting). Open a project and choose <strong>Permits</strong>.</p>

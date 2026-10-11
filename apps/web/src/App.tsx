@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { RequireAuth, RequirePermission, RequireSystemAdmin } from "./components/guards";
 import { AccountPage } from "./pages/AccountPage";
+import { AddressingPage } from "./pages/AddressingPage";
 import { AuditPage } from "./pages/AuditPage";
 import { BasemapsPage } from "./pages/BasemapsPage";
 import { ChecklistPage } from "./pages/ChecklistPage";
@@ -112,6 +113,14 @@ export function App() {
           element={
             <RequirePermission permission="enforcement.view">
               <CasePage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="projects/:projectId/addressing"
+          element={
+            <RequirePermission permission="project.view">
+              <AddressingPage />
             </RequirePermission>
           }
         />

@@ -1350,3 +1350,51 @@ export interface Compliance {
   dataroom: { is_open: boolean; published_projects: number; documents_on_display: number };
   week_ahead: LateRow[];
 }
+
+// --- Street addressing (Phase 20) -----------------------------------------------------------
+
+export type AddressingMethod = "decametric" | "metric" | "sequential";
+
+export interface AddressRow {
+  property: number;
+  label: string;
+  street: number;
+  street_name: string;
+  street_code: string;
+  side: "left" | "right";
+  /** Metres from the start of the street. */
+  distance_m: number;
+  off_street_m: number;
+  number: string;
+  address: string;
+  /** The number the property has on the map now ("" if none). */
+  current: string;
+}
+
+/** Street codes and property numbers as they would be: nothing is saved until applied. */
+export interface AddressProposal {
+  method: AddressingMethod;
+  method_label: string;
+  odd_side: "left" | "right";
+  start_near: [number, number] | null;
+  streets: number;
+  streets_without_a_name: number;
+  new_street_codes: { street: number; code: string }[];
+  properties: number;
+  numbered: number;
+  /** Too far from any street to be numbered on it; null when there are too many to count in one go. */
+  without_a_street: number | null;
+  /** Properties whose number would change. */
+  changes: number;
+  truncated: boolean;
+  /** The first few hundred rows; the schedule (CSV) has them all. */
+  rows: AddressRow[];
+  methods: Record<AddressingMethod, string>;
+}
+
+export interface AddressingOptions {
+  method?: AddressingMethod;
+  odd_side?: "left" | "right";
+  lon?: number;
+  lat?: number;
+}

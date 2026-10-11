@@ -99,6 +99,8 @@ class Application(models.Model):
     decided_on = models.DateField(null=True, blank=True)
     issued_on = models.DateField(null=True, blank=True)
     expires_on = models.DateField(null=True, blank=True)
+    # r.45(15)-(18): the Certificate of Habitation, once the finished development is inspected.
+    habitation_on = models.DateField(null=True, blank=True)
 
     # The automatic checks, as last run: advice to the committees.
     checks = models.JSONField(default=dict, blank=True)

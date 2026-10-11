@@ -73,6 +73,7 @@ def application_json(application: Application, request: Request, *, full: bool) 
         "issued_on": _day(application.issued_on),
         "expires_on": _day(application.expires_on),
         "expired": bool(application.expires_on and application.expires_on < today),
+        "habitation_on": _day(application.habitation_on),
         "next_due": due,
         "check_counts": (application.checks or {}).get("counts"),
     }
@@ -89,6 +90,7 @@ def application_json(application: Application, request: Request, *, full: bool) 
             "inspected_on": _day(application.inspected_on),
             "reported_on": _day(application.reported_on),
             "clocks": services.clocks(application, today),
+            "completion": services.completion(application, today),
             "requirements": services.required_documents(application),
             "extra_requirements": application.extra_requirements,
             "documents": [
@@ -295,6 +297,9 @@ class ApplicationViewSet(viewsets.GenericViewSet[Application]):
         "acknowledgement": "permit.view",
         "letter": "permit.view",
         "certificate": "permit.view",
+        "habitation_certificate": "permit.view",
+        "land_use_certificate": "permit.view",
+        "habitation": "permit.decide",
         "inspect": "permit.inspect",
         "decide": "permit.decide",
         "issue": "permit.decide",
@@ -326,6 +331,7 @@ class ApplicationViewSet(viewsets.GenericViewSet[Application]):
             OpenApiParameter("overdue", bool, description="Only those with a deadline passed"),
         ],
         responses=OpenApiTypes.OBJECT,
+        operation_id="permits_applications_list",
     )
     def list(self, request: Request) -> Response:
         qs = self.get_queryset()
@@ -591,6 +597,18 @@ class ApplicationViewSet(viewsets.GenericViewSet[Application]):
             raise _drf(exc) from exc
         return self._answer(application)
 
+    @extend_schema(request=DatedSerializer, responses=OpenApiTypes.OBJECT)
+    @action(detail=True, methods=["post"])
+    def habitation(self, request: Request, pk: str | None = None) -> Response:
+        """r.45(15)-(18): issues the Certificate of Habitation, within 14 days
+        of the inspection of the completed development."""
+        application, values = self._step(request, DatedSerializer)
+        try:
+            services.certify_habitation(application, self._on(values), request_user(request))
+        except DjangoValidationError as exc:
+            raise _drf(exc) from exc
+        return self._answer(application)
+
     @extend_schema(request=NoteSerializer, responses=OpenApiTypes.OBJECT)
     @action(detail=True, methods=["post"])
     def withdraw(self, request: Request, pk: str | None = None) -> Response:
@@ -673,6 +691,32 @@ class ApplicationViewSet(viewsets.GenericViewSet[Application]):
             raise Http404("The permit hasn't been issued.")
         stem = application.number.replace("/", "-")
         return self._pdf(documents.certificate(application), f"permit-{stem}")
+
+    @extend_schema(responses={(200, "application/pdf"): OpenApiTypes.BINARY})
+    @action(detail=True, methods=["get"], url_path="habitation-certificate")
+    def habitation_certificate(self, request: Request, pk: str | None = None) -> HttpResponse:
+        """The Certificate of Habitation (Form 43E)."""
+        application = self.get_object()
+        if application.habitation_on is None:
+            raise Http404("The Certificate of Habitation hasn't been issued.")
+        stem = application.number.replace("/", "-")
+        return self._pdf(documents.habitation_certificate(application), f"habitation-{stem}")
+
+    @extend_schema(responses={(200, "application/pdf"): OpenApiTypes.BINARY})
+    @action(detail=True, methods=["get"], url_path="land-use-certificate")
+    def land_use_certificate(self, request: Request, pk: str | None = None) -> HttpResponse:
+        """A Land Use Certificate for the site (Form 43F; r.46): its zone, from
+        the approved plan on the map."""
+        application = self.get_object()
+        # As found by the last check (checks run whenever the site or details change).
+        zone = (application.checks or {}).get("zone") or {}
+        if not zone.get("value"):
+            raise serializers.ValidationError(
+                "The site isn't in a zone on the map: put the site on the map, and say which"
+                " layer holds the zoning (or the parcels with their land use)."
+            )
+        stem = application.number.replace("/", "-")
+        return self._pdf(documents.land_use_certificate(application, zone), f"land-use-{stem}")
 
 
 @extend_schema(parameters=[DISTRICT_HEADER])

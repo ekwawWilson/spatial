@@ -641,6 +641,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     recordPermitFee: (id: number, data: { stage: "processing" | "permit"; amount: string; receipt: string; paid_on?: string }) =>
       request<PermitApplication>("POST", `/api/permits/applications/${id}/fees/`, data),
     issuePermit: (id: number, on?: string) => request<PermitApplication>("POST", `/api/permits/applications/${id}/issue/`, { on }),
+    certifyHabitation: (id: number, on?: string) => request<PermitApplication>("POST", `/api/permits/applications/${id}/habitation/`, { on }),
     withdrawPermit: (id: number, note = "") => request<PermitApplication>("POST", `/api/permits/applications/${id}/withdraw/`, { note }),
     async uploadPermitDocument(id: number, file: File, requirement = ""): Promise<PermitApplication> {
       const form = new FormData();
@@ -655,11 +656,20 @@ export function createApiClient(options: ApiClientOptions = {}) {
     downloadPermitDocument: (id: number) => blob(`/api/permits/documents/${id}/download/`),
     deletePermitDocument: (id: number) => request<void>("DELETE", `/api/permits/documents/${id}/`),
     /** The acknowledgement of receipt, the refusal or deferral letter, or the certificate, as PDF. */
-    permitPaper: (id: number, paper: "acknowledgement" | "letter" | "certificate") => blob(`/api/permits/applications/${id}/${paper}/`),
+    permitPaper: (id: number, paper: "acknowledgement" | "letter" | "certificate" | "habitation-certificate" | "land-use-certificate") => blob(`/api/permits/applications/${id}/${paper}/`),
     listPermitFees: () => request<PermitFee[]>("GET", "/api/permits/fees/"),
     createPermitFee: (data: Omit<PermitFee, "id" | "updated_at">) => request<PermitFee>("POST", "/api/permits/fees/", data),
     updatePermitFee: (id: number, data: Partial<PermitFee>) => request<PermitFee>("PATCH", `/api/permits/fees/${id}/`, data),
     deletePermitFee: (id: number) => request<void>("DELETE", `/api/permits/fees/${id}/`),
+    /** The project as a plan sheet (PDF) at a true scale in its own grid. `scale` is the scale used. */
+    async planSheet(projectId: number, options: { paper?: string; scale?: number; title?: string } = {}): Promise<{ blob: Blob; scale: number }> {
+      const send = () => doFetch(`${root}/api/projects/${projectId}/sheet/${query(options)}`, { headers: headers(false) });
+      let response = await send();
+      if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
+      if (!response.ok) throw await toApiError(response);
+      return { blob: await response.blob(), scale: Number(response.headers.get("X-Sheet-Scale") ?? 0) };
+    },
+
     // --- The district's statutory deadlines -------------------------------------------------
     compliance: () => request<Compliance>("GET", "/api/reports/compliance/"),
     compliancePdf: () => blob("/api/reports/compliance/pdf/"),

@@ -10,6 +10,8 @@ from xml.sax.saxutils import escape
 from django.conf import settings
 from django.db import connection
 
+from projects import geometry as geo
+
 from . import registry
 from .models import Application
 
@@ -27,22 +29,22 @@ def site_facts(application: Application) -> dict[str, Any]:
     """Where the site is, in the project's coordinate system, and its area."""
     if application.site_id is None:
         return {}
+    centre = geo.centre(application.site_id)
+    if centre is None:
+        return {}
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT ST_X(ST_Centroid(geom_native)), ST_Y(ST_Centroid(geom_native)),"
-            " ST_Area(geom_4326::geography), ST_Dimension(geom_4326)"
+            "SELECT ST_Area(geom_4326::geography), ST_Dimension(geom_4326)"
             " FROM projects_feature WHERE id = %s",
             [application.site_id],
         )
-        row = cursor.fetchone()
-    if row is None or row[0] is None:
-        return {}
+        area, dimension = cursor.fetchone()
     crs = application.project.crs
     return {
-        "easting": round(float(row[0]), 2),
-        "northing": round(float(row[1]), 2),
+        "easting": round(centre[0], 2),
+        "northing": round(centre[1], 2),
         "crs": f"{crs.code} {crs.name}",
-        "area_m2": round(float(row[2]), 1) if row[3] == 2 else None,
+        "area_m2": round(float(area), 1) if dimension == 2 else None,
     }
 
 
@@ -280,6 +282,112 @@ def certificate(application: Application) -> bytes:
                 ]
             ],
             colWidths=[40 * mm, 126 * mm],
+        ),
+    ]
+    doc.build(story)
+    return buffer.getvalue()
+
+
+def habitation_certificate(application: Application) -> bytes:
+    """The Certificate of Habitation (Form 43E; r.45(15)-(18)), signed by the Works Engineer."""
+    from reportlab.lib.units import mm
+    from reportlab.platypus import Paragraph, Spacer
+
+    doc, buffer, styles = _document(f"Certificate of Habitation {application.number}")
+    issued = application.habitation_on.isoformat() if application.habitation_on else "—"
+    line = "." * 44
+    story: list[Any] = [
+        Paragraph(escape(application.project.district.name), styles["Title"]),
+        Paragraph("Certificate of Habitation", styles["Heading2"]),
+        Paragraph("(Form 43E, L.I. 2384)", styles["Italic"]),
+        Spacer(1, 4 * mm),
+        Paragraph(
+            "The development described below has been completed and inspected, and the"
+            " conditions and requirements of its development permit have been fulfilled. It may"
+            " be occupied.",
+            styles["BodyText"],
+        ),
+        Spacer(1, 3 * mm),
+        _facts(
+            [
+                *_about(application),
+                ("Development permit", application.number),
+                (
+                    "Permit issued on",
+                    application.issued_on.isoformat() if application.issued_on else "—",
+                ),
+                ("Certificate issued on", issued),
+            ]
+        ),
+        Spacer(1, 12 * mm),
+        Paragraph(f"{line}<br/>Works Engineer<br/>Date:", styles["BodyText"]),
+        Spacer(1, 6 * mm),
+        Paragraph(f"Issued under the {ACT}.", styles["Italic"]),
+    ]
+    doc.build(story)
+    return buffer.getvalue()
+
+
+def land_use_certificate(application: Application, zone: dict[str, Any]) -> bytes:
+    """A Land Use Certificate for the application's site (Form 43F; r.46): the
+    use the approved plan gives the land. `zone` is the zone found for the site
+    (permits.checks)."""
+    from reportlab.lib.units import mm
+    from reportlab.platypus import Paragraph, Spacer
+
+    from relations import zoning
+
+    doc, buffer, styles = _document(f"Land Use Certificate {application.number}")
+    national = zoning.match(zone.get("value"))
+    named = (
+        f"{national.code}: {national.name}" if national else str(zone.get("value") or "Not zoned")
+    )
+    site = site_facts(application)
+    rows = [
+        ("Reference", application.number),
+        ("Applicant", application.applicant_name),
+        ("Locality", application.project.community or application.project.name),
+    ]
+    if site:
+        rows.append(
+            (
+                "Site (centre)",
+                f"E {site['easting']:,.2f}, N {site['northing']:,.2f} ({site['crs']})",
+            )
+        )
+        if site["area_m2"] is not None:
+            rows.append(("Site area", f"{site['area_m2']:,.1f} m²"))
+    rows += [("Land use (zone)", named), ("Read from", str(zone.get("from") or "—"))]
+    line = "." * 44
+    story: list[Any] = [
+        Paragraph(escape(application.project.district.name), styles["Title"]),
+        Paragraph("Land Use Certificate", styles["Heading2"]),
+        Paragraph("(Form 43F, regulation 46 of L.I. 2384)", styles["Italic"]),
+        Spacer(1, 4 * mm),
+        Paragraph(
+            "This certifies the use that the approved local or structure plan gives the land"
+            " described below.",
+            styles["BodyText"],
+        ),
+        Spacer(1, 3 * mm),
+        _facts(rows),
+    ]
+    if national and national.permitted:
+        story += [
+            Spacer(1, 4 * mm),
+            Paragraph("Permissible uses in this zone", styles["Heading3"]),
+            Paragraph(escape("; ".join(national.permitted)) + ".", styles["BodyText"]),
+            Paragraph("Prohibited uses in this zone", styles["Heading3"]),
+            Paragraph(escape("; ".join(national.prohibited)) + ".", styles["BodyText"]),
+        ]
+    story += [
+        Spacer(1, 12 * mm),
+        Paragraph(f"{line}<br/>Physical Planning Officer<br/>Date:", styles["BodyText"]),
+        Spacer(1, 6 * mm),
+        Paragraph(
+            "A Land Use Certificate is not a permit: no development may start without a planning"
+            f" or development permit. Issued under the {ACT}.",
+            styles["Italic"],
         ),
     ]
     doc.build(story)

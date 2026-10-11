@@ -352,6 +352,47 @@ def issue(application: Application, on: date, user: User) -> None:
     sync_site(application, user)
 
 
+def completion(application: Application, today: date | None = None) -> dict[str, Any] | None:
+    """r.45(18): the Certificate of Habitation is issued within 14 days after
+    the inspection of the completed development. None until that inspection."""
+    inspected = (
+        application.inspections.filter(purpose=Inspection.Purpose.COMPLETION)
+        .order_by("-inspected_on", "-id")
+        .first()
+    )
+    if inspected is None:
+        return None
+    today = today or date.today()
+    due = inspected.inspected_on + timedelta(days=registry.HABITATION_DAYS)
+    issued = application.habitation_on
+    return {
+        "inspected_on": inspected.inspected_on.isoformat(),
+        "due_on": due.isoformat(),
+        "issued_on": issued.isoformat() if issued else None,
+        "late": bool(issued and issued > due),
+        "overdue": issued is None and today > due,
+    }
+
+
+def certify_habitation(application: Application, on: date, user: User) -> None:
+    """r.45(15)-(18): the development is complete, inspected, and meets the
+    permit's conditions: the Certificate of Habitation is issued."""
+    _need(application, Status.ISSUED, doing="A Certificate of Habitation")
+    if application.kind != Application.Kind.DEVELOPMENT:
+        raise ValidationError("Only a development permit leads to a Certificate of Habitation.")
+    if application.habitation_on is not None:
+        raise ValidationError("The Certificate of Habitation has already been issued.")
+    done = completion(application)
+    if done is None:
+        raise ValidationError(
+            "Record the inspection of the completed development first (r.45(18))."
+        )
+    _not_before(on, date.fromisoformat(done["inspected_on"]), "the completion inspection")
+    application.habitation_on = on
+    application.save(update_fields=["habitation_on", "updated_at"])
+    event(application, "habitation", on, user)
+
+
 def withdraw(application: Application, note: str, user: User) -> None:
     _need(application, *OPEN, doing="Withdrawing")
     application.status = Status.WITHDRAWN

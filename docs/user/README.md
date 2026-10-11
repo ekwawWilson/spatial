@@ -12,6 +12,7 @@ Written for physical planners, district administrators and field officers. Secti
 - [Importing and exporting data](import-export.md)
 - [Editing features and making the planning area](editing-and-boundaries.md)
 - [The readiness checklist](readiness-checklist.md)
+- [Plan sheets](plan-sheets.md)
 - [Relationships between features](relationships.md)
 - [Zoning and the national standards](zoning.md)
 - [Planning and development permits](permits.md)

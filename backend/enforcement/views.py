@@ -222,6 +222,7 @@ class CaseViewSet(viewsets.GenericViewSet[Case]):
     @extend_schema(
         parameters=[OpenApiParameter("project", int), OpenApiParameter("status", str)],
         responses=OpenApiTypes.OBJECT,
+        operation_id="enforcement_cases_list",
     )
     def list(self, request: Request) -> Response:
         qs = self.get_queryset()

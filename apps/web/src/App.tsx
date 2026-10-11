@@ -19,6 +19,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { MembersPage } from "./pages/MembersPage";
 import { PermitPage } from "./pages/PermitPage";
 import { PermitsPage } from "./pages/PermitsPage";
+import { PlanSheetPage } from "./pages/PlanSheetPage";
 import { ProjectWorkspace } from "./pages/ProjectWorkspace";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { PublicRoomPage, PublicRoomsPage } from "./pages/PublicRoomPage";
@@ -111,6 +112,14 @@ export function App() {
           element={
             <RequirePermission permission="enforcement.view">
               <CasePage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="projects/:projectId/sheet"
+          element={
+            <RequirePermission permission="project.view">
+              <PlanSheetPage />
             </RequirePermission>
           }
         />

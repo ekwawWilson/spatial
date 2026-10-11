@@ -181,7 +181,8 @@ Built from the published law and standards. What needs the Assembly's own docume
 - **Deadlines are calendar days** from the day of receipt, as the Regulations word them.
 - **The public check** (`/api/public/permits/<token>/`) needs no sign-in: the token (24 random bytes) is made when the permit is issued, kept out of the audit log, and looked up across districts. Only issued permits answer.
 - **Waiting for the Assembly:** the certificate and letters are plain layouts until its letterhead and the exact Schedule forms (42B, 43C, 43E) arrive; fees are entered by the district administrator from the fee-fixing resolution; acknowledgements are PDFs to hand over or send, with SMS and email to follow once a sender is agreed.
-- **Not done yet:** the Certificate of Habitation and Land Use Certificate (r.45(15)-(18), r.46), reviews and appeals (Form 53), renewals, site inspection from the field app, committee agendas and minutes, and drawing the site on the map from the form.
+- **Added after the first cut:** the Certificate of Habitation (a completion inspection, then the certificate within 14 days, r.45(18)) and the Land Use Certificate for an application's site (r.46).
+- **Not done yet:** reviews and appeals (Form 53), renewals, site inspection from the field app, committee agendas and minutes, and drawing the site on the map from the form.
 
 ## Phase 16 notes
 - **Gate:** `dataroom/tests/test_dataroom.py`: nothing is public until the room is opened and a project published; the register shows r.67(3)'s particulars with no personal data (`test_the_register_of_permits`); the zone lookup answers from a zoning layer and the adopted standards; requests for information get the five-day date and are kept.
@@ -203,4 +204,10 @@ Built from the published law and standards. What needs the Assembly's own docume
 - `reports/services.compliance`: one count of every statutory clock for the district: permits (r.44), requests for information (r.64(7)), enforcement steps (r.57), zoning scheme duties (r.29), with the share met in time this year. `GET /api/reports/compliance/` and a PDF at `/pdf/`. No models: counted from the other apps' records at each request.
 - Open to every role (`reports.view`): it carries numbers, application and case numbers, never names.
 - `reports/tests/test_reports.py::test_every_statutory_clock_is_counted` builds one late item of each kind and checks each is counted once under its own heading.
+
+## Plan sheets (part of Phase 19, built early)
+- `projects/sheet.py` draws the project's visible layers with reportlab at a true scale in the project's own coordinates: no reprojection, so a distance on the sheet times the scale is the grid distance. `GET /api/projects/<id>/sheet/?paper=&scale=&title=`; the scale used comes back in `X-Sheet-Scale`.
+- `projects/geometry.py` stays the only reader of `geom_native`: it gained `in_box` (features touching a box in native coordinates) and `centre`, which the permit and enforcement papers now use.
+- Tested: the helpers (frame, scale fitting, grid interval) on known values, and the endpoint on the fixture community (`projects/tests/test_sheet.py`). The drawing itself is checked by eye.
+- **Not done:** imagery or a basemap under the plan; the national colour patterns (stripes, dots); a sheet index for areas that need several sheets.
 

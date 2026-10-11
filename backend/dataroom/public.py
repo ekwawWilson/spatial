@@ -78,10 +78,10 @@ def _locality(application: Application) -> str:
     return application.project.community or application.project.name
 
 
-@extend_schema(operation_id="public_rooms_list", responses=OpenApiTypes.OBJECT)
 class RoomsView(PublicView):
     """The Assemblies whose Public Data Room is open online."""
 
+    @extend_schema(operation_id="public_rooms_list", responses=OpenApiTypes.OBJECT)
     def get(self, request: Request) -> Response:
         with tenant_context(None, is_system_admin=True):
             rooms = list(

@@ -20,6 +20,7 @@ const EVENTS: Record<string, string> = {
   processing_fee_paid: "Processing fee paid",
   permit_fee_paid: "Permit fee paid",
   issued: "Permit issued",
+  habitation: "Certificate of Habitation issued",
   withdrawn: "Withdrawn",
 };
 const DECISIONS: Record<PermitDecision, string> = { grant: "Grant", refuse: "Refuse", defer: "Defer" };
@@ -80,7 +81,7 @@ function NextStep({ permit, registry, act }: { permit: PermitApplication; regist
   const [amount, setAmount] = useState("");
   const [receipt, setReceipt] = useState("");
   useEffect(() => setText(""), [permit.status]);
-  const paper = async (kind: "acknowledgement" | "letter" | "certificate") => saveBlob(await api.permitPaper(permit.id, kind), `${kind}-${permit.number.replace(/\//g, "-")}.pdf`);
+  const paper = async (kind: "acknowledgement" | "letter" | "certificate" | "habitation-certificate") => saveBlob(await api.permitPaper(permit.id, kind), `${kind}-${permit.number.replace(/\//g, "-")}.pdf`);
   const process = can("permit.process");
 
   if (permit.status === "received") {
@@ -245,6 +246,47 @@ function NextStep({ permit, registry, act }: { permit: PermitApplication; regist
             </a>
           )}
         </div>
+        {permit.kind === "development" && (
+          <>
+            <h3>When the development is finished: the Certificate of Habitation (r.45(15)–(18))</h3>
+            {permit.habitation_on ? (
+              <div className="inline-form">
+                <span>Issued on {permit.habitation_on}.</span>
+                <button type="button" onClick={() => void paper("habitation-certificate")}>
+                  Download the Certificate of Habitation
+                </button>
+              </div>
+            ) : permit.completion ? (
+              <div className="inline-form">
+                <span className={permit.completion.overdue ? "error" : undefined}>
+                  Inspected on {permit.completion.inspected_on}: the certificate is due by {permit.completion.due_on}.
+                </span>
+                {can("permit.decide") && (
+                  <button type="button" onClick={() => void act(() => api.certifyHabitation(permit.id), "Certificate of Habitation issued.")}>
+                    Issue the Certificate of Habitation
+                  </button>
+                )}
+              </div>
+            ) : (
+              can("permit.inspect") && (
+                <form
+                  className="inline-form"
+                  aria-label="Completion inspection"
+                  onSubmit={(e: FormEvent) => {
+                    e.preventDefault();
+                    void act(() => api.inspectPermit(permit.id, { purpose: "completion", findings: {}, summary: text }), "Completion inspection recorded.");
+                  }}
+                >
+                  <label>
+                    What the inspection of the finished development found
+                    <input required aria-label="Completion inspection findings" value={text} onChange={(e) => setText(e.target.value)} />
+                  </label>
+                  <button type="submit">Record the completion inspection</button>
+                </form>
+              )
+            )}
+          </>
+        )}
       </Card>
     );
   }
@@ -458,7 +500,17 @@ export function PermitPage() {
             <dt>Received</dt>
             <dd>{permit.received_on}</dd>
             <dt>Site</dt>
-            <dd>{permit.site ? <Link to={`/projects/${projectId}`}>On the project's map, in the permits layer</Link> : "Not on the map yet"}</dd>
+            <dd>
+              {permit.site ? <Link to={`/projects/${projectId}`}>On the project's map, in the permits layer</Link> : "Not on the map yet"}
+              {permit.site && permit.checks?.zone?.value && (
+                <>
+                  {" · "}
+                  <button type="button" className="link" onClick={async () => saveBlob(await api.permitPaper(permit.id, "land-use-certificate"), `land-use-${permit.number.replace(/\//g, "-")}.pdf`)}>
+                    Land Use Certificate
+                  </button>
+                </>
+              )}
+            </dd>
           </dl>
 
           <NextStep permit={permit} registry={registry.data} act={act} />

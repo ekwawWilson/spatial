@@ -19,6 +19,7 @@ function permit(extra: Partial<PermitApplication> = {}): PermitApplication {
     acknowledged_on: null,
     inspected_on: null,
     reported_on: null,
+    completion: null,
     clocks: [clock(), clock({ code: "inspect", label: "Technical Sub-Committee: zoning checks and site inspection", rule: "r.44(7)", days: 14, due_on: "2026-10-25" })],
     requirements: [{ code: "site_plan", label: "Site plan at 1:2500, conforming to the local plan", rule: "r.44(3)(b), r.45(9)(a)", asked_for: false, submitted: 0 }],
     extra_requirements: [],

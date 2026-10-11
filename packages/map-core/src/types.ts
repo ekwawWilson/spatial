@@ -979,6 +979,8 @@ export interface PermitSummary {
   issued_on: string | null;
   expires_on: string | null;
   expired: boolean;
+  /** When the Certificate of Habitation was issued, for a completed development. */
+  habitation_on: string | null;
   /** The first statutory step not done yet; null once the application is closed. */
   next_due: PermitClock | null;
   check_counts: Record<PermitCheck["outcome"], number> | null;
@@ -1003,6 +1005,8 @@ export interface PermitApplication extends PermitSummary {
   inspected_on: string | null;
   reported_on: string | null;
   clocks: PermitClock[];
+  /** The completed development's inspection and the 14 days for its Certificate of Habitation; null until inspected. */
+  completion: { inspected_on: string; due_on: string; issued_on: string | null; late: boolean; overdue: boolean } | null;
   requirements: PermitRequirement[];
   extra_requirements: string[];
   documents: { id: number; requirement: string; name: string; size: number; uploaded_at: string }[];

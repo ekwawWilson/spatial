@@ -685,3 +685,54 @@ class FeatureWithEditingViewSet(FeatureEditingMixin, FeatureViewSet):
     def perform_destroy(self, instance: Feature) -> None:
         check_not_locked_boundary(instance)
         instance.delete()
+
+
+# --- Plan sheets --------------------------------------------------------------------------------
+
+
+@extend_schema(
+    parameters=[
+        DISTRICT_HEADER,
+        OpenApiParameter("paper", str, description="A4, A3 (default), A2 or A1, landscape"),
+        OpenApiParameter(
+            "scale", int, description="e.g. 2500 for 1:2,500. Default: the largest that fits"
+        ),
+        OpenApiParameter("title", str),
+    ],
+    responses={(200, "application/pdf"): OpenApiTypes.BINARY},
+)
+class SheetView(APIView):
+    """The project as a plan sheet (PDF): its visible layers at a true scale in
+    the project's own coordinate system, with title block, legend, grid
+    coordinates, scale bar and north arrow. The scale used is in X-Sheet-Scale."""
+
+    def get_permissions(self) -> list[BasePermission]:
+        return [IsAuthenticated(), district_permission("project.view")()]
+
+    def get(self, request: Request, project_id: int) -> HttpResponse:
+        from . import sheet
+
+        project = get_object_or_404(
+            PlanProject.objects.select_related("district", "crs"),
+            pk=project_id,
+            district_id=require_district_id(request),
+        )
+        params = request.query_params
+        scale_text = params.get("scale", "")
+        if scale_text and not scale_text.isdigit():
+            raise serializers.ValidationError({"scale": "A whole number, e.g. 2500."})
+        user = request_user(request)
+        try:
+            pdf, scale = sheet.plan_sheet(
+                project,
+                paper=params.get("paper", "A3").upper(),
+                scale=int(scale_text) if scale_text else None,
+                title=params.get("title", "")[:120],
+                prepared_by=f"{user.first_name} {user.last_name}".strip() or user.email,
+            )
+        except DjangoValidationError as exc:
+            raise _drf(exc) from exc
+        response = HttpResponse(pdf, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="plan-sheet-{project.pk}.pdf"'
+        response["X-Sheet-Scale"] = str(scale)
+        return response

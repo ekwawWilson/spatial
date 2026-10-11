@@ -42,6 +42,7 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <li><a href="#editing-and-boundaries">Editing features and making the planning area</a></li>
 <li><a href="#imagery">Drone and satellite imagery</a></li>
 <li><a href="#readiness-checklist">The readiness checklist</a></li>
+<li><a href="#plan-sheets">Plan sheets</a></li>
 <li><a href="#relationships">Relationships between features</a></li>
 <li><a href="#zoning">Zoning and the national standards</a></li>
 </ul><p class="part">Development control</p><ul>
@@ -324,6 +325,35 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <li>Existing projects don't change when the template changes. To pick up items added since a project started, choose <strong>Add new template items</strong> on that project's checklist.</li>
 <li><strong>Revert to the platform default</strong> removes the district's own template.</li>
 </ul>
+<h2 id="plan-sheets">Plan sheets</h2>
+<p><em>Everyone who can see a project.</em></p>
+<p>A plan sheet is the project's map as a page to print: the layers drawn to a <strong>true scale</strong> in the project's own coordinate system, with what a plan carries. Open a project and choose <strong>Plan sheet</strong>.</p>
+<h3>Printing one</h3>
+<ol>
+<li>Choose the <strong>paper</strong>: A4, A3, A2 or A1, landscape.</li>
+<li>Choose the <strong>scale</strong>, or leave it at "the largest that fits": the platform picks the largest standard scale (1:500, 1:1,000, 1:1,250, 1:2,500, 1:5,000 …) at which the area fits the sheet.</li>
+<li>Give the sheet a <strong>title</strong> if it should differ from the project's name.</li>
+<li><strong>Download the plan sheet.</strong> The page says what scale it was drawn at.</li>
+</ol>
+<p>Print the PDF at <strong>100% ("actual size")</strong>. "Fit to page" shrinks it and the scale is lost.</p>
+<h3>What is on the sheet</h3>
+<ul>
+<li><strong>The map:</strong> the project's visible layers, in their order and styles from the project's map. To leave a layer out, switch it off on the map first. Labels follow each layer's label setting.</li>
+<li><strong>What it covers:</strong> the planning area, if the project has one; otherwise everything in the layers.</li>
+<li><strong>Grid coordinates:</strong> crosses at a round interval, with their eastings and northings along the frame, in the project's coordinate system (feet for the Ghana National Grid).</li>
+<li><strong>Title block:</strong> the Assembly, the title, the locality, the scale and paper size, the coordinate system, and lines for <em>prepared by</em>, <em>checked by</em> and <em>approved by</em>.</li>
+<li><strong>North arrow</strong> (grid north, which is up the sheet) and a <strong>scale bar</strong> in metres.</li>
+<li><strong>Legend:</strong> each layer drawn, and each category of a layer styled by category.</li>
+</ul>
+<h3>Accuracy</h3>
+<p>Coordinates go from the record to the page untouched: nothing is reprojected. A distance measured on the sheet, times the scale, is the distance in the project's grid. Measure in the grid's units (feet or metres); the scale bar is in metres.</p>
+<h3>What is left out</h3>
+<ul>
+<li><strong>Basemaps and imagery</strong> are not printed.</li>
+<li><strong>Layers in another coordinate system</strong> than the project's are not drawn, and are named at the foot of the sheet.</li>
+<li>A layer with more than 20,000 features in view is drawn in part, and named at the foot of the sheet. Print at a larger scale, or a smaller area.</li>
+<li><strong>Restricted fields</strong> are not used as labels for people who may not see them.</li>
+</ul>
 <h2 id="relationships">Relationships between features</h2>
 <p><em>Physical planners and district administrators; everyone in the district can view them.</em></p>
 <p>The platform works out how the features of a project relate to one another, so you can ask questions like "which properties flood?", "which buildings are too close to their boundary?" and "which communities have no school nearby?". Open <strong>Relationships</strong> at the top of the project.</p>
@@ -454,6 +484,15 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <li><strong>Permit fee and certificate.</strong> Once granted, record the permit fee's receipt (r.44(11)); the district administrator then <strong>issues the permit</strong>. Download the certificate. It is valid for five years.</li>
 </ol>
 <p>An application can be <strong>withdrawn</strong> while it is open; its deadlines then stop.</p>
+<h3>When the building is finished: the Certificate of Habitation</h3>
+<p>A development may be occupied only once it has a Certificate of Habitation (r.45(15)–(18)). On the issued permit:</p>
+<ol>
+<li>Record the <strong>completion inspection</strong>: what was found when the finished development was inspected against the permit's conditions.</li>
+<li>The district administrator <strong>issues the Certificate of Habitation</strong>. The Regulations give 14 days from the inspection; the page shows the date.</li>
+<li>Download the certificate (Form 43E) for the Works Engineer's signature.</li>
+</ol>
+<h3>The Land Use Certificate</h3>
+<p>A <strong>Land Use Certificate</strong> (Form 43F, r.46) states the use the approved plan gives a piece of land. It goes with a permit, and is asked for when land is registered. Once an application's site is on the map and in a zone, choose <strong>Land Use Certificate</strong> beside the site to download it: the zone, where it was read from, and the zone's permissible and prohibited uses. It is not a permit.</p>
 <h3>The automatic checks</h3>
 <p>When an application is received, and whenever its details change, the platform checks the site against the map (the "initial zoning checks" of r.44(7)(a)):</p>
 <table><thead><tr><th>Check</th><th>What it compares</th></tr></thead><tbody>

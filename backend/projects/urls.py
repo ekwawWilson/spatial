@@ -11,6 +11,7 @@ router.register("features", views.FeatureWithEditingViewSet, basename="feature")
 urlpatterns = [
     path("", include(router.urls)),
     path("geometry/traverse/", views.TraverseView.as_view(), name="traverse"),
+    path("projects/<int:project_id>/sheet/", views.SheetView.as_view(), name="project-sheet"),
     path(
         "layers/<int:layer_id>/tiles/<int:z>/<int:x>/<int:y>.pbf",
         views.LayerTileView.as_view(),

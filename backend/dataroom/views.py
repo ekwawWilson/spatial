@@ -262,7 +262,7 @@ class RequestViewSet(viewsets.GenericViewSet[InformationRequest]):
             district_id=require_district_id(self.request)
         ).select_related("answered_by")
 
-    @extend_schema(responses=OpenApiTypes.OBJECT)
+    @extend_schema(responses=OpenApiTypes.OBJECT, operation_id="dataroom_requests_list")
     def list(self, request: Request) -> Response:
         today = date.today()
         rows = [request_json(item, today) for item in self.get_queryset()[:500]]

@@ -6,9 +6,8 @@ heading when it supplies one."""
 from typing import Any
 from xml.sax.saxutils import escape
 
-from django.db import connection
-
 from permits.documents import _document, _facts
+from projects import geometry as geo
 
 from . import registry
 from .models import Notice
@@ -34,17 +33,10 @@ def _property(notice: Notice) -> list[tuple[str, str]]:
     ]
     if case.owner_address:
         rows.append(("Address", case.owner_address))
-    if case.feature_id is not None:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT ST_X(ST_Centroid(geom_native)), ST_Y(ST_Centroid(geom_native))"
-                " FROM projects_feature WHERE id = %s",
-                [case.feature_id],
-            )
-            row = cursor.fetchone()
-        if row and row[0] is not None:
-            crs = case.project.crs
-            rows.append(("Position", f"E {row[0]:,.2f}, N {row[1]:,.2f} ({crs.code} {crs.name})"))
+    centre = geo.centre(case.feature_id) if case.feature_id is not None else None
+    if centre is not None:
+        crs = case.project.crs
+        rows.append(("Position", f"E {centre[0]:,.2f}, N {centre[1]:,.2f} ({crs.code} {crs.name})"))
     return rows
 
 

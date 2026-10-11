@@ -42,6 +42,16 @@ The application's page always shows the **next step**.
 
 An application can be **withdrawn** while it is open; its deadlines then stop.
 
+## When the building is finished: the Certificate of Habitation
+A development may be occupied only once it has a Certificate of Habitation (r.45(15)–(18)). On the issued permit:
+
+1. Record the **completion inspection**: what was found when the finished development was inspected against the permit's conditions.
+2. The district administrator **issues the Certificate of Habitation**. The Regulations give 14 days from the inspection; the page shows the date.
+3. Download the certificate (Form 43E) for the Works Engineer's signature.
+
+## The Land Use Certificate
+A **Land Use Certificate** (Form 43F, r.46) states the use the approved plan gives a piece of land. It goes with a permit, and is asked for when land is registered. Once an application's site is on the map and in a zone, choose **Land Use Certificate** beside the site to download it: the zone, where it was read from, and the zone's permissible and prohibited uses. It is not a permit.
+
 ## The automatic checks
 When an application is received, and whenever its details change, the platform checks the site against the map (the "initial zoning checks" of r.44(7)(a)):
 

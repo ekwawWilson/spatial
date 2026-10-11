@@ -513,3 +513,60 @@ def test_fees_roles_and_tenancy(world, admin, api, members_a, district_a, distri
     assert receive(other, world).status_code == 404  # not their project
     with tenant_context(district_b.id):
         assert Application.objects.count() == 0
+
+
+def test_the_land_use_and_habitation_certificates(world, admin, api, members_a, district_a):
+    """r.46 and r.45(15)-(18)."""
+    world.set_roles()
+    planner = world.client
+    officer = api(members_a[Role.FIELD_OFFICER], district_a)
+    app = receive(planner, world).json()
+    # A Land Use Certificate (Form 43F) says what the plan zones the site for: it needs the site in a zone.
+    paper = planner.get(url("land-use-certificate", app))
+    assert paper.status_code == 200 and paper.content.startswith(b"%PDF")
+    no_site = receive(planner, world, site_feature=None).json()
+    assert planner.get(url("land-use-certificate", no_site)).status_code == 400
+
+    assert admin.post(url("habitation", app), {}, format="json").status_code == 400  # no permit yet
+    planner.post(url("acknowledge", app), {}, format="json")
+    planner.post(url("inspect", app), {"summary": "Seen."}, format="json")
+    planner.post(url("report", app), {"recommendation": "grant"}, format="json")
+    admin.post(url("decide", app), {"decision": "grant"}, format="json")
+    planner.post(
+        url("fees", app), {"stage": "permit", "amount": "850", "receipt": "R1"}, format="json"
+    )
+    issued = admin.post(url("issue", app), {}, format="json").json()
+    assert (
+        issued["status"] == "issued"
+        and issued["completion"] is None
+        and issued["habitation_on"] is None
+    )
+
+    # The building is finished: inspected, then certified within 14 days (r.45(18)).
+    assert (
+        admin.post(url("habitation", issued), {}, format="json").status_code == 400
+    )  # inspect it first
+    inspected = officer.post(
+        url("inspect", issued),
+        {"purpose": "completion", "summary": "Built as approved."},
+        format="json",
+    )
+    assert inspected.status_code == 200, inspected.content
+    assert inspected.json()["completion"] == {
+        "inspected_on": str(TODAY),
+        "due_on": str(TODAY + timedelta(days=14)),
+        "issued_on": None,
+        "late": False,
+        "overdue": False,
+    }
+    assert planner.post(url("habitation", issued), {}, format="json").status_code == 403
+    done = admin.post(url("habitation", issued), {}, format="json")
+    assert done.status_code == 200, done.content
+    assert done.json()["habitation_on"] == str(TODAY) and done.json()["completion"][
+        "issued_on"
+    ] == str(TODAY)
+    assert done.json()["events"][-1]["kind"] == "habitation"
+    certificate = planner.get(url("habitation-certificate", issued))
+    assert certificate.status_code == 200 and certificate.content.startswith(b"%PDF")
+    assert admin.post(url("habitation", issued), {}, format="json").status_code == 400  # once
+    assert planner.get(url("habitation-certificate", no_site)).status_code == 404

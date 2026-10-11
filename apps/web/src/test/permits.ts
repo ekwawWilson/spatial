@@ -42,6 +42,7 @@ export function summary(id: number, extra: Partial<PermitSummary> = {}): PermitS
     issued_on: null,
     expires_on: null,
     expired: false,
+    habitation_on: null,
     next_due: clock(),
     check_counts: { pass: 4, fail: 0, warn: 0, unknown: 1 },
     ...extra,

@@ -139,12 +139,15 @@ def test_every_statutory_clock_is_counted(
         "report": 0,
         "issue": 1,
     }
-    worst = permits["late"][0]
-    assert (worst["step"], worst["rule"]) == (
+    # The longest overdue first: the application nobody acknowledged (due 33 days ago),
+    # then the granted one whose certificate was due 20 days ago.
+    worst, next_worst = permits["late"]
+    assert (worst["number"], worst["rule"], worst["days_late"]) == (late["number"], "r.44(6)", 33)
+    assert (next_worst["step"], next_worst["rule"], next_worst["days_late"]) == (
         "Decision, and the certificate where granted",
         "r.44(10)",
-    ) and worst["days_late"] == 20
-    assert permits["late"][1]["number"] == late["number"] and permits["late"][1]["days_late"] == 33
+        20,
+    )
     assert permits["decided_this_year"] == 2 and permits["decided_within_limit_pct"] == 50.0
     assert permits["average_days_to_decision"] == 28.5
     assert [row["number"] for row in data["week_ahead"]] == [

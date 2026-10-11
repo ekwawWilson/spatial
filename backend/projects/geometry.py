@@ -195,6 +195,42 @@ def extent(layer: Layer) -> dict[str, list[float] | None]:
     return {"native": list(row[:4]), "wgs84": list(row[4:])}
 
 
+def centre(feature_id: int) -> tuple[float, float] | None:
+    """A feature's centre, in its layer's own coordinates."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT ST_X(ST_Centroid(geom_native)), ST_Y(ST_Centroid(geom_native))"
+            " FROM projects_feature WHERE id = %s",
+            [feature_id],
+        )
+        row = cursor.fetchone()
+    if row is None or row[0] is None:
+        return None
+    return float(row[0]), float(row[1])
+
+
+def in_box(
+    layer: Layer, box: tuple[float, float, float, float], limit: int
+) -> list[tuple[int, dict[str, Any], dict[str, Any]]]:
+    """The layer's features that touch a box given in the layer's own
+    coordinates (west, south, east, north): (id, properties, native GeoJSON),
+    at most `limit` of them."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT id, properties, ST_AsGeoJSON(geom_native, %s) FROM projects_feature"
+            " WHERE layer_id = %s AND geom_native IS NOT NULL"
+            " AND geom_native && ST_MakeEnvelope(%s, %s, %s, %s, %s) ORDER BY id LIMIT %s",
+            [GEOJSON_DECIMALS, layer.pk, *box, layer.crs.srid, limit],
+        )
+        rows = cursor.fetchall()
+    out = []
+    for feature_id, properties, text in rows:
+        if isinstance(properties, str):
+            properties = json.loads(properties)
+        out.append((feature_id, properties or {}, json.loads(text)))
+    return out
+
+
 def recompute_wgs84(layer: Layer) -> int:
     """Re-derives geom_4326 for every feature of a layer (after the operation
     between its CRS and WGS 84 changes). geom_native is not touched."""

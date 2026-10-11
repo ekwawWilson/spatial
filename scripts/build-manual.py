@@ -28,6 +28,7 @@ CHAPTERS = [
     ("editing-and-boundaries.md", "Building the plan's data"),
     ("imagery.md", "Building the plan's data"),
     ("readiness-checklist.md", "Building the plan's data"),
+    ("plan-sheets.md", "Building the plan's data"),
     ("relationships.md", "Building the plan's data"),
     ("zoning.md", "Building the plan's data"),
     ("permits.md", "Development control"),

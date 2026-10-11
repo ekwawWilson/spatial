@@ -56,6 +56,16 @@ import type {
   ImageryUpload,
   DevelopmentStandard,
   AdoptReport,
+  DataRoomSettings,
+  InformationRequest,
+  InformationRequests,
+  Publication,
+  PublicRoom,
+  PublicStatus,
+  PublicZone,
+  RegisterEntry,
+  RoomDocument,
+  RoomDocumentKind,
   NewPermit,
   PermitApplication,
   PermitDecision,
@@ -199,6 +209,16 @@ export function createApiClient(options: ApiClientOptions = {}) {
     let response = await send();
     if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
     return response;
+  }
+
+  /** A public read: no token is sent. With `orNull`, a 404 is "nothing there". */
+  function open<T>(path: string): Promise<T>;
+  function open<T>(path: string, orNull: true): Promise<T | null>;
+  async function open<T>(path: string, orNull = false): Promise<T | null> {
+    const response = await doFetch(`${root}${path}`);
+    if (orNull && response.status === 404) return null;
+    if (!response.ok) throw await toApiError(response);
+    return (await response.json()) as T;
   }
 
   /** An authenticated file download. */
@@ -633,6 +653,50 @@ export function createApiClient(options: ApiClientOptions = {}) {
     createPermitFee: (data: Omit<PermitFee, "id" | "updated_at">) => request<PermitFee>("POST", "/api/permits/fees/", data),
     updatePermitFee: (id: number, data: Partial<PermitFee>) => request<PermitFee>("PATCH", `/api/permits/fees/${id}/`, data),
     deletePermitFee: (id: number) => request<void>("DELETE", `/api/permits/fees/${id}/`),
+    // --- The Public Data Room: staff ---------------------------------------------------------
+    getDataRoom: () => request<DataRoomSettings>("GET", "/api/dataroom/"),
+    updateDataRoom: (data: Partial<Omit<DataRoomSettings, "code" | "updated_at">>) => request<DataRoomSettings>("PATCH", "/api/dataroom/", data),
+    listPublications: () => request<Publication[]>("GET", "/api/dataroom/publications/"),
+    publishProject: (project: number) => request<Publication>("POST", "/api/dataroom/publications/", { project }),
+    updatePublication: (id: number, data: Partial<Pick<Publication, "permits" | "zoning">>) =>
+      request<Publication>("PATCH", `/api/dataroom/publications/${id}/`, data),
+    unpublishProject: (id: number) => request<void>("DELETE", `/api/dataroom/publications/${id}/`),
+    listRoomDocuments: () => request<RoomDocument[]>("GET", "/api/dataroom/documents/"),
+    async uploadRoomDocument(data: { file: File; kind: RoomDocumentKind; title: string; description?: string; display_from?: string; display_until?: string }): Promise<RoomDocument> {
+      const form = new FormData();
+      for (const [key, value] of Object.entries(data)) {
+        if (value !== undefined && value !== "") form.set(key, value instanceof File ? value : String(value));
+      }
+      const send = () => doFetch(`${root}/api/dataroom/documents/`, { method: "POST", headers: headers(false), body: form });
+      let response = await send();
+      if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
+      if (!response.ok) throw await toApiError(response);
+      return (await response.json()) as RoomDocument;
+    },
+    deleteRoomDocument: (id: number) => request<void>("DELETE", `/api/dataroom/documents/${id}/`),
+    listInformationRequests: () => request<InformationRequests>("GET", "/api/dataroom/requests/"),
+    answerInformationRequest: (id: number, answer: string, declined = false) =>
+      request<InformationRequest>("POST", `/api/dataroom/requests/${id}/answer/`, { answer, declined }),
+
+    // --- The Public Data Room: anyone, no sign-in -----------------------------------------
+    publicRooms: () => open<{ code: string; assembly: string }[]>("/api/public/rooms/"),
+    /** Null when that Assembly's room isn't open online. */
+    publicRoom: (code: string) => open<PublicRoom>(`/api/public/rooms/${encodeURIComponent(code)}/`, true),
+    publicRegister: (code: string, filters: { q?: string; status?: string } = {}) =>
+      open<{ results: RegisterEntry[] }>(`/api/public/rooms/${encodeURIComponent(code)}/register/${query(filters)}`),
+    publicStatus: (code: string, number: string) => open<PublicStatus>(`/api/public/rooms/${encodeURIComponent(code)}/status/${query({ number })}`, true),
+    publicZone: (code: string, lon: number, lat: number) => open<PublicZone>(`/api/public/rooms/${encodeURIComponent(code)}/zone/${query({ lon, lat })}`),
+    publicDocumentUrl: (code: string, id: number) => `${root}/api/public/rooms/${encodeURIComponent(code)}/documents/${id}/`,
+    async askDataRoom(code: string, data: { name: string; phone?: string; email?: string; subject: string; body: string }) {
+      const response = await doFetch(`${root}/api/public/rooms/${encodeURIComponent(code)}/requests/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw await toApiError(response);
+      return (await response.json()) as { reference: string; received_on: string; answer_due_on: string };
+    },
+
     /** Checks a certificate's code against the Assembly's record. Needs no sign-in. */
     async verifyPermit(token: string): Promise<PermitVerification | null> {
       const response = await doFetch(`${root}/api/public/permits/${encodeURIComponent(token)}/`);

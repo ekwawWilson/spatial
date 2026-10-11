@@ -36,6 +36,9 @@ export type Permission =
   | "permit.inspect"
   | "permit.decide"
   | "permit.settings"
+  | "dataroom.view"
+  | "dataroom.manage"
+  | "dataroom.answer"
   | "data.sensitive";
 
 export interface DistrictBrief {
@@ -1067,3 +1070,126 @@ export interface PermitVerification {
   expires_on: string;
   valid: boolean;
 }
+
+// --- The Public Data Room (Phase 16) -------------------------------------------------------
+
+/** A district's data room, as its staff set it. */
+export interface DataRoomSettings {
+  /** The district's code: its public page is /public/<code>. */
+  code: string;
+  is_open: boolean;
+  /** Whether the public register names the people permits were issued to. */
+  show_applicants: boolean;
+  welcome: string;
+  contact: string;
+  updated_at: string;
+}
+
+export interface Publication {
+  id: number;
+  project: number;
+  project_name: string;
+  permits: boolean;
+  zoning: boolean;
+  published_at: string;
+}
+
+export type RoomDocumentKind = "sdf" | "structure_plan" | "local_plan" | "zoning_scheme" | "notice" | "consultation" | "outsourced" | "other";
+
+export interface RoomDocument {
+  id: number;
+  kind: RoomDocumentKind;
+  kind_label: string;
+  title: string;
+  description: string;
+  name: string;
+  size: number;
+  display_from: string;
+  display_until: string | null;
+  uploaded_at?: string;
+}
+
+export interface InformationRequest {
+  id: number;
+  reference: string;
+  name: string;
+  phone: string;
+  email: string;
+  subject: string;
+  body: string;
+  received_on: string;
+  status: "open" | "answered" | "declined";
+  answer: string;
+  answered_on: string | null;
+  answered_by: string | null;
+  due_on: string;
+  late: boolean;
+  overdue: boolean;
+}
+
+export interface InformationRequests {
+  answer_within_days: number;
+  open: number;
+  overdue: number;
+  results: InformationRequest[];
+}
+
+/** What anyone sees of an Assembly's data room. */
+export interface PublicRoom {
+  code: string;
+  assembly: string;
+  welcome: string;
+  contact: string;
+  answer_within_days: number;
+  fees: { label: string; stage: "processing" | "permit"; kind: PermitKind; amount: string }[];
+  documents: RoomDocument[];
+  zoning_schemes: { name: string; status: string; approved_on: string | null; effective_on: string | null; locality: string }[];
+}
+
+export interface RegisterEntry {
+  number: string;
+  permit: string;
+  for: string;
+  proposed_use: string;
+  locality: string;
+  /** Null unless the Assembly shows names. */
+  applicant: string | null;
+  status: string;
+  received_on: string;
+  decided_on: string | null;
+  issued_on: string | null;
+  expires_on: string | null;
+  expired: boolean;
+  /** The grounds, for a refused application. */
+  reasons: string;
+}
+
+export interface PublicStatus {
+  number: string;
+  permit: string;
+  status: string;
+  received_on: string;
+  decided_on: string | null;
+  issued_on: string | null;
+  next_step: { label: string; due_on: string } | null;
+}
+
+/** "What can I build here?" */
+export type PublicZone =
+  | { found: false; detail: string }
+  | {
+      found: true;
+      zone: string;
+      from: string;
+      locality: string;
+      code: string | null;
+      name: string;
+      colour: string | null;
+      permitted: string[];
+      prohibited: string[];
+      standard: Pick<
+        DevelopmentStandard,
+        "min_setback_m" | "front_setback_m" | "side_setback_m" | "rear_setback_m" | "min_floors" | "max_floors" | "max_coverage_pct" | "min_plot_m2" | "min_width_m"
+      > | null;
+      note: string;
+    };

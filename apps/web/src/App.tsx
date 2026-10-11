@@ -8,6 +8,7 @@ import { BasemapsPage } from "./pages/BasemapsPage";
 import { ChecklistPage } from "./pages/ChecklistPage";
 import { ConflictsPage } from "./pages/ConflictsPage";
 import { CrsPage } from "./pages/CrsPage";
+import { DataRoomPage } from "./pages/DataRoomPage";
 import { DistrictsPage } from "./pages/DistrictsPage";
 import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPages";
 import { HomePage } from "./pages/HomePage";
@@ -18,6 +19,7 @@ import { PermitPage } from "./pages/PermitPage";
 import { PermitsPage } from "./pages/PermitsPage";
 import { ProjectWorkspace } from "./pages/ProjectWorkspace";
 import { ProjectsPage } from "./pages/ProjectsPage";
+import { PublicRoomPage, PublicRoomsPage } from "./pages/PublicRoomPage";
 import { ReadinessPage } from "./pages/ReadinessPage";
 import { RelationsPage } from "./pages/RelationsPage";
 import { StatusPage } from "./pages/StatusPage";
@@ -33,6 +35,8 @@ export function App() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/status" element={<StatusPage />} />
       <Route path="/verify/:token" element={<VerifyPage />} />
+      <Route path="/public" element={<PublicRoomsPage />} />
+      <Route path="/public/:code" element={<PublicRoomPage />} />
       <Route
         element={
           <RequireAuth>
@@ -113,6 +117,14 @@ export function App() {
           element={
             <RequirePermission permission="project.view">
               <ConflictsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="data-room"
+          element={
+            <RequirePermission permission="dataroom.view">
+              <DataRoomPage />
             </RequirePermission>
           }
         />

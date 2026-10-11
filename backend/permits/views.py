@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -259,7 +260,7 @@ class PermitDecisionSerializer(DatedSerializer):
 
 class FeesSerializer(serializers.Serializer[Any]):
     stage = serializers.ChoiceField(choices=[("processing", "Processing"), ("permit", "Permit")])
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"))
     receipt = serializers.CharField(max_length=60)
     paid_on = serializers.DateField(required=False)
 

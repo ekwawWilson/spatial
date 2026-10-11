@@ -44,6 +44,10 @@ PERMISSIONS: dict[str, frozenset[Role]] = {
     "permit.inspect": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER, Role.FIELD_OFFICER}),
     "permit.decide": frozenset({Role.DISTRICT_ADMIN}),
     "permit.settings": frozenset({Role.DISTRICT_ADMIN}),
+    # The Public Data Room (dataroom app).
+    "dataroom.view": ALL_ROLES,
+    "dataroom.manage": frozenset({Role.DISTRICT_ADMIN}),
+    "dataroom.answer": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
     # Restricted (personal) attribute values: see projects/privacy.py.
     "data.sensitive": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
 }

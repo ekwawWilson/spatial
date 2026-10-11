@@ -11,8 +11,8 @@ import { OUTCOME } from "./PermitsPage";
 const EVENTS: Record<string, string> = {
   received: "Received",
   acknowledged: "Receipt acknowledged",
-  inspected_application: "Site inspected",
-  inspected_completion: "Completed development inspected",
+  inspected: "Site inspected",
+  completion: "Completed development inspected",
   reported: "Report sent to the Spatial Planning Committee",
   granted: "Granted",
   refused: "Refused",

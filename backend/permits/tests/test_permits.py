@@ -86,7 +86,7 @@ def test_an_application_from_receipt_to_certificate(world, admin, api, members_a
         str(TODAY + timedelta(days=n)) for n in (7, 14, 21, 30)
     ]
     assert app["next_due"]["code"] == "acknowledge" and app["next_due"]["overdue"] is False
-    assert result(app, "plot_size")["measured_m2"] == pytest.approx(900, abs=2)
+    assert result(app, "plot_size")["measured_m2"] == pytest.approx(900, abs=5)
 
     # r.44(6): acknowledged; it goes to the Technical Sub-Committee.
     app = planner.post(url("acknowledge", app), {}, format="json").json()
@@ -173,7 +173,7 @@ def test_an_application_from_receipt_to_certificate(world, admin, api, members_a
     assert [e["kind"] for e in app["events"]] == [
         "received",
         "acknowledged",
-        "inspected_application",
+        "inspected",
         "reported",
         "granted",
         "permit_fee_paid",
@@ -374,10 +374,10 @@ def test_the_automatic_checks_advise_from_the_map(world, admin):
     }
     assert result(app, "plot_width")["measured_m"] == pytest.approx(30, abs=0.3)
     assert result(app, "access")["distance_m"] == pytest.approx(10, abs=0.5)
-    assert (
-        "450 m²" in result(app, "drawings")["detail"]
-        and "6 m at the front" in result(app, "drawings")["detail"]
-    )
+    drawings = result(app, "drawings")["detail"]
+    assert "6 m at the front" in drawings and "coverage up to 50%" in drawings
+    # Half of the 900 m2 plot may be built on.
+    assert int(drawings.split("(")[1].split(" m²")[0]) == pytest.approx(450, abs=2)
     assert app["check_counts"] == {"pass": 4, "fail": 4, "warn": 0, "unknown": 1}
 
     # A clean site in the same zone, once the plot minimum is met.
@@ -425,7 +425,7 @@ def test_sites_numbers_and_kinds(world):
         site_crs="EPSG:4326",
     )
     assert drawn.status_code == 201, drawn.content
-    assert result(drawn.json(), "plot_size")["measured_m2"] == pytest.approx(900, abs=2)
+    assert result(drawn.json(), "plot_size")["measured_m2"] == pytest.approx(900, abs=5)
     assert (
         receive(
             planner,

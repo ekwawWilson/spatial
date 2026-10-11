@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "imagery",
     "relations",
     "permits",
+    "dataroom",
 ]
 
 MIDDLEWARE = [
@@ -181,6 +182,7 @@ SPECTACULAR_SETTINGS = {
         "ImageryKindEnum": "imagery.models.Imagery.Kind",
         "ZoningSchemeStatusEnum": "relations.models.ZoningScheme.Status",
         "PermitKindEnum": "permits.models.Application.Kind",
+        "RoomDocumentKindEnum": "dataroom.models.RoomDocument.Kind",
         "PermitRecommendationEnum": "permits.models.Application.Recommendation",
     },
     "DESCRIPTION": "Community planning GIS platform for Ghanaian MMDAs.",

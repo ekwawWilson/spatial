@@ -278,7 +278,8 @@ def inspect(
     if purpose == Inspection.Purpose.APPLICATION:
         application.inspected_on = on
         application.save(update_fields=["inspected_on", "updated_at"])
-    event(application, f"inspected_{purpose}", on, user, summary)
+    done = "inspected" if purpose == Inspection.Purpose.APPLICATION else "completion"
+    event(application, done, on, user, summary)
     return inspection
 
 

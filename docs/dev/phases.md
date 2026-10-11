@@ -31,8 +31,9 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 11 | Drone and raster imagery | **complete except the offline basemap on a device** (decision 2026-10-06): gate passed in CI (`5b34526`); the device check is in `docs/qa/phase-9-field-app-on-device.md` |
 | 12 | Relationship layer and procedures | **complete** (decision 2026-10-06): gate passed in CI (`1ce4708`) |
 | 13 | Hardening and release | **complete except an iOS build, an RTK receiver test and an independent security test** (decision 2026-10-06): gate passed in CI (`bf4c73d`); see the Phase 13 notes |
-| 14 | Zoning standards and zoning register | in progress on `main` |
+| 14 | Zoning standards and zoning register | **complete** (2026-10-11): gate passed in CI and deployed (`91acc29`) |
 | 15 | Development and planning permits | in progress on `main` |
+| 16 | Online Public Data Room and public register | in progress on `main` |
 
 ## Open items carried forward
 - **Phase 3:** Martin (vector tiles) connects as the app role, so row-level security hides tenant tables from it until tile requests carry a district context (e.g. per-district function sources, or tiles served through the API). Design this in Phase 3; don't grant Martin BYPASSRLS.
@@ -180,4 +181,12 @@ Built from the published law and standards. What needs the Assembly's own docume
 - **The public check** (`/api/public/permits/<token>/`) needs no sign-in: the token (24 random bytes) is made when the permit is issued, kept out of the audit log, and looked up across districts. Only issued permits answer.
 - **Waiting for the Assembly:** the certificate and letters are plain layouts until its letterhead and the exact Schedule forms (42B, 43C, 43E) arrive; fees are entered by the district administrator from the fee-fixing resolution; acknowledgements are PDFs to hand over or send, with SMS and email to follow once a sender is agreed.
 - **Not done yet:** the Certificate of Habitation and Land Use Certificate (r.45(15)-(18), r.46), reviews and appeals (Form 53), renewals, site inspection from the field app, committee agendas and minutes, and drawing the site on the map from the form.
+
+## Phase 16 notes
+- **Gate:** `dataroom/tests/test_dataroom.py`: nothing is public until the room is opened and a project published; the register shows r.67(3)'s particulars with no personal data (`test_the_register_of_permits`); the zone lookup answers from a zoning layer and the adopted standards; requests for information get the five-day date and are kept.
+- **Public views** (`dataroom/public.py`) take no sign-in. Each finds the district by its code, requires its room to be open, then reads inside `tenant_context(district)`: row-level security does the scoping, so a public request can never read another district.
+- **Personal data:** names only with `show_applicants`; contact details never. The application status lookup works for any application of the district (the applicant holds the number) and returns no name.
+- **The register is assembled from the records** (permits, zoning schemes, fees) at each request: no copy to fall out of date.
+- **Requests for information** number in their own series (`<district>/IR/<year>/<n>`), sharing `permits.Counter`.
+- **Not done yet:** a public map (the lookup is by location or coordinates); SMS replies to status queries; the register as a downloadable file; comments on a draft plan (Phase 19).
 

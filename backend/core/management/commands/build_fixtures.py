@@ -15,6 +15,9 @@ Outputs (native CRS = EPSG:2136 Ghana National Grid, unless stated):
   kml/<layer>.kml             WGS84, as the KML spec requires
   sample.dxf                  all layers, no CRS (CAD convention)
   drone_ortho.tif             200 x 200 m synthetic orthophoto, 1 m pixels, EPSG:32630
+  drone_ortho_later.tif       the same place a month on: a new 12 x 12 m structure on
+                              open ground and a 10 x 10 m change on building B-001
+                              (for the image comparison of Phase 17)
   manifest.json               expected facts the tests check
 """
 
@@ -216,6 +219,7 @@ class Command(BaseCommand):
 
         self._write_dxf(out / "sample.dxf", layers, to_native)
         self._write_ortho(out / "drone_ortho.tif", design)
+        self._write_ortho(out / "drone_ortho_later.tif", design, later=True)
         self._write_manifest(out / "manifest.json", layers)
         self.stdout.write(self.style.SUCCESS(f"Fixtures written to {out}"))
 
@@ -270,7 +274,7 @@ class Command(BaseCommand):
                 lyr.CreateFeature(feat)
         ds.Close()
 
-    def _write_ortho(self, path: Path, design: osr.SpatialReference) -> None:
+    def _write_ortho(self, path: Path, design: osr.SpatialReference, later: bool = False) -> None:
         # Synthetic 3-band image over the parcels: grey ground, dark road strip
         # along Main Street, lighter squares where buildings stand.
         size = 200
@@ -281,7 +285,11 @@ class Command(BaseCommand):
             for col in range(size):
                 x = 450.0 + col + 0.5
                 idx = row * size + col
-                if 995.0 <= y <= 1005.0:
+                if later and 470 <= x <= 482 and 1050 <= y <= 1062:
+                    value = (235, 235, 235)  # a new structure on open ground
+                elif later and 530 <= x <= 540 and 1020 <= y <= 1030:
+                    value = (40, 40, 40)  # work on the roof of B-001
+                elif 995.0 <= y <= 1005.0:
                     value = (60, 60, 60)
                 elif any(523 + 30 * k <= x <= 547 + 30 * k for k in range(3)) and (
                     1013 <= y <= 1037 or 963 <= y <= 987
@@ -298,7 +306,8 @@ class Command(BaseCommand):
         ds.SetProjection(design.ExportToWkt())
         for b in range(3):
             ds.GetRasterBand(b + 1).WriteRaster(0, 0, size, size, bytes(bands[b]))
-        ds.SetMetadata({"CAPTURE_DATE": "2026-09-01", "SOURCE": "synthetic test orthophoto"})
+        captured = "2026-10-01" if later else "2026-09-01"
+        ds.SetMetadata({"CAPTURE_DATE": captured, "SOURCE": "synthetic test orthophoto"})
         ds.Close()
 
     def _write_manifest(self, path: Path, layers: dict[str, LayerSpec]) -> None:

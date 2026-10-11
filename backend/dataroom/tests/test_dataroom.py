@@ -406,3 +406,48 @@ def test_requests_for_information_are_answered_within_five_days(
     assert (theirs["code"], theirs["is_open"]) == ("DB", False)
     with tenant_context(district_b.id):
         assert InformationRequest.objects.count() == 0
+
+
+def test_enforcement_notices_served_are_in_the_register(world, admin, anyone):
+    """r.67(3)(d): what was served, where and when; never on whom."""
+    planner = world.client
+    admin.patch(reverse(SETTINGS), {"is_open": True}, format="json")
+    case = planner.post(
+        reverse("enforcement-case-list"),
+        {
+            "project": world.project,
+            "contravention": "no_permit",
+            "description": "Wall",
+            "owner_name": "Kwesi Appiah",
+            "owner_address": "Plot 14",
+        },
+        format="json",
+    ).json()
+    issued = planner.post(
+        reverse("enforcement-case-notices", args=[case["id"]]),
+        {"kind": "stop", "grounds": "Building without a permit"},
+        format="json",
+    ).json()
+    assert anyone.get(public("notices")).json() == {
+        "results": []
+    }  # project not published, notice not served
+    admin.post(reverse("dataroom-publication-list"), {"project": world.project}, format="json")
+    assert anyone.get(public("notices")).json() == {"results": []}  # issued, but not served yet
+    planner.post(
+        reverse("enforcement-notice-serve", args=[issued["notices"][0]["id"]]),
+        {"method": "on_land"},
+        format="json",
+    )
+    rows = anyone.get(public("notices")).json()["results"]
+    assert rows == [
+        {
+            "case": case["number"],
+            "notice": "Stop Notice or Order for Discontinuance",
+            "contravention": "Development without a permit",
+            "locality": "Relations plan",
+            "served_on": str(TODAY),
+            "comply_by": None,
+            "complied_on": None,
+        }
+    ]
+    assert "Kwesi" not in str(rows) and "Plot 14" not in str(rows)

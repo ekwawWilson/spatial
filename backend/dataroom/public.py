@@ -27,6 +27,8 @@ from rest_framework.views import APIView
 
 from core.models import District
 from core.tenancy import tenant_context
+from enforcement import registry as enforcement_registry
+from enforcement.models import Notice
 from permits import registry as permit_registry
 from permits import services as permit_services
 from permits.models import Application, Counter, Fee
@@ -253,6 +255,37 @@ class StatusView(PublicView):
                 "next_step": {"label": due["label"], "due_on": due["due_on"]} if due else None,
             }
         return Response(body)
+
+
+@extend_schema(responses=OpenApiTypes.OBJECT)
+class NoticesView(PublicView):
+    """The enforcement notices served (r.67(3)(d)), in the projects the
+    Assembly has published: what, where and when, never on whom."""
+
+    def get(self, request: Request, code: str) -> Response:
+        with room(code):
+            served = (
+                Notice.objects.filter(
+                    served_on__isnull=False, case__project__publication__permits=True
+                )
+                .select_related("case", "case__project")
+                .order_by("-served_on", "-id")[:300]
+            )
+            rows = [
+                {
+                    "case": n.case.number,
+                    "notice": enforcement_registry.NOTICE_BY_CODE[n.kind].label,
+                    "contravention": enforcement_registry.CONTRAVENTION_BY_CODE[
+                        n.case.contravention
+                    ][0],
+                    "locality": n.case.project.community or n.case.project.name,
+                    "served_on": _day(n.served_on),
+                    "comply_by": _day(n.comply_by),
+                    "complied_on": _day(n.complied_on),
+                }
+                for n in served
+            ]
+        return Response({"results": rows})
 
 
 def _standard_json(standard: dict[str, Any]) -> dict[str, Any]:

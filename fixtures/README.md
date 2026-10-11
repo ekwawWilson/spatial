@@ -16,6 +16,7 @@ Conditions planted on purpose, which later phases test against (see `manifest.js
 | Communities A and B overlap by 10 m | x = 990–1000 m | Phase 6 overlap report |
 | Building B-006 inside flood zone F-001 | southern parcel row | Phase 12 flood procedure |
 | Building B-003 0.5 m from its east boundary (normal 3 m) | parcel P-003 | Phase 12 setback rule |
+| `drone_ortho_later.tif`: a new 12 x 12 m structure on open ground, and a 10 x 10 m change on building B-001 | north-west of the parcels; parcel P-001 | Phase 17 image comparison |
 
 ## `source/control_points.csv`: survey control points (**action needed**)
 The Phase 2 exit gate checks CRS transforms against **official** control points: published coordinates in both the Ghana National Grid and WGS84. The file is currently only a header.

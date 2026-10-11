@@ -18,6 +18,7 @@ urlpatterns = [
     ),
     path("public/rooms/<str:code>/status/", public.StatusView.as_view(), name="public-status"),
     path("public/rooms/<str:code>/zone/", public.ZoneView.as_view(), name="public-zone"),
+    path("public/rooms/<str:code>/notices/", public.NoticesView.as_view(), name="public-notices"),
     path(
         "public/rooms/<str:code>/requests/", public.RequestsView.as_view(), name="public-requests"
     ),

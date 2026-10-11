@@ -66,6 +66,7 @@ import type {
   InformationRequest,
   InformationRequests,
   Publication,
+  PublicNotice,
   PublicRoom,
   PublicStatus,
   PublicZone,
@@ -714,6 +715,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     publicRoom: (code: string) => open<PublicRoom>(`/api/public/rooms/${encodeURIComponent(code)}/`, true),
     publicRegister: (code: string, filters: { q?: string; status?: string } = {}) =>
       open<{ results: RegisterEntry[] }>(`/api/public/rooms/${encodeURIComponent(code)}/register/${query(filters)}`),
+    publicNotices: (code: string) => open<{ results: PublicNotice[] }>(`/api/public/rooms/${encodeURIComponent(code)}/notices/`),
     publicStatus: (code: string, number: string) => open<PublicStatus>(`/api/public/rooms/${encodeURIComponent(code)}/status/${query({ number })}`, true),
     publicZone: (code: string, lon: number, lat: number) => open<PublicZone>(`/api/public/rooms/${encodeURIComponent(code)}/zone/${query({ lon, lat })}`),
     publicDocumentUrl: (code: string, id: number) => `${root}/api/public/rooms/${encodeURIComponent(code)}/documents/${id}/`,

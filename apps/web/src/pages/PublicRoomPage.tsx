@@ -288,6 +288,43 @@ function Register({ code }: { code: string }) {
   );
 }
 
+function Notices({ code }: { code: string }) {
+  const { api } = useSession();
+  const notices = useLoad(() => api.publicNotices(code), [api, code]);
+  if (!notices.data || notices.data.results.length === 0) return null;
+  return (
+    <section aria-label="Enforcement notices" className="card wide">
+      <h2>Enforcement notices served</h2>
+      <table className="data">
+        <thead>
+          <tr>
+            <th>Case</th>
+            <th>Notice</th>
+            <th>Locality</th>
+            <th>Served</th>
+          </tr>
+        </thead>
+        <tbody>
+          {notices.data.results.map((n) => (
+            <tr key={`${n.case}-${n.notice}-${n.served_on}`}>
+              <td>{n.case}</td>
+              <td>
+                {n.notice}
+                <div className="muted small">{n.contravention}</div>
+              </td>
+              <td>{n.locality}</td>
+              <td className="small">
+                {n.served_on}
+                {n.complied_on ? `; complied with ${n.complied_on}` : n.comply_by ? `; to comply by ${n.comply_by}` : ""}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
 function Ask({ code, days }: { code: string; days: number }) {
   const { api } = useSession();
   const [values, setValues] = useState({ name: "", phone: "", email: "", subject: "", body: "" });
@@ -383,6 +420,7 @@ export function PublicRoomPage() {
           <WhatCanIBuild code={code} />
           <CheckApplication code={code} />
           <Register code={code} />
+          <Notices code={code} />
           <section aria-label="Plans and notices" className="card wide">
             <h2>Plans and notices</h2>
             {room.documents.length === 0 && <p>Nothing on display at the moment.</p>}

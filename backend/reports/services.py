@@ -57,7 +57,7 @@ def compliance(district_id: int, today: date | None = None) -> dict[str, Any]:
             )
     decided = [a for a in applications if a.decided_on and a.decided_on >= year_start]
     took = [(a.decided_on - a.received_on).days for a in decided if a.decided_on]
-    permits_out = {
+    permits_out: dict[str, Any] = {
         "open": len(open_apps),
         "overdue": len(late),
         "overdue_by_step": by_step,
@@ -73,7 +73,7 @@ def compliance(district_id: int, today: date | None = None) -> dict[str, Any]:
     requests = list(InformationRequest.objects.filter(district_id=district_id))
     open_requests = [r for r in requests if r.status == InformationRequest.Status.OPEN]
     answered = [r for r in requests if r.answered_on and r.answered_on >= year_start]
-    requests_out = {
+    requests_out: dict[str, Any] = {
         "open": len(open_requests),
         "overdue": sum(1 for r in open_requests if today > due_on(r.received_on)),
         "answered_this_year": len(answered),
@@ -91,7 +91,7 @@ def compliance(district_id: int, today: date | None = None) -> dict[str, Any]:
         )
     )
     steps = [(case, enforcement.next_action(case, today)) for case in cases]
-    enforcement_out = {
+    enforcement_out: dict[str, Any] = {
         "open": len(cases),
         "overdue": sum(1 for _case, step in steps if step and step["overdue"]),
         "late": [
@@ -109,7 +109,7 @@ def compliance(district_id: int, today: date | None = None) -> dict[str, Any]:
 
     # --- Zoning schemes (r.29) -------------------------------------------------------------------
     schemes = list(ZoningScheme.objects.filter(district_id=district_id).select_related("project"))
-    duties = []
+    duties: list[dict[str, Any]] = []
     for scheme in schemes:
         for code, deadline in ZoningSchemeSerializer().get_deadlines(scheme).items():
             if deadline["overdue"]:
@@ -122,11 +122,11 @@ def compliance(district_id: int, today: date | None = None) -> dict[str, Any]:
                         "due_on": deadline["due_on"],
                     }
                 )
-    zoning_out = {"schemes": len(schemes), "overdue": len(duties), "late": duties}
+    zoning_out: dict[str, Any] = {"schemes": len(schemes), "overdue": len(duties), "late": duties}
 
     # --- The Public Data Room (r.64) -------------------------------------------------------------
     room = DataRoom.objects.filter(district_id=district_id).first()
-    dataroom_out = {
+    dataroom_out: dict[str, Any] = {
         "is_open": bool(room and room.is_open),
         "published_projects": Publication.objects.filter(district_id=district_id).count(),
         "documents_on_display": RoomDocument.objects.filter(
@@ -137,7 +137,7 @@ def compliance(district_id: int, today: date | None = None) -> dict[str, Any]:
     }
 
     overdue = (
-        permits_out["overdue"] + requests_out["overdue"] + enforcement_out["overdue"] + len(duties)
+        len(late) + int(requests_out["overdue"]) + int(enforcement_out["overdue"]) + len(duties)
     )
     return {
         "as_of": today.isoformat(),

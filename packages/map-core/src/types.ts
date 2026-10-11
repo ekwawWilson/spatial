@@ -1168,6 +1168,17 @@ export interface RegisterEntry {
   reasons: string;
 }
 
+/** An enforcement notice served, as the public register shows it. */
+export interface PublicNotice {
+  case: string;
+  notice: string;
+  contravention: string;
+  locality: string;
+  served_on: string;
+  comply_by: string | null;
+  complied_on: string | null;
+}
+
 export interface PublicStatus {
   number: string;
   permit: string;

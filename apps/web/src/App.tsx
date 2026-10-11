@@ -10,6 +10,7 @@ import { ConflictsPage } from "./pages/ConflictsPage";
 import { CrsPage } from "./pages/CrsPage";
 import { DataRoomPage } from "./pages/DataRoomPage";
 import { DistrictsPage } from "./pages/DistrictsPage";
+import { CasePage, EnforcementPage } from "./pages/EnforcementPage";
 import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPages";
 import { HomePage } from "./pages/HomePage";
 import { ImageryPage } from "./pages/ImageryPage";
@@ -93,6 +94,22 @@ export function App() {
           element={
             <RequirePermission permission="permit.view">
               <PermitPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="projects/:projectId/enforcement"
+          element={
+            <RequirePermission permission="enforcement.view">
+              <EnforcementPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="projects/:projectId/enforcement/:caseId"
+          element={
+            <RequirePermission permission="enforcement.view">
+              <CasePage />
             </RequirePermission>
           }
         />

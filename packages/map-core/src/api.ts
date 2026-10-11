@@ -56,6 +56,11 @@ import type {
   ImageryUpload,
   DevelopmentStandard,
   AdoptReport,
+  CaseList,
+  DetectionRun,
+  EnforcementCase,
+  EnforcementRegistry,
+  NewCase,
   DataRoomSettings,
   InformationRequest,
   InformationRequests,
@@ -653,6 +658,26 @@ export function createApiClient(options: ApiClientOptions = {}) {
     createPermitFee: (data: Omit<PermitFee, "id" | "updated_at">) => request<PermitFee>("POST", "/api/permits/fees/", data),
     updatePermitFee: (id: number, data: Partial<PermitFee>) => request<PermitFee>("PATCH", `/api/permits/fees/${id}/`, data),
     deletePermitFee: (id: number) => request<void>("DELETE", `/api/permits/fees/${id}/`),
+    // --- Enforcement ------------------------------------------------------------------------
+    enforcementRegistry: () => request<EnforcementRegistry>("GET", "/api/enforcement/registry/"),
+    listCases: (filters: { project?: number; status?: string } = {}) => request<CaseList>("GET", `/api/enforcement/cases/${query(filters)}`),
+    getCase: (id: number) => request<EnforcementCase>("GET", `/api/enforcement/cases/${id}/`),
+    openCase: (data: NewCase) => request<EnforcementCase>("POST", "/api/enforcement/cases/", data),
+    updateCase: (id: number, data: Partial<Omit<NewCase, "project" | "opened_on" | "origin">>) =>
+      request<EnforcementCase>("PATCH", `/api/enforcement/cases/${id}/`, data),
+    issueNotice: (caseId: number, data: { kind: string; grounds: string; required?: string; comply_by?: string | null; on?: string }) =>
+      request<EnforcementCase>("POST", `/api/enforcement/cases/${caseId}/notices/`, data),
+    serveNotice: (noticeId: number, data: { method: string; on?: string; note?: string }) =>
+      request<EnforcementCase>("POST", `/api/enforcement/notices/${noticeId}/serve/`, data),
+    noticeComplied: (noticeId: number) => request<EnforcementCase>("POST", `/api/enforcement/notices/${noticeId}/complied/`),
+    noticePaper: (noticeId: number) => blob(`/api/enforcement/notices/${noticeId}/paper/`),
+    closeCase: (id: number, data: { status: "rectified" | "enforced" | "dropped"; outcome?: string; cost?: string | null; cost_recovered?: string | null; on?: string }) =>
+      request<EnforcementCase>("POST", `/api/enforcement/cases/${id}/close/`, data),
+    listDetections: (projectId: number) => request<{ results: DetectionRun[] }>("GET", `/api/projects/${projectId}/detections/`),
+    /** Compares two orthophotos for changes on the ground. Can take a minute. */
+    detectChanges: (projectId: number, before: number, after: number) =>
+      request<DetectionRun>("POST", `/api/projects/${projectId}/detections/`, { before, after }),
+
     // --- The Public Data Room: staff ---------------------------------------------------------
     getDataRoom: () => request<DataRoomSettings>("GET", "/api/dataroom/"),
     updateDataRoom: (data: Partial<Omit<DataRoomSettings, "code" | "updated_at">>) => request<DataRoomSettings>("PATCH", "/api/dataroom/", data),

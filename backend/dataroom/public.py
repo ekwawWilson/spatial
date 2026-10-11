@@ -76,7 +76,7 @@ def _locality(application: Application) -> str:
     return application.project.community or application.project.name
 
 
-@extend_schema(responses=OpenApiTypes.OBJECT)
+@extend_schema(operation_id="public_rooms_list", responses=OpenApiTypes.OBJECT)
 class RoomsView(PublicView):
     """The Assemblies whose Public Data Room is open online."""
 

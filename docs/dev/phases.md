@@ -34,6 +34,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 14 | Zoning standards and zoning register | **complete** (2026-10-11): gate passed in CI and deployed (`91acc29`) |
 | 15 | Development and planning permits | in progress on `main` |
 | 16 | Online Public Data Room and public register | in progress on `main` |
+| 17 | Enforcement notices and change detection | in progress on `main` |
 
 ## Open items carried forward
 - **Phase 3:** Martin (vector tiles) connects as the app role, so row-level security hides tenant tables from it until tile requests carry a district context (e.g. per-district function sources, or tiles served through the API). Design this in Phase 3; don't grant Martin BYPASSRLS.
@@ -189,4 +190,12 @@ Built from the published law and standards. What needs the Assembly's own docume
 - **The register is assembled from the records** (permits, zoning schemes, fees) at each request: no copy to fall out of date.
 - **Requests for information** number in their own series (`<district>/IR/<year>/<n>`), sharing `permits.Counter`.
 - **Not done yet:** a public map (the lookup is by location or coordinates); SMS replies to status queries; the register as a downloadable file; comments on a draft plan (Phase 19).
+
+## Phase 17 notes
+- **Gate:** `enforcement/tests/test_enforcement.py`: a case through rectification notice, service, the r.57(2) and r.57(4) dates and closing; and `test_changes_are_classed_by_permits_and_known_buildings`, where a later image with three painted-in squares yields exactly three changes: one new, one at a known building, one where a permit is granted. `test_the_comparison_finds_what_changed_and_only_that` shows a brighter day alone finds nothing and a 2 x 2 m speck is ignored.
+- **Notices are worded after the Schedule's forms** (47, 48A, 48B, 49, 50), read from the published L.I. 2384 (`enforcement/documents.py`). r.55(2)'s four named notices have no Schedule form and share a plain layout.
+- **Change detection** (`enforcement/change.py`): both images warped to one grid at about a metre a cell; brightness compared after removing the median difference between the flights; cells over a threshold sieved to patches of 16 m2 or more and polygonised. It needs numpy, which comes with the GDAL image (not pinned in requirements, to keep one build of it).
+- **Detections are features** in a layer "Changes found between images", so they are on the map and in field packages; a case opened on one writes its number back to the feature.
+- **Runs inside the request** for now: fine for a neighbourhood (the limit is 60 million cells); a district-wide comparison should become a background job.
+- **Not done yet:** sending detections to the field app as tasks; photos on a case; acquisition of land as enforcement (r.59, Form 51); the public register's list of enforcement notices (r.67(3)(d)).
 

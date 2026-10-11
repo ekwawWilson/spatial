@@ -47,6 +47,7 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 </ul><p class="part">Development control</p><ul>
 <li><a href="#permits">Planning and development permits</a></li>
 <li><a href="#public-data-room">The Public Data Room</a></li>
+<li><a href="#enforcement">Enforcement</a></li>
 </ul><p class="part">Working in the field</p><ul>
 <li><a href="#field-app">The field app (Android)</a></li>
 <li><a href="#field-sync">Field data in the office: sync, conflicts and ground-truthing</a></li>
@@ -518,6 +519,62 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <tr><td>See what is published</td><td>✓</td><td>✓</td><td>✓</td></tr>
 <tr><td>Read and answer requests for information</td><td></td><td>✓</td><td>✓</td></tr>
 <tr><td>Open or close the room; publish projects; put documents on display</td><td></td><td></td><td>✓</td></tr>
+</tbody></table>
+<h2 id="enforcement">Enforcement</h2>
+<p><em>Planners and district administrators; field officers can open cases.</em></p>
+<p>The platform keeps a <strong>case</strong> for each contravention, issues the notices the Regulations provide for, records how each was served, and works out the dates that follow (Act 925 s.160–167; L.I. 2384 r.30, r.55–58). It can also compare two drone images to find development nobody applied for. Open a project and choose <strong>Enforcement</strong>.</p>
+<h3>Finding new development from the air</h3>
+<p>Under <strong>Find new development from the air</strong>, choose two orthophotos of the same place taken at different times and <strong>Compare</strong>. The platform marks where the ground changed and sorts each place into one of three kinds:</p>
+<table><thead><tr><th>Kind</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><strong>New: no permit and no building on the map</strong></td><td>Look at these first: development that neither a permit nor the map explains</td></tr>
+<tr><td><strong>At a building already on the map</strong></td><td>An extension, a new roof, or a change beside a known building</td></tr>
+<tr><td><strong>Where a permit has been granted</strong></td><td>Explained by a granted or issued permit</td></tr>
+</tbody></table>
+<p>The places go into a layer called <strong>Changes found between images</strong>, coloured by kind, on the project's map.</p>
+<p>A comparison is a place to look, not a finding. Light, shadow, the season, a parked lorry or a cleared plot also change a picture. Changes smaller than about 16 m² are ignored. Use images of similar quality, and send an officer before opening a case.</p>
+<p>To check each change against permits and buildings, the project needs its <strong>properties</strong> layer set under Relationships, and its permit applications in the platform.</p>
+<h3>Opening a case</h3>
+<p>Choose <strong>Open a case</strong>: the contravention, how it came to light, what was found, and the owner or occupier if known. To tie the case to something on the map (a building, a parcel, or a change found between images), give its <strong>feature number</strong>: click it on the map to read the number.</p>
+<table><thead><tr><th>Contravention</th><th>Law</th></tr></thead><tbody>
+<tr><td>Development without a permit</td><td>Act 925 s.117</td></tr>
+<tr><td>Breach of a condition of a permit</td><td>Act 925 s.160</td></tr>
+<tr><td>Does not conform to the approved zoning scheme</td><td>Act 925 s.84</td></tr>
+<tr><td>Encroaches on public space or a right of way</td><td>Act 925 s.121</td></tr>
+<tr><td>Untidy land; dangerous building; other</td><td>Act 925 s.160</td></tr>
+</tbody></table>
+<p>The case gets its number: district, EN, year and a running number, for example <code>SMA/EN/2026/0007</code>.</p>
+<h3>Notices</h3>
+<p>On the case, choose the notice, type what has come to the Assembly's attention and what must be done (one point per line), and give the date to comply by. Then <strong>Download the notice</strong>: it is worded after the Schedule's form, with the property described at the end, ready for the Chief Executive's signature.</p>
+<table><thead><tr><th>Notice</th><th>Form</th><th>When</th></tr></thead><tbody>
+<tr><td>Stop Notice or Order for Discontinuance</td><td>48A</td><td>Work must stop at once. It has no date to comply by.</td></tr>
+<tr><td>Notice for Rectification of Contravention</td><td>49</td><td>The owner is to put it right by a date.</td></tr>
+<tr><td>Enforcement Notice</td><td>47</td><td>The owner did not rectify in time.</td></tr>
+<tr><td>Notice of Revocation of Permit</td><td>48B</td><td>A condition of a permit is breached. Link the case to the permit first.</td></tr>
+<tr><td>Notice to Enter Land for Enforcement Purposes</td><td>50</td><td>Before an authorised officer enters.</td></tr>
+<tr><td>Planning Contravention, Breach of Condition, Untidy Land, Dangerous Buildings notices</td><td>—</td><td>The other notices the Regulations name (r.55(2)).</td></tr>
+</tbody></table>
+<h4>Serving a notice</h4>
+<p>Record <strong>how</strong> it was served, by one of the ways the Regulations recognise (r.56): posted on the land or building, on the Public Data Room's notice board, on the Assembly's notice board, sent by post or left at the last known address, published in a national newspaper, emailed, or sent by another form of written communication.</p>
+<h4>The days that follow</h4>
+<p>The case shows what is due, and overdue steps are in red.</p>
+<table><thead><tr><th>After</th><th>The Regulations say</th><th>Rule</th></tr></thead><tbody>
+<tr><td>The date to rectify passes without rectification</td><td>Serve an enforcement notice within <strong>14 days</strong></td><td>r.57(2)</td></tr>
+<tr><td>An enforcement notice is served</td><td>After <strong>14 days</strong> the Assembly may rectify and recover the cost</td><td>r.57(4)</td></tr>
+<tr><td>A notice to enter land is served</td><td>Entry not before <strong>3 days</strong></td><td>r.58</td></tr>
+<tr><td>A revocation notice is served</td><td>The permit holder has <strong>21 days</strong> to show cause</td><td>Form 48B</td></tr>
+</tbody></table>
+<h3>Closing a case</h3>
+<ul>
+<li><strong>Rectified by the owner:</strong> the notices are marked as complied with.</li>
+<li><strong>Rectified by the Assembly:</strong> only once 14 days have passed since an enforcement notice was served. Record the cost and how much has been recovered from the person responsible (r.57(4)).</li>
+<li><strong>No contravention found.</strong></li>
+</ul>
+<h3>Who can do this</h3>
+<table><thead><tr><th></th><th>Viewer</th><th>Field officer</th><th>Planner, district administrator</th></tr></thead><tbody>
+<tr><td>See cases and download notices</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>See the owner's name, address and contact</td><td></td><td></td><td>✓</td></tr>
+<tr><td>Open a case</td><td></td><td>✓</td><td>✓</td></tr>
+<tr><td>Compare images; issue and serve notices; close a case</td><td></td><td></td><td>✓</td></tr>
 </tbody></table>
 <h2 id="field-app">The field app (Android)</h2>
 <p><em>Field officers, planners and district administrators.</em></p>

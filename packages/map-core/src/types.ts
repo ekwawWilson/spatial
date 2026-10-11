@@ -36,6 +36,9 @@ export type Permission =
   | "permit.inspect"
   | "permit.decide"
   | "permit.settings"
+  | "enforcement.view"
+  | "enforcement.open"
+  | "enforcement.act"
   | "dataroom.view"
   | "dataroom.manage"
   | "dataroom.answer"
@@ -1193,3 +1196,105 @@ export type PublicZone =
       > | null;
       note: string;
     };
+
+// --- Enforcement (Phase 17) ----------------------------------------------------------------
+
+export interface EnforcementRegistry {
+  contraventions: { code: string; label: string; section: string }[];
+  notices: { code: string; label: string; form: string; rule: string; dated: boolean }[];
+  service_methods: { code: string; label: string }[];
+  days: { enforcement_after: number; act_after: number; entry_notice: number; show_cause: number };
+}
+
+export type CaseStatus = "open" | "notice" | "rectified" | "enforced" | "dropped";
+
+export interface EnforcementNotice {
+  id: number;
+  kind: string;
+  label: string;
+  /** The Schedule form it is served on, or "" where the Regulations give none. */
+  form: string;
+  rule: string;
+  grounds: string;
+  required: string;
+  issued_on: string;
+  comply_by: string | null;
+  served_on: string | null;
+  served_by: string;
+  served_by_label: string;
+  served_note: string;
+  complied_on: string | null;
+  /** What follows from the notice, by the Regulations' days. */
+  dates: Partial<{
+    enforcement_notice_due_on: string;
+    overdue: boolean;
+    assembly_may_act_from: string;
+    entry_not_before: string;
+    show_cause_by: string;
+    past_comply_by: boolean;
+  }>;
+}
+
+export interface CaseSummary {
+  id: number;
+  project: number;
+  number: string;
+  origin: "inspection" | "complaint" | "detection" | "check";
+  origin_label: string;
+  contravention: string;
+  contravention_label: string;
+  section: string;
+  description: string;
+  status: CaseStatus;
+  status_label: string;
+  feature: number | null;
+  permit: number | null;
+  permit_number: string | null;
+  opened_on: string;
+  closed_on: string | null;
+  next_action: { label: string; due_on: string | null; overdue: boolean } | null;
+}
+
+export interface EnforcementCase extends CaseSummary {
+  /** "restricted" for roles that may not see personal data. */
+  owner_name: string;
+  owner_address: string;
+  owner_contact: string;
+  outcome: string;
+  cost: string | null;
+  cost_recovered: string | null;
+  opened_by: string | null;
+  notices: EnforcementNotice[];
+}
+
+export interface CaseList {
+  results: CaseSummary[];
+  summary: { total: number; open: number; overdue: number };
+}
+
+export interface NewCase {
+  project: number;
+  origin?: CaseSummary["origin"];
+  contravention: string;
+  description?: string;
+  feature?: number | null;
+  permit?: number | null;
+  owner_name?: string;
+  owner_address?: string;
+  owner_contact?: string;
+  opened_on?: string;
+}
+
+/** One comparison of two orthophotos. */
+export interface DetectionRun {
+  id: number;
+  before: string | null;
+  after: string | null;
+  /** The layer the changed places were put in. */
+  layer: number | null;
+  found: number;
+  summary: { permitted: number; existing: number; new: number };
+  kinds: { permitted: string; existing: string; new: string };
+  at: string;
+  started_by: string | null;
+}

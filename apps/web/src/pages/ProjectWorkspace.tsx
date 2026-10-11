@@ -240,6 +240,7 @@ export function ProjectWorkspace() {
         <Link to={`/projects/${id}/relations`}>Relationships</Link>
         <Link to={`/projects/${id}/zoning`}>Zoning</Link>
         <Link to={`/projects/${id}/permits`}>Permits</Link>
+        <Link to={`/projects/${id}/enforcement`}>Enforcement</Link>
         <Link to={`/projects/${id}/conflicts`}>
           Field conflicts{conflicts.data?.length ? ` (${conflicts.data.length})` : ""}
         </Link>

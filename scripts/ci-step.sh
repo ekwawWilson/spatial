@@ -14,7 +14,7 @@ if [ "$status" -ne 0 ]; then
   # (/app/...) before the last lines. Annotation messages need %, CR and LF escaped.
   # Also pytest's own failure lines ("E   ..." and "path.py:NN: Error"), and
   # the API schema generator's warnings ("Warning [View]: ...").
-  { grep -m 80 -E 'Fatal Python error|File "/app/|^E  |^[A-Za-z_/]+\.py:[0-9]+: [A-Za-z]+|^(Warning|Error)( \[| #)' "$log" || true; echo '...'; tail -n 40 "$log"; } \
+  { grep -m 80 -E 'Fatal Python error|File "/app/|^E  |^[A-Za-z_/]+\.py:[0-9]+: [A-Za-z]+|(^|[^A-Za-z])(Warning|Error)( \[|: )' "$log" || true; echo '...'; tail -n 40 "$log"; } \
     | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk 'BEGIN{ORS="%0A"}{print}' \
     | { printf '::error title=%s failed (exit %s)::' "$1" "$status"; cat; echo; }
 fi

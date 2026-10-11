@@ -427,7 +427,7 @@ export function CasePage() {
                 aria-label="Issue a notice"
                 onSubmit={(e: FormEvent) => {
                   e.preventDefault();
-                  void act(() => api.issueNotice(item.id, { kind, grounds, required, comply_by: complyBy || null }), "Notice issued. Download it, serve it, then record how it was served.").then(() => {
+                  void act(() => api.issueNotice(item.id, { kind, grounds, remedy: required, comply_by: complyBy || null }), "Notice issued. Download it, serve it, then record how it was served.").then(() => {
                     setGrounds("");
                     setRequired("");
                     setComplyBy("");

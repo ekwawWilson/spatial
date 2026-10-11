@@ -199,3 +199,8 @@ Built from the published law and standards. What needs the Assembly's own docume
 - **Runs inside the request** for now: fine for a neighbourhood (the limit is 60 million cells); a district-wide comparison should become a background job.
 - **Not done yet:** sending detections to the field app as tasks; photos on a case; acquisition of land as enforcement (r.59, Form 51); the public register's list of enforcement notices (r.67(3)(d)).
 
+## The statutory deadlines page (part of Phase 22, built early)
+- `reports/services.compliance`: one count of every statutory clock for the district: permits (r.44), requests for information (r.64(7)), enforcement steps (r.57), zoning scheme duties (r.29), with the share met in time this year. `GET /api/reports/compliance/` and a PDF at `/pdf/`. No models: counted from the other apps' records at each request.
+- Open to every role (`reports.view`): it carries numbers, application and case numbers, never names.
+- `reports/tests/test_reports.py::test_every_statutory_clock_is_counted` builds one late item of each kind and checks each is counted once under its own heading.
+

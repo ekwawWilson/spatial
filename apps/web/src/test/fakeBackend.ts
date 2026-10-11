@@ -58,6 +58,7 @@ export function makeMe(overrides: Partial<Me> = {}): Me {
           "permit.inspect",
           "permit.decide",
           "permit.settings",
+          "reports.view",
           "enforcement.view",
           "enforcement.open",
           "enforcement.act",

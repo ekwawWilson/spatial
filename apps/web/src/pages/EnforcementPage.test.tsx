@@ -114,7 +114,7 @@ describe("enforcement", () => {
     await userEvent.type(within(form).getByLabelText("What must be done"), "Remove the wall");
     await userEvent.type(within(form).getByLabelText("To comply by"), "2026-09-20");
     await userEvent.click(within(form).getByRole("button", { name: "Issue the notice" }));
-    await waitFor(() => expect(api.calls.find((c) => c.method === "POST")?.body).toEqual({ kind: "rectification", grounds: "Building without a permit", required: "Remove the wall", comply_by: "2026-09-20" }));
+    await waitFor(() => expect(api.calls.find((c) => c.method === "POST")?.body).toEqual({ kind: "rectification", grounds: "Building without a permit", remedy: "Remove the wall", comply_by: "2026-09-20" }));
 
     const notice = await screen.findByRole("article", { name: "Notice for Rectification of Contravention" });
     expect(notice).toHaveTextContent("Form 49, r.57(1)");

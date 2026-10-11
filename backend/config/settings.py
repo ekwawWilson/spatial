@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "permits",
     "dataroom",
     "enforcement",
+    "reports",
 ]
 
 MIDDLEWARE = [

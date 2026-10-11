@@ -6,6 +6,7 @@ import { AccountPage } from "./pages/AccountPage";
 import { AuditPage } from "./pages/AuditPage";
 import { BasemapsPage } from "./pages/BasemapsPage";
 import { ChecklistPage } from "./pages/ChecklistPage";
+import { CompliancePage } from "./pages/CompliancePage";
 import { ConflictsPage } from "./pages/ConflictsPage";
 import { CrsPage } from "./pages/CrsPage";
 import { DataRoomPage } from "./pages/DataRoomPage";
@@ -134,6 +135,14 @@ export function App() {
           element={
             <RequirePermission permission="project.view">
               <ConflictsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="deadlines"
+          element={
+            <RequirePermission permission="reports.view">
+              <CompliancePage />
             </RequirePermission>
           }
         />

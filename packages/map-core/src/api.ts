@@ -56,6 +56,7 @@ import type {
   ImageryUpload,
   DevelopmentStandard,
   AdoptReport,
+  Compliance,
   CaseList,
   DetectionRun,
   EnforcementCase,
@@ -658,6 +659,10 @@ export function createApiClient(options: ApiClientOptions = {}) {
     createPermitFee: (data: Omit<PermitFee, "id" | "updated_at">) => request<PermitFee>("POST", "/api/permits/fees/", data),
     updatePermitFee: (id: number, data: Partial<PermitFee>) => request<PermitFee>("PATCH", `/api/permits/fees/${id}/`, data),
     deletePermitFee: (id: number) => request<void>("DELETE", `/api/permits/fees/${id}/`),
+    // --- The district's statutory deadlines -------------------------------------------------
+    compliance: () => request<Compliance>("GET", "/api/reports/compliance/"),
+    compliancePdf: () => blob("/api/reports/compliance/pdf/"),
+
     // --- Enforcement ------------------------------------------------------------------------
     enforcementRegistry: () => request<EnforcementRegistry>("GET", "/api/enforcement/registry/"),
     listCases: (filters: { project?: number; status?: string } = {}) => request<CaseList>("GET", `/api/enforcement/cases/${query(filters)}`),
@@ -665,7 +670,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     openCase: (data: NewCase) => request<EnforcementCase>("POST", "/api/enforcement/cases/", data),
     updateCase: (id: number, data: Partial<Omit<NewCase, "project" | "opened_on" | "origin">>) =>
       request<EnforcementCase>("PATCH", `/api/enforcement/cases/${id}/`, data),
-    issueNotice: (caseId: number, data: { kind: string; grounds: string; required?: string; comply_by?: string | null; on?: string }) =>
+    issueNotice: (caseId: number, data: { kind: string; grounds: string; remedy?: string; comply_by?: string | null; on?: string }) =>
       request<EnforcementCase>("POST", `/api/enforcement/cases/${caseId}/notices/`, data),
     serveNotice: (noticeId: number, data: { method: string; on?: string; note?: string }) =>
       request<EnforcementCase>("POST", `/api/enforcement/notices/${noticeId}/serve/`, data),

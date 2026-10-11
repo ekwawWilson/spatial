@@ -44,6 +44,8 @@ PERMISSIONS: dict[str, frozenset[Role]] = {
     "permit.inspect": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER, Role.FIELD_OFFICER}),
     "permit.decide": frozenset({Role.DISTRICT_ADMIN}),
     "permit.settings": frozenset({Role.DISTRICT_ADMIN}),
+    # The district's statutory deadlines at a glance (reports app): no personal data.
+    "reports.view": ALL_ROLES,
     # Enforcement cases and notices (enforcement app).
     "enforcement.view": ALL_ROLES,
     "enforcement.open": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER, Role.FIELD_OFFICER}),

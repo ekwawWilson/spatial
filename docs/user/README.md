@@ -17,6 +17,7 @@ Written for physical planners, district administrators and field officers. Secti
 - [Planning and development permits](permits.md)
 - [The Public Data Room](public-data-room.md)
 - [Enforcement](enforcement.md)
+- [Statutory deadlines](statutory-deadlines.md)
 - [Project files (.spp)](project-files.md)
 - [The field app (Android)](field-app.md)
 - [Field data in the office: sync, conflicts and ground-truthing](field-sync.md)

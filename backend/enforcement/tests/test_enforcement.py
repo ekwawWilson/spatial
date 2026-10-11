@@ -55,7 +55,7 @@ def issue(client, case, kind, **extra):
         {
             "kind": kind,
             "grounds": "Building without a permit\nOn the road reservation",
-            "required": "Stop work\nRemove the wall",
+            "remedy": "Stop work\nRemove the wall",
             **extra,
         },
         format="json",

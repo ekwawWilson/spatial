@@ -36,6 +36,7 @@ export type Permission =
   | "permit.inspect"
   | "permit.decide"
   | "permit.settings"
+  | "reports.view"
   | "enforcement.view"
   | "enforcement.open"
   | "enforcement.act"
@@ -1297,4 +1298,40 @@ export interface DetectionRun {
   kinds: { permitted: string; existing: string; new: string };
   at: string;
   started_by: string | null;
+}
+
+// --- The district's statutory deadlines (reports) ------------------------------------------
+
+export interface LateRow {
+  id?: number;
+  project: number;
+  number?: string;
+  scheme?: string;
+  step?: string;
+  duty?: string;
+  rule?: string;
+  due_on: string | null;
+  days_late?: number;
+}
+
+export interface Compliance {
+  as_of: string;
+  /** Every duty past its date, across permits, requests, enforcement and zoning. */
+  overdue: number;
+  permits: {
+    open: number;
+    overdue: number;
+    overdue_by_step: Record<"acknowledge" | "inspect" | "report" | "issue", number>;
+    received_this_year: number;
+    decided_this_year: number;
+    decided_within_limit_pct: number | null;
+    average_days_to_decision: number | null;
+    limit_days: number;
+    late: LateRow[];
+  };
+  requests: { open: number; overdue: number; answered_this_year: number; answered_within_limit_pct: number | null; limit_days: number };
+  enforcement: { open: number; overdue: number; late: LateRow[] };
+  zoning: { schemes: number; overdue: number; late: LateRow[] };
+  dataroom: { is_open: boolean; published_projects: number; documents_on_display: number };
+  week_ahead: LateRow[];
 }

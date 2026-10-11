@@ -164,7 +164,8 @@ class CaseWriteSerializer(serializers.Serializer[Any]):
 class NoticeWriteSerializer(serializers.Serializer[Any]):
     kind = serializers.CharField(max_length=14)
     grounds = serializers.CharField()
-    required = serializers.CharField(required=False, allow_blank=True)
+    # What must be done. Not "required": that is the field class's own attribute.
+    remedy = serializers.CharField(required=False, allow_blank=True)
     comply_by = serializers.DateField(required=False, allow_null=True)
     on = serializers.DateField(required=False, help_text="Issued on. Default: today")
 
@@ -338,7 +339,7 @@ class CaseViewSet(viewsets.GenericViewSet[Case]):
                 case,
                 values["kind"],
                 values["grounds"],
-                values.get("required", ""),
+                values.get("remedy", ""),
                 values.get("comply_by"),
                 values.get("on") or date.today(),
                 request_user(request),

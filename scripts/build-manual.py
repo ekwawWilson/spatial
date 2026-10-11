@@ -33,6 +33,7 @@ CHAPTERS = [
     ("permits.md", "Development control"),
     ("public-data-room.md", "Development control"),
     ("enforcement.md", "Development control"),
+    ("statutory-deadlines.md", "Development control"),
     ("field-app.md", "Working in the field"),
     ("field-sync.md", "Working in the field"),
     ("project-files.md", "Keeping work safe"),

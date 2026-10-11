@@ -1,5 +1,8 @@
+import calendar
+from datetime import date, timedelta
 from typing import Any
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Q, QuerySet
 from django.shortcuts import get_object_or_404
@@ -17,9 +20,10 @@ from core.permissions import district_permission, request_user, require_district
 from core.schema import DISTRICT_HEADER
 from projects import privacy
 from projects.models import Feature, Layer, PlanProject
+from projects.styles import DEFAULT_SYMBOL, validate_style
 
-from . import procedures, services
-from .models import DevelopmentStandard, LayerRole, Relationship, Run
+from . import procedures, services, zoning
+from .models import DevelopmentStandard, LayerRole, Relationship, Run, ZoningScheme
 from .registry import (
     LINK_TYPES,
     PROCEDURES,
@@ -431,24 +435,63 @@ class StandardSerializer(serializers.ModelSerializer[DevelopmentStandard]):
             "id",
             "zone",
             "min_setback_m",
+            "front_setback_m",
+            "side_setback_m",
+            "rear_setback_m",
+            "min_floors",
             "max_floors",
             "max_coverage_pct",
             "min_plot_m2",
+            "min_width_m",
+            "prohibited_uses",
             "permit_required",
             "build_in_flood_area",
+            "source",
             "notes",
             "updated_at",
         ]
+        read_only_fields = ["source"]
+
+    def validate_prohibited_uses(self, value: Any) -> list[str]:
+        if not isinstance(value, list) or not all(isinstance(word, str) for word in value):
+            raise serializers.ValidationError("A list of words.")
+        return [word.strip().lower() for word in value if word.strip()][:50]
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
-        for name in ("min_setback_m", "max_coverage_pct", "min_plot_m2"):
+        for name in (
+            "min_setback_m",
+            "front_setback_m",
+            "side_setback_m",
+            "rear_setback_m",
+            "max_coverage_pct",
+            "min_plot_m2",
+            "min_width_m",
+        ):
             value = attrs.get(name)
             if value is not None and value < 0:
                 raise serializers.ValidationError({name: "Can't be negative."})
         cover = attrs.get("max_coverage_pct")
         if cover is not None and cover > 100:
             raise serializers.ValidationError({"max_coverage_pct": "At most 100."})
+        current = self.instance if isinstance(self.instance, DevelopmentStandard) else None
+        low = attrs.get("min_floors", current.min_floors if current else None)
+        high = attrs.get("max_floors", current.max_floors if current else None)
+        if low is not None and high is not None and low > high:
+            raise serializers.ValidationError(
+                {"min_floors": "The fewest storeys can't be more than the most."}
+            )
         return attrs
+
+
+class AdoptSerializer(serializers.Serializer[Any]):
+    zones = serializers.ListField(
+        child=serializers.CharField(max_length=20),
+        required=False,
+        help_text="National zone codes; all zones with site standards when left out",
+    )
+    replace = serializers.BooleanField(
+        default=False, help_text="Also overwrite standards the district has changed"
+    )
 
 
 @extend_schema(parameters=[DISTRICT_HEADER])
@@ -476,3 +519,225 @@ class StandardViewSet(viewsets.ModelViewSet[DevelopmentStandard]):
                 {"zone": "This district already has a standard for that zone."}
             )
         serializer.save(district_id=district_id, zone=zone)
+
+    def perform_update(self, serializer: Any) -> None:
+        # Once changed by the district it is the district's own standard.
+        serializer.save(source="")
+
+    @extend_schema(request=AdoptSerializer, responses=OpenApiTypes.OBJECT)
+    @action(detail=False, methods=["post"], url_path="adopt-national")
+    def adopt_national(self, request: Request) -> Response:
+        """Adopts the national zoning standards (LUSPA, 2025) for this district:
+        one standard per zone that has site standards. Standards the district
+        has set or changed itself are left alone unless `replace` is true."""
+        data = AdoptSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        district_id = require_district_id(request)
+        wanted = data.validated_data.get("zones")
+        chosen = []
+        for code in wanted or [z.code for z in zoning.ZONES if z.site is not None]:
+            zone = zoning.match(code)
+            if zone is None or zone.site is None:
+                raise serializers.ValidationError(
+                    {"zones": f"{code!r} isn't a national zone with site standards."}
+                )
+            chosen.append(zone)
+        existing = list(DevelopmentStandard.objects.filter(district_id=district_id))
+        report: dict[str, list[str]] = {"added": [], "updated": [], "kept": []}
+        for zone in chosen:
+            row = next((s for s in existing if zoning.match(s.zone) == zone), None)
+            values = zoning.standard_values(zone)
+            if row is None:
+                DevelopmentStandard.objects.create(
+                    district_id=district_id,
+                    zone=zone.code,
+                    source=zoning.SOURCE_CODE,
+                    notes=f"{zoning.SOURCE}. Height: {zone.site.height}." if zone.site else "",
+                    **values,
+                )
+                report["added"].append(zone.code)
+            elif row.source == zoning.SOURCE_CODE or data.validated_data["replace"]:
+                for name, value in values.items():
+                    setattr(row, name, value)
+                row.source = zoning.SOURCE_CODE
+                row.save()
+                report["updated"].append(zone.code)
+            else:
+                report["kept"].append(zone.code)
+        return Response(report)
+
+
+@extend_schema(responses=OpenApiTypes.OBJECT)
+class ZonesView(APIView):
+    """The national zones (LUSPA, 2025): codes, colours, permissible and
+    prohibited uses, and the site standards of the zones that have them."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        return Response(
+            {
+                "source": zoning.SOURCE,
+                "zones": [zoning.zone_json(zone) for zone in zoning.ZONES],
+            }
+        )
+
+
+@extend_schema(parameters=[DISTRICT_HEADER], request=None, responses=OpenApiTypes.OBJECT)
+class ZoningStyleView(APIView):
+    """Colours the project's zoning layer by zone, in the national colour
+    codes. Zones the standards don't name keep the layer's default symbol."""
+
+    def get_permissions(self) -> list[BasePermission]:
+        return _perms("relations.edit")
+
+    def post(self, request: Request, project_id: int) -> Response:
+        project = _project(request, project_id)
+        role = (
+            LayerRole.objects.filter(project=project, role="zoning").select_related("layer").first()
+        )
+        if role is None:
+            raise serializers.ValidationError(
+                {"detail": "Say which layer holds the zoning first (Relationships, layer roles)."}
+            )
+        layer = role.layer
+        field = role.config.get("zone_field", "zone")
+        values = (
+            Feature.objects.filter(layer=layer)
+            .values_list(f"properties__{field}", flat=True)
+            .distinct()
+        )
+        categories: list[dict[str, Any]] = []
+        unknown: list[str] = []
+        for value in sorted({str(v) for v in values if v not in (None, "")}):
+            zone = zoning.match(value)
+            if zone is None:
+                unknown.append(value)
+                continue
+            categories.append(
+                {
+                    **DEFAULT_SYMBOL,
+                    "value": value,
+                    "fill": zone.colour,
+                    "stroke": "#333333",
+                    "fill_opacity": 0.6,
+                }
+            )
+        style = {
+            "kind": "categorized",
+            "field": field,
+            "categories": categories,
+            "default": {**DEFAULT_SYMBOL, "fill": "#bbbbbb", "stroke": "#555555"},
+            "label_field": field,
+        }
+        try:
+            layer.style = validate_style(style, layer.schema)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"detail": exc.messages}) from exc
+        layer.save(update_fields=["style"])
+        return Response(
+            {"layer": layer.pk, "coloured": [c["value"] for c in categories], "unknown": unknown}
+        )
+
+
+def _add_months(day: date, months: int) -> date:
+    month = day.month - 1 + months
+    year, month = day.year + month // 12, month % 12 + 1
+    return date(year, month, min(day.day, calendar.monthrange(year, month)[1]))
+
+
+class ZoningSchemeSerializer(serializers.ModelSerializer[ZoningScheme]):
+    deadlines = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ZoningScheme
+        fields = [
+            "id",
+            "project",
+            "name",
+            "status",
+            "structure_plan_approved_on",
+            "approved_on",
+            "effective_on",
+            "sent_to_luspa_on",
+            "update_every_months",
+            "notes",
+            "deadlines",
+            "updated_at",
+        ]
+
+    def validate_update_every_months(self, value: int) -> int:
+        if not 1 <= value <= 240:
+            raise serializers.ValidationError("Between 1 and 240 months.")
+        return value
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        current = self.instance if isinstance(self.instance, ZoningScheme) else None
+        status_now = attrs.get("status", current.status if current else ZoningScheme.Status.DRAFT)
+        approved = attrs.get("approved_on", current.approved_on if current else None)
+        if status_now != ZoningScheme.Status.DRAFT and approved is None:
+            raise serializers.ValidationError(
+                {"approved_on": "Give the date the scheme was approved or adopted."}
+            )
+        return attrs
+
+    def get_deadlines(self, obj: ZoningScheme) -> dict[str, Any]:
+        """The dates L.I. 2384 r.29 sets, and whether each has been met."""
+        today = date.today()
+        out: dict[str, Any] = {}
+        if obj.structure_plan_approved_on and obj.status == ZoningScheme.Status.DRAFT:
+            due = obj.structure_plan_approved_on + timedelta(days=90)
+            out["prepare"] = {
+                "rule": "r.29(1): within 90 days of the structure plan's approval",
+                "due_on": due.isoformat(),
+                "overdue": today > due,
+            }
+        if obj.approved_on:
+            due = obj.approved_on + timedelta(days=28)
+            out["send_to_luspa"] = {
+                "rule": "r.29(6): a copy to LUSPA within 28 days of approval",
+                "due_on": due.isoformat(),
+                "done_on": obj.sent_to_luspa_on.isoformat() if obj.sent_to_luspa_on else None,
+                "overdue": obj.sent_to_luspa_on is None and today > due,
+            }
+            due = _add_months(obj.approved_on, obj.update_every_months)
+            out["update"] = {
+                "rule": "r.29(3): the scheme's schedule for periodic updates",
+                "due_on": due.isoformat(),
+                "overdue": today > due,
+            }
+        return out
+
+
+@extend_schema(parameters=[DISTRICT_HEADER])
+class ZoningSchemeViewSet(viewsets.ModelViewSet[ZoningScheme]):
+    """The register of zoning schemes (filter with ?project=): when each was
+    approved, sent to LUSPA, and is next due for update."""
+
+    serializer_class = ZoningSchemeSerializer
+    queryset = ZoningScheme.objects.none()
+    pagination_class = None
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+
+    def get_permissions(self) -> list[BasePermission]:
+        safe = self.request.method in ("GET", "HEAD", "OPTIONS")
+        return _perms("project.view" if safe else "relations.edit")
+
+    def get_queryset(self) -> QuerySet[ZoningScheme]:
+        qs = ZoningScheme.objects.filter(district_id=require_district_id(self.request))
+        project = self.request.query_params.get("project", "")
+        return qs.filter(project_id=int(project)) if project.isdigit() else qs
+
+    def perform_create(self, serializer: Any) -> None:
+        district_id = require_district_id(self.request)
+        project = serializer.validated_data["project"]
+        if project.district_id != district_id:
+            raise serializers.ValidationError({"project": "Pick a project of this district."})
+        serializer.save(district_id=district_id, created_by=request_user(self.request))
+
+    def perform_update(self, serializer: Any) -> None:
+        if "project" in serializer.validated_data:
+            current = serializer.instance
+            if serializer.validated_data["project"].pk != current.project_id:
+                raise serializers.ValidationError({"project": "A scheme stays with its project."})
+        serializer.save()

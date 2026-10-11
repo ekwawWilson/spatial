@@ -42,7 +42,7 @@ Each link records how it was made:
 Under **Links**, pick a kind of link and tick **Only those to check** to see the guesses. For each, choose **Confirm** or **Reject**. From then on no run will change or remake that link. **Undo** hands it back to the platform.
 
 ## Development standards
-District administrators set what is allowed in each zone under **Development standards**: minimum setback from the plot boundary, maximum floors, maximum plot coverage, minimum plot size, whether a permit is required, and whether building in a flood-prone area is allowed.
+District administrators set what is allowed in each zone under **Development standards**: setbacks (from any side, or separately for the front, the sides and the back), the fewest and the most floors, maximum plot coverage, minimum plot size and width, words for uses that aren't allowed, whether a permit is required, and whether building in a flood-prone area is allowed. **Adopt LUSPA's 2025 standards** fills in the national standards for the residential zones ([zoning and the national standards](zoning.md)).
 
 - A standard's **zone** is matched to the parcel's land use (or to the zoning layer, if the project has one).
 - The standard with an empty zone is the district's **default**, used for any other zone.

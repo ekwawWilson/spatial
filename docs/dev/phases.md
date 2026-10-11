@@ -31,6 +31,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 11 | Drone and raster imagery | **complete except the offline basemap on a device** (decision 2026-10-06): gate passed in CI (`5b34526`); the device check is in `docs/qa/phase-9-field-app-on-device.md` |
 | 12 | Relationship layer and procedures | **complete** (decision 2026-10-06): gate passed in CI (`1ce4708`) |
 | 13 | Hardening and release | **complete except an iOS build, an RTK receiver test and an independent security test** (decision 2026-10-06): gate passed in CI (`bf4c73d`); see the Phase 13 notes |
+| 14 | Zoning standards and zoning register | in progress on `main` |
 
 ## Open items carried forward
 - **Phase 3:** Martin (vector tiles) connects as the app role, so row-level security hides tenant tables from it until tile requests carry a district context (e.g. per-district function sources, or tiles served through the API). Design this in Phase 3; don't grant Martin BYPASSRLS.
@@ -143,3 +144,28 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 - **Field app:** `build-apk.sh --aab` and signing with the Assembly's own key.
 - **Not done, and said so in the guides:** an iOS build (needs a Mac and an Apple account); testing with an external RTK receiver; an independent security test; read-access logging; two-factor sign-in; background sync on the phone.
 - **Manual and training:** `docs/manual/user-manual.html` is built from the user guides by `scripts/build-manual.py`; courses are in `docs/training/`.
+
+## After Phase 13: the statutory roadmap
+From 2026-10-11 the platform grows from a planning GIS into the system an Assembly runs its statutory planning work on, following the Land Use and Spatial Planning Act, 2016 (Act 925), the Regulations (L.I. 2384) and LUSPA's standards and guidelines. Changes go straight to `main`; the deploy job only deploys a commit whose every check passed. Phases, in order:
+
+| Phase | What | Source |
+|---|---|---|
+| 14 | Zoning standards and zoning register | Revised Zoning Guidelines and Planning Standards (2025); L.I. 2384 r.29, r.47 |
+| 15 | Development and planning permits, application to certificate | L.I. 2384 r.43–46; LUSPA permitting guidelines |
+| 16 | Online Public Data Room and public register | L.I. 2384 r.64, r.67–68 |
+| 17 | Enforcement notices and change detection | L.I. 2384 r.30, r.55–59 |
+| 18 | Re-zoning, change of use, subdivision and consolidation | L.I. 2384 r.33, r.34, r.54 |
+| 19 | Plan preparation and consultation; plan sheets | L.I. 2384 r.23–27, r.65 |
+| 20 | Street naming and property addressing | L.I. 2384 r.28 |
+| 21 | Property register, revenue link and betterment | Act 936 s.144; L.I. 2384 r.40–42 |
+| 22 | Reports and national links | L.I. 2384 r.29(6), r.32 |
+
+Built from the published law and standards. What needs the Assembly's own documents (its fee-fixing resolution, forms, letterhead, committee membership, approved plans) is made configurable and filled in later.
+
+## Phase 14 notes
+- **The national standards as data** (`relations/zoning.py`): 36 zones with codes, colours and groups; site standards and uses for the five residential zones. Transcribed from LUSPA's scanned PDF (section 2.6 and Tables 2–7), so `test_the_national_zones_and_their_standards` pins every site value to the printed table. The document's list of zones swaps the descriptions of Re C and Re D; the section headings and the standards table agree with each other and are followed.
+- **Nothing national applies until adopted:** `POST /api/standards/adopt-national/` copies the standards into the district's own rows (`source = luspa-2025`); an edit clears `source`, and adopting again then leaves that row alone unless `replace`.
+- **Front, side and back** (`procedures.plot_edges`): each parcel's boundary is taken edge by edge; edges within the nearest quarter of the spread of distances to a street are the front, the farthest quarter the back, the rest sides. Corner plots get two fronts. No street within about 200 m: front unknown, and the smallest setback is asked of every side.
+- **Prohibited uses** are keyword matches on the recorded use: inferred, confidence 0.7, for a person to decide.
+- **Zone colours:** patterns in the standards (stripes, dots) aren't drawn; such zones get their background colour.
+- **Not done:** site standards for non-residential zones (the national document gives facility standards, not a site table, for those); they are Phase 19's facility checks.

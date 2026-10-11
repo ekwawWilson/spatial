@@ -43,6 +43,7 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <li><a href="#imagery">Drone and satellite imagery</a></li>
 <li><a href="#readiness-checklist">The readiness checklist</a></li>
 <li><a href="#relationships">Relationships between features</a></li>
+<li><a href="#zoning">Zoning and the national standards</a></li>
 </ul><p class="part">Working in the field</p><ul>
 <li><a href="#field-app">The field app (Android)</a></li>
 <li><a href="#field-sync">Field data in the office: sync, conflicts and ground-truthing</a></li>
@@ -133,7 +134,8 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <h2 id="basemaps">Basemaps</h2>
 <p>A basemap is the background map under your layers: streets, satellite imagery, or your district's own aerial photos.</p>
 <h3>Choosing a basemap in a project</h3>
-<p>In a project, the <strong>Basemap</strong> box at the top of the layer panel lists what's available. Pick one, or <strong>None</strong>, and set its opacity with the slider. Your choice is remembered for that project on this device.</p>
+<p>In a project, the <strong>Basemap</strong> box at the top of the layer panel lists what's available. Pick one, or <strong>None</strong>, and set its opacity with the slider. Your choice is remembered for that project on this device. When the basemap is one of the district's own images, <strong>Zoom to image</strong> moves the map to it.</p>
+<p>The <strong>◎ My location</strong> button, under the zoom buttons on the map, shows where you are (the browser asks for permission the first time) and moves the map there. The blue circle is how precise the position is: a laptop on Wi-Fi may be off by tens of metres, a phone outdoors by a few. Your position stays on your device.</p>
 <p>If a basemap can't be shown (for example, its API key is missing or no longer valid), a message appears under the list instead of a blank map. Ask your district administrator to fix the key on the <strong>Basemaps</strong> page.</p>
 <h3>Managing basemaps (district and system administrators)</h3>
 <p>Open <strong>Basemaps</strong>.</p>
@@ -236,12 +238,13 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <ol>
 <li>Choose the file and the <strong>kind</strong>: orthophoto, or elevation model.</li>
 <li>Give it a name, the date it was <strong>captured</strong>, and who captured it. If the file carries a capture date, it is filled in for you.</li>
-<li>Choose <strong>Upload</strong>. The image is checked and converted in the background; the list shows <strong>Ready</strong> when it is done, or <strong>Failed</strong> with the reason.</li>
+<li>Choose <strong>Upload</strong>. The file is sent in pieces, with a progress bar: keep the page open until it reaches 100%. If the connection drops, the upload waits and carries on from where it stopped, by itself; a slow connection only makes it take longer. An upload left unfinished for a day is removed.</li>
+<li>The image is then checked and converted in the background; the list shows <strong>Ready</strong> when it is done, or <strong>Failed</strong> with the reason.</li>
 </ol>
 <p>The image is stored in its own coordinate system and is not altered. The map draws it in place alongside your layers.</p>
 <h3>Using an orthophoto</h3>
 <ul>
-<li><strong>As a basemap:</strong> it appears in the project's <strong>Basemap</strong> list as "<em>name</em> (imagery)", for everyone in the district.</li>
+<li><strong>As a basemap:</strong> it appears in the project's <strong>Basemap</strong> list as "<em>name</em> (imagery)", for everyone in the district. <strong>Show on map</strong> in the imagery list opens the project with that image as the basemap, zoomed to where it is; in the project, <strong>Zoom to image</strong> under the basemap list does the same.</li>
 <li><strong>In the field, offline:</strong> because it is the Assembly's own data, it may be stored on phones. When a field officer downloads the project, the image is offered as an <strong>offline basemap</strong>, covering the planning area. Set the planning area first.</li>
 <li><strong>On the readiness checklist:</strong> the "Recent imagery" item shows how many images the project has, the newest capture date and the pixel size. It can be marked ready when the newest image is under 12 months old. Correct a wrong capture date in the imagery list.</li>
 </ul>
@@ -349,7 +352,7 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 </tbody></table>
 <p>Under <strong>Links</strong>, pick a kind of link and tick <strong>Only those to check</strong> to see the guesses. For each, choose <strong>Confirm</strong> or <strong>Reject</strong>. From then on no run will change or remake that link. <strong>Undo</strong> hands it back to the platform.</p>
 <h3>Development standards</h3>
-<p>District administrators set what is allowed in each zone under <strong>Development standards</strong>: minimum setback from the plot boundary, maximum floors, maximum plot coverage, minimum plot size, whether a permit is required, and whether building in a flood-prone area is allowed.</p>
+<p>District administrators set what is allowed in each zone under <strong>Development standards</strong>: setbacks (from any side, or separately for the front, the sides and the back), the fewest and the most floors, maximum plot coverage, minimum plot size and width, words for uses that aren't allowed, whether a permit is required, and whether building in a flood-prone area is allowed. <strong>Adopt LUSPA's 2025 standards</strong> fills in the national standards for the residential zones (zoning and the national standards).</p>
 <ul>
 <li>A standard's <strong>zone</strong> is matched to the parcel's land use (or to the zoning layer, if the project has one).</li>
 <li>The standard with an empty zone is the district's <strong>default</strong>, used for any other zone.</li>
@@ -363,6 +366,52 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <p>Click any feature: its details list what it is <strong>linked to</strong> ("is located on Main Street", "is affected by F-001"), including links pointing at it from other features.</p>
 <h3>Who can do this</h3>
 <p>Planners and district administrators set the layers, run, and confirm or reject links. District administrators set the standards.</p>
+<h2 id="zoning">Zoning and the national standards</h2>
+<p><em>Planners; district administrators for adopting standards.</em></p>
+<p>The platform carries LUSPA's <strong>Revised Zoning Guidelines and Planning Standards (2025)</strong>: the 36 zones with their codes and colours, and, for the residential zones, the site standards and the permissible and prohibited uses. The Regulations require zoning schemes and development to conform to them (L.I. 2384 r.29(2), r.47). Open a project and choose <strong>Zoning</strong>.</p>
+<h3>The national zones</h3>
+<p>The <strong>National zones and standards</strong> table lists every zone: its colour, its code (Re A, CBD, LI…), its name, and for the residential zones the site standards:</p>
+<table><thead><tr><th>Zone</th><th>Smallest plot</th><th>Narrowest at the street</th><th>Most coverage</th><th>Storeys</th><th>Setbacks: front / side / back</th></tr></thead><tbody>
+<tr><td>Re A, low density</td><td>930 m²</td><td>70 ft (21.3 m)</td><td>40%</td><td>up to 2</td><td>6 / 3 / 5 m</td></tr>
+<tr><td>Re B, medium density</td><td>647 m²</td><td>50 ft (15.2 m)</td><td>50%</td><td>up to 3</td><td>6 / 3 / 3 m</td></tr>
+<tr><td>Re C, high-rise apartments</td><td>4,047 m²</td><td>—</td><td>75%</td><td>at least 3</td><td>6 / 3 / 3 m</td></tr>
+<tr><td>Re D, high density (low-rise)</td><td>182 m²</td><td>40 ft (12.2 m)</td><td>60%</td><td>1 to 3</td><td>3 / 1.5 / 1.5 m</td></tr>
+<tr><td>Re Z, redevelopment</td><td>1,011 m²</td><td>70 ft (21.3 m)</td><td>75%</td><td>at least 3</td><td>2.5 / 2.5 / 3 m</td></tr>
+</tbody></table>
+<p>Open <strong>Permissible and prohibited uses</strong> under a zone's name to read them.</p>
+<p>The values were typed in from LUSPA's published document. If your copy of the standards differs, tell your district administrator, who can correct the district's standard (below).</p>
+<h3>Using the codes in your zoning layer</h3>
+<p>Give the zoning layer a field for the zone (by default called <code>zone</code>) and enter the national codes. They are recognised however they are written: "Re A", "ReA", "re a" and "Residential Zone A" are the same zone. A value that isn't a national zone ("Chief's palace") is kept as the district's own word.</p>
+<p>Tell the project which layer holds the zoning under <strong>Relationships → Layers</strong>.</p>
+<h3>Adopting the standards for the district</h3>
+<p>A district administrator opens <strong>Relationships → Development standards</strong> and chooses <strong>Adopt LUSPA's 2025 standards</strong>. That adds one standard for each residential zone, marked "LUSPA 2025". From the next run, every property is checked against the standard of the zone it stands in.</p>
+<ul>
+<li>The district may <strong>tighten or correct</strong> a standard: choose <strong>Edit</strong>. It is then the district's own, and adopting again leaves it alone.</li>
+<li>Zones without site standards in the national document (business, industrial and others) can be given standards by the district: <strong>Add a standard</strong> with the zone's code.</li>
+</ul>
+<h3>What is checked</h3>
+<p>For each property, against its zone's standard:</p>
+<table><thead><tr><th>Check</th><th>How it is measured</th></tr></thead><tbody>
+<tr><td><strong>Front, side and back setbacks</strong></td><td>The plot's edges nearest a street are its front, the farthest its back, the rest its sides. The building's distance to each is compared with the standard.</td></tr>
+<tr><td><strong>Plot width</strong></td><td>The length of the plot's front.</td></tr>
+<tr><td><strong>Plot size and coverage</strong></td><td>The plot's area, and the share of it that is built on.</td></tr>
+<tr><td><strong>Storeys</strong></td><td>The property's number of floors against the fewest and the most allowed.</td></tr>
+<tr><td><strong>Prohibited use</strong></td><td>Words in the property's recorded use that suggest a use the zone prohibits (a filling station, a factory). Shown as <strong>inferred</strong>: a person confirms or rejects it.</td></tr>
+</tbody></table>
+<p>Setbacks from the front, sides and back need a <strong>streets</strong> layer. Without one, or for a plot with no street within about 200 m, the front isn't known: the smallest of the three setbacks is then asked of every side, and the breach says so.</p>
+<p>A breach is advice for a planner and the committees to look into. It is not a decision.</p>
+<h3>Colouring the zoning layer</h3>
+<p><strong>Colour the zoning layer in the national colours</strong> sets the layer's style by zone, using the standards' colour codes, so plans read the same in every district. Zones the standards draw with a pattern (stripes, dots) get their background colour. Values that aren't national zones are left grey and listed.</p>
+<h3>The zoning scheme register</h3>
+<p>Record each zoning scheme under <strong>Zoning scheme register</strong>: its name, status, and the dates the structure plan was approved, the scheme was approved, it took effect and a copy went to LUSPA. The register then shows what the Regulations ask and whether it has been met:</p>
+<table><thead><tr><th>Duty</th><th>Rule</th></tr></thead><tbody>
+<tr><td>Prepare the scheme within <strong>90 days</strong> of the structure plan's approval</td><td>r.29(1)</td></tr>
+<tr><td>Send a copy to LUSPA within <strong>28 days</strong> of the scheme's approval</td><td>r.29(6)</td></tr>
+<tr><td>Update the scheme on its schedule (every 60 months unless you set another)</td><td>r.29(3)</td></tr>
+</tbody></table>
+<p>Overdue duties are shown in red.</p>
+<h3>Who can do this</h3>
+<p>Everyone in the district can see the zones, the standards and the register. Planners and district administrators record schemes and colour the zoning layer. Only district administrators adopt or change the district's standards.</p>
 <h2 id="field-app">The field app (Android)</h2>
 <p><em>Field officers, planners and district administrators.</em></p>
 <p>The field app lets you take a project out of the office, see its layers with no connection, and record new features with the phone's GPS, a form and photos.</p>
@@ -382,6 +431,7 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <ul>
 <li><strong>Tap a feature</strong> to see its details. <strong>Details and photos</strong> opens its form.</li>
 <li><strong>Layers</strong> (top right) shows or hides layers.</li>
+<li><strong>My location</strong> (the crosshair, top right) shows where you are as a blue dot and moves the map there.</li>
 <li><strong>Measure</strong> gives a distance or an area as you tap points. These are measured on the phone, for guidance.</li>
 </ul>
 <h3>Capturing</h3>

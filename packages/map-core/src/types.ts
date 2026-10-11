@@ -829,12 +829,75 @@ export interface RelationsRun {
 export interface DevelopmentStandard {
   id: number;
   zone: string;
+  /** From any boundary. The three below apply to the street side, the sides and the back. */
   min_setback_m: number | null;
+  front_setback_m: number | null;
+  side_setback_m: number | null;
+  rear_setback_m: number | null;
+  min_floors: number | null;
   max_floors: number | null;
   max_coverage_pct: number | null;
   min_plot_m2: number | null;
+  /** Along the street. */
+  min_width_m: number | null;
+  /** Words that, in a property's recorded use, suggest a prohibited use. */
+  prohibited_uses: string[];
   permit_required: boolean;
   build_in_flood_area: boolean;
+  /** "luspa-2025" while it is the national standard, unchanged. */
+  source: string;
   notes: string;
+  updated_at: string;
+}
+
+/** A zone of the national zoning standards (LUSPA, 2025). */
+export interface NationalZone {
+  code: string;
+  name: string;
+  group: string;
+  colour: string;
+  /** How the standards draw it where a plain colour isn't enough. */
+  pattern: string;
+  height: string;
+  standard: Pick<
+    DevelopmentStandard,
+    "min_plot_m2" | "min_width_m" | "max_coverage_pct" | "min_floors" | "max_floors" | "front_setback_m" | "side_setback_m" | "rear_setback_m" | "prohibited_uses"
+  > | null;
+  permitted: string[];
+  prohibited: string[];
+}
+
+export interface NationalZones {
+  source: string;
+  zones: NationalZone[];
+}
+
+export interface AdoptReport {
+  added: string[];
+  updated: string[];
+  kept: string[];
+}
+
+export interface SchemeDeadline {
+  /** The regulation that sets it. */
+  rule: string;
+  due_on: string;
+  done_on?: string | null;
+  overdue: boolean;
+}
+
+/** A project's entry in the register of zoning schemes. */
+export interface ZoningScheme {
+  id: number;
+  project: number;
+  name: string;
+  status: "draft" | "approved" | "adopted";
+  structure_plan_approved_on: string | null;
+  approved_on: string | null;
+  effective_on: string | null;
+  sent_to_luspa_on: string | null;
+  update_every_months: number;
+  notes: string;
+  deadlines: Partial<Record<"prepare" | "send_to_luspa" | "update", SchemeDeadline>>;
   updated_at: string;
 }

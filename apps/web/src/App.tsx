@@ -20,6 +20,7 @@ import { ReadinessPage } from "./pages/ReadinessPage";
 import { RelationsPage } from "./pages/RelationsPage";
 import { StatusPage } from "./pages/StatusPage";
 import { UsersPage } from "./pages/UsersPage";
+import { ZoningPage } from "./pages/ZoningPage";
 
 export function App() {
   return (
@@ -68,6 +69,14 @@ export function App() {
           element={
             <RequirePermission permission="project.view">
               <RelationsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="projects/:projectId/zoning"
+          element={
+            <RequirePermission permission="project.view">
+              <ZoningPage />
             </RequirePermission>
           }
         />

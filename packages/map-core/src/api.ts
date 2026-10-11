@@ -55,6 +55,9 @@ import type {
   ImageryDetails,
   ImageryUpload,
   DevelopmentStandard,
+  AdoptReport,
+  NationalZones,
+  ZoningScheme,
   LayerRoleRow,
   RelationsRegistry,
   RelationsRun,
@@ -567,6 +570,20 @@ export function createApiClient(options: ApiClientOptions = {}) {
     createStandard: (data: Partial<DevelopmentStandard>) => request<DevelopmentStandard>("POST", "/api/standards/", data),
     updateStandard: (id: number, data: Partial<DevelopmentStandard>) => request<DevelopmentStandard>("PATCH", `/api/standards/${id}/`, data),
     deleteStandard: (id: number) => request<void>("DELETE", `/api/standards/${id}/`),
+
+    // --- Zoning (the national standards, the scheme register) ---------------------------
+    nationalZones: () => request<NationalZones>("GET", "/api/relations/zones/"),
+    /** Adopts LUSPA's standards for the district; `replace` also overwrites the district's own changes. */
+    adoptNationalStandards: (data: { zones?: string[]; replace?: boolean } = {}) =>
+      request<AdoptReport>("POST", "/api/standards/adopt-national/", data),
+    /** Colours the project's zoning layer in the national colour codes. */
+    colourZoningLayer: (projectId: number) =>
+      request<{ layer: number; coloured: string[]; unknown: string[] }>("POST", `/api/projects/${projectId}/zoning-style/`),
+    listZoningSchemes: (projectId: number) => request<ZoningScheme[]>("GET", `/api/zoning-schemes/${query({ project: projectId })}`),
+    createZoningScheme: (data: Partial<ZoningScheme> & { project: number; name: string }) =>
+      request<ZoningScheme>("POST", "/api/zoning-schemes/", data),
+    updateZoningScheme: (id: number, data: Partial<ZoningScheme>) => request<ZoningScheme>("PATCH", `/api/zoning-schemes/${id}/`, data),
+    deleteZoningScheme: (id: number) => request<void>("DELETE", `/api/zoning-schemes/${id}/`),
 
     // --- Audit log ---------------------------------------------------------------
     listAudit: (filters: AuditFilters = {}) =>

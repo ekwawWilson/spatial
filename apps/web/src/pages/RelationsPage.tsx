@@ -8,6 +8,12 @@ import { useSession } from "../session";
 
 const RULES: Record<string, string> = {
   setback: "Too close to the plot boundary",
+  setback_front: "Too close to the street side of the plot",
+  setback_side: "Too close to the side of the plot",
+  setback_rear: "Too close to the back of the plot",
+  plot_width: "Plot too narrow at the street",
+  too_few_floors: "Too few floors",
+  prohibited_use: "Use not allowed in this zone (to be checked)",
   floors: "Too many floors",
   coverage: "Plot coverage too high",
   plot_size: "Plot too small",
@@ -23,7 +29,10 @@ export function describeLink(link: RelationshipLink): string {
     const parts = [RULES[link.rule] ?? link.rule];
     if (d.measured_m !== undefined) parts.push(`${d.measured_m} m, needs ${d.required_m} m`);
     if (d.measured_pct !== undefined) parts.push(`${d.measured_pct}%, limit ${d.allowed_pct}%`);
-    if (d.measured !== undefined) parts.push(`${d.measured}, limit ${d.allowed}`);
+    if (d.measured !== undefined && d.allowed !== undefined) parts.push(`${d.measured}, limit ${d.allowed}`);
+    if (d.measured !== undefined && d.required !== undefined) parts.push(`${d.measured}, needs at least ${d.required}`);
+    if (d.use !== undefined) parts.push(`recorded use "${d.use}"`);
+    if (d.front_unknown) parts.push("no street nearby, so the front isn't known");
     if (d.measured_m2 !== undefined) parts.push(`${d.measured_m2} m², needs ${d.required_m2} m²`);
     return `${parts.join(": ")} (${d.zone} standard)`;
   }
@@ -366,16 +375,60 @@ function RolesForm(props: {
   );
 }
 
-const EMPTY: Partial<DevelopmentStandard> = { zone: "", min_setback_m: null, max_floors: null, max_coverage_pct: null, min_plot_m2: null, permit_required: false, build_in_flood_area: true };
+const EMPTY: Partial<DevelopmentStandard> = {
+  zone: "",
+  min_setback_m: null,
+  front_setback_m: null,
+  side_setback_m: null,
+  rear_setback_m: null,
+  min_floors: null,
+  max_floors: null,
+  max_coverage_pct: null,
+  min_plot_m2: null,
+  min_width_m: null,
+  prohibited_uses: [],
+  permit_required: false,
+  build_in_flood_area: true,
+};
+
+/** "6 / 3 / 5", or the single any-side setback, or a dash. */
+function setbacks(s: DevelopmentStandard): string {
+  const sides = [s.front_setback_m, s.side_setback_m, s.rear_setback_m];
+  if (sides.some((v) => v !== null)) return sides.map((v) => v ?? "—").join(" / ");
+  return s.min_setback_m === null ? "—" : `${s.min_setback_m} (any side)`;
+}
+
+function storeys(s: DevelopmentStandard): string {
+  if (s.min_floors !== null && s.max_floors !== null) return `${s.min_floors} to ${s.max_floors}`;
+  if (s.min_floors !== null) return `at least ${s.min_floors}`;
+  return s.max_floors === null ? "—" : `up to ${s.max_floors}`;
+}
 
 function Standards({ canEdit }: { canEdit: boolean }) {
   const { api, districtId } = useSession();
   const list = useLoad(() => api.listStandards(), [api, districtId]);
   const [draft, setDraft] = useState<Partial<DevelopmentStandard> | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const [note, setNote] = useState<string | null>(null);
   useEffect(() => setDraft(null), [districtId]);
 
   const number = (value: string) => (value === "" ? null : Number(value));
+  async function adopt() {
+    setError(null);
+    setNote(null);
+    try {
+      const report = await api.adoptNationalStandards();
+      const parts = [
+        report.added.length ? `added ${report.added.join(", ")}` : "",
+        report.updated.length ? `refreshed ${report.updated.join(", ")}` : "",
+        report.kept.length ? `kept the district's own for ${report.kept.join(", ")}` : "",
+      ].filter(Boolean);
+      setNote(`LUSPA's 2025 standards: ${parts.join("; ")}.`);
+      list.reload();
+    } catch (err) {
+      setError(err);
+    }
+  }
   async function save() {
     if (!draft) return;
     setError(null);
@@ -395,18 +448,21 @@ function Standards({ canEdit }: { canEdit: boolean }) {
       <p className="muted small">
         What the district allows in each zone. A zone is matched to a parcel's land use (or the zoning layer). The standard with no
         zone is the district's default. With no standards at all, a 3 m setback is checked. They apply to every project in the
-        district, at the next run.
+        district, at the next run. Front, side and back setbacks are measured from the plot's street side, so they need a streets
+        layer; without one the smallest of the three is asked of every side.
       </p>
       <ErrorMessage error={error ?? list.error} />
+      {note && <p role="status">{note}</p>}
       {list.data && list.data.length > 0 && (
         <table className="data">
           <thead>
             <tr>
               <th>Zone</th>
-              <th>Setback (m)</th>
-              <th>Floors</th>
+              <th>Setbacks: front / side / back (m)</th>
+              <th>Storeys</th>
               <th>Coverage (%)</th>
               <th>Plot (m²)</th>
+              <th>Width (m)</th>
               <th>Permit</th>
               <th>Flood-prone areas</th>
               <th />
@@ -415,11 +471,15 @@ function Standards({ canEdit }: { canEdit: boolean }) {
           <tbody>
             {list.data.map((s) => (
               <tr key={s.id}>
-                <td>{s.zone || "Default"}</td>
-                <td>{s.min_setback_m ?? "—"}</td>
-                <td>{s.max_floors ?? "—"}</td>
+                <td>
+                  {s.zone || "Default"}
+                  {s.source === "luspa-2025" && <div className="muted small">LUSPA 2025</div>}
+                </td>
+                <td>{setbacks(s)}</td>
+                <td>{storeys(s)}</td>
                 <td>{s.max_coverage_pct ?? "—"}</td>
                 <td>{s.min_plot_m2 ?? "—"}</td>
+                <td>{s.min_width_m ?? "—"}</td>
                 <td>{s.permit_required ? "required" : "—"}</td>
                 <td>{s.build_in_flood_area ? "—" : "no building"}</td>
                 <td>
@@ -449,9 +509,15 @@ function Standards({ canEdit }: { canEdit: boolean }) {
         </table>
       )}
       {canEdit && !draft && (
-        <button type="button" className="secondary" onClick={() => setDraft(EMPTY)}>
-          Add a standard
-        </button>
+        <div className="inline-form">
+          <button type="button" className="secondary" onClick={() => setDraft(EMPTY)}>
+            Add a standard
+          </button>
+          <button type="button" className="secondary" onClick={() => void adopt()}>
+            Adopt LUSPA's 2025 standards
+          </button>
+          <span className="muted small">Adds the national standard for each residential zone. Standards you have changed are kept.</span>
+        </div>
       )}
       {draft && (
         <form
@@ -471,6 +537,22 @@ function Standards({ canEdit }: { canEdit: boolean }) {
             <input type="number" min={0} step="any" style={{ width: "6rem" }} value={draft.min_setback_m ?? ""} onChange={(e) => setDraft({ ...draft, min_setback_m: number(e.target.value) })} />
           </label>
           <label>
+            Front setback (m)
+            <input type="number" min={0} step="any" style={{ width: "6rem" }} value={draft.front_setback_m ?? ""} onChange={(e) => setDraft({ ...draft, front_setback_m: number(e.target.value) })} />
+          </label>
+          <label>
+            Side setback (m)
+            <input type="number" min={0} step="any" style={{ width: "6rem" }} value={draft.side_setback_m ?? ""} onChange={(e) => setDraft({ ...draft, side_setback_m: number(e.target.value) })} />
+          </label>
+          <label>
+            Back setback (m)
+            <input type="number" min={0} step="any" style={{ width: "6rem" }} value={draft.rear_setback_m ?? ""} onChange={(e) => setDraft({ ...draft, rear_setback_m: number(e.target.value) })} />
+          </label>
+          <label>
+            Minimum floors
+            <input type="number" min={0} style={{ width: "5rem" }} value={draft.min_floors ?? ""} onChange={(e) => setDraft({ ...draft, min_floors: number(e.target.value) })} />
+          </label>
+          <label>
             Maximum floors
             <input type="number" min={0} style={{ width: "5rem" }} value={draft.max_floors ?? ""} onChange={(e) => setDraft({ ...draft, max_floors: number(e.target.value) })} />
           </label>
@@ -481,6 +563,18 @@ function Standards({ canEdit }: { canEdit: boolean }) {
           <label>
             Minimum plot (m²)
             <input type="number" min={0} step="any" style={{ width: "6rem" }} value={draft.min_plot_m2 ?? ""} onChange={(e) => setDraft({ ...draft, min_plot_m2: number(e.target.value) })} />
+          </label>
+          <label>
+            Minimum width at the street (m)
+            <input type="number" min={0} step="any" style={{ width: "6rem" }} value={draft.min_width_m ?? ""} onChange={(e) => setDraft({ ...draft, min_width_m: number(e.target.value) })} />
+          </label>
+          <label>
+            Words for uses not allowed (comma-separated)
+            <input
+              value={(draft.prohibited_uses ?? []).join(", ")}
+              placeholder="e.g. factory, filling station"
+              onChange={(e) => setDraft({ ...draft, prohibited_uses: e.target.value.split(",").map((w) => w.trimStart()) })}
+            />
           </label>
           <label className="checkbox">
             <input type="checkbox" checked={draft.permit_required ?? false} onChange={(e) => setDraft({ ...draft, permit_required: e.target.checked })} /> Permit required

@@ -30,6 +30,7 @@ ROLES: tuple[Role, ...] = (
         (
             ("id_field", "Property id", "property_id"),
             ("floors_field", "Number of floors", "floors"),
+            ("use_field", "Use", "use"),
         ),
     ),
     Role(

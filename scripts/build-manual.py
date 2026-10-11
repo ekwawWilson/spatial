@@ -29,6 +29,7 @@ CHAPTERS = [
     ("imagery.md", "Building the plan's data"),
     ("readiness-checklist.md", "Building the plan's data"),
     ("relationships.md", "Building the plan's data"),
+    ("zoning.md", "Building the plan's data"),
     ("field-app.md", "Working in the field"),
     ("field-sync.md", "Working in the field"),
     ("project-files.md", "Keeping work safe"),

@@ -131,6 +131,40 @@ describe("relationships page", () => {
     await waitFor(() => expect(api.calls.some((c) => c.method === "POST" && c.path === "/api/projects/5/relations/run/")).toBe(true));
   });
 
+  it("adopts LUSPA's standards and shows front, side and back setbacks", async () => {
+    const reA = { id: 1, zone: "Re A", min_setback_m: null, front_setback_m: 6, side_setback_m: 3, rear_setback_m: 5, min_floors: null, max_floors: 2, max_coverage_pct: 40, min_plot_m2: 930, min_width_m: 21.3, prohibited_uses: ["cemetery"], permit_required: false, build_in_flood_area: true, source: "luspa-2025", notes: "", updated_at: "" };
+    let adopted = false;
+    const api = backend({
+      "GET /api/standards/": () => ({ body: adopted ? [reA] : [] }),
+      "POST /api/standards/adopt-national/": () => {
+        adopted = true;
+        return { body: { added: ["Re A"], updated: [], kept: [] } };
+      },
+    });
+    renderApp(api.fetch, { tokens: signedIn, route: "/projects/5/relations" });
+    const section = await screen.findByRole("region", { name: "Development standards" });
+    await userEvent.click(within(section).getByRole("button", { name: "Adopt LUSPA's 2025 standards" }));
+    expect(await within(section).findByRole("status")).toHaveTextContent("added Re A");
+    const row = (await within(section).findByText("Re A")).closest("tr")!;
+    expect(row).toHaveTextContent("LUSPA 2025");
+    expect(row).toHaveTextContent("6 / 3 / 5");
+    expect(row).toHaveTextContent("up to 2");
+    expect(row).toHaveTextContent("21.3");
+  });
+
+  it("describes the zoning breaches in plain words", () => {
+    const base = { type: "violates", object: null, method: "calculated" } as const;
+    expect(describeLink(link(3, { ...base, rule: "setback_front", details: { measured_m: 3, required_m: 6, zone: "Re A" } }))).toBe(
+      "Too close to the street side of the plot: 3 m, needs 6 m (Re A standard)",
+    );
+    expect(describeLink(link(4, { ...base, rule: "too_few_floors", details: { measured: 1, required: 3, zone: "Re C" } }))).toBe(
+      "Too few floors: 1, needs at least 3 (Re C standard)",
+    );
+    expect(describeLink(link(5, { ...base, rule: "prohibited_use", method: "inferred", details: { use: "Fuel filling station", matched: "filling station", zone: "Re B" } }))).toBe(
+      'Use not allowed in this zone (to be checked): recorded use "Fuel filling station" (Re B standard)',
+    );
+  });
+
   it("describes a breach in plain words", () => {
     const breach = link(2, { type: "violates", object: null, rule: "setback", method: "calculated", details: { measured_m: 0.5, required_m: 3, zone: "default" } });
     expect(describeLink(breach)).toBe("Too close to the plot boundary: 0.5 m, needs 3 m (default standard)");

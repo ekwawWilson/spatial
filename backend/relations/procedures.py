@@ -15,6 +15,7 @@ from django.db import connection
 
 from projects.models import Feature
 
+from . import zoning
 from .models import DevelopmentStandard, LayerRole, Relationship
 
 # Defaults a role's config can override.
@@ -25,6 +26,23 @@ CATCHMENT_M = 1000.0
 NEED_MATCH_M = 500.0
 MIN_SHARE = 0.5  # a property "falls within" an area that covers at least half of it
 SETBACK_TOLERANCE_M = 0.05
+WIDTH_TOLERANCE_M = 0.3
+# A plot's front is looked for among streets this close to it (in degrees: about 220 m).
+FRONT_SEARCH_DEG = 0.002
+# The share of the spread in "distance to the street" that still counts as the
+# front (nearest edges) or the back (farthest edges). The rest are sides.
+EDGE_BAND = 0.25
+STANDARD_FIELDS = (
+    "min_setback_m",
+    "front_setback_m",
+    "side_setback_m",
+    "rear_setback_m",
+    "min_floors",
+    "max_floors",
+    "max_coverage_pct",
+    "min_plot_m2",
+    "min_width_m",
+)
 
 # Platform defaults, used where a district has set no standard at all.
 PLATFORM_STANDARD = {"min_setback_m": 3.0, "max_floors": None, "max_coverage_pct": None}
@@ -317,40 +335,102 @@ def permits(roles: Roles, scope: Scope) -> dict[str, list[Candidate]]:
 
 def standard_for(district_id: int, zone: str | None) -> dict[str, Any]:
     """The standard that applies to a zone: the zone's own, else the
-    district's default (zone ""), else the platform's."""
-    rows = {s.zone.lower(): s for s in DevelopmentStandard.objects.filter(district_id=district_id)}
+    district's default (zone ""), else the platform's. A zone written another
+    way ("ReA", "Residential Zone A") finds the standard for its national
+    code ("Re A")."""
+    stored = list(DevelopmentStandard.objects.filter(district_id=district_id))
+    rows = {s.zone.lower(): s for s in stored}
     chosen = rows.get(str(zone).lower()) if zone not in (None, "") else None
+    national = zoning.match(zone)
+    if chosen is None and national is not None:
+        chosen = next((s for s in stored if zoning.match(s.zone) == national), None)
     chosen = chosen or rows.get("")
+    empty: dict[str, Any] = dict.fromkeys(STANDARD_FIELDS)
     if chosen is None:
         return {
+            **empty,
             "id": None,
             "zone": "",
             "permit_required": False,
             "build_in_flood_area": True,
-            "min_plot_m2": None,
+            "prohibited_uses": [],
             **PLATFORM_STANDARD,
         }
     return {
+        **{name: getattr(chosen, name) for name in STANDARD_FIELDS},
         "id": chosen.pk,
         "zone": chosen.zone,
-        "min_setback_m": chosen.min_setback_m,
-        "max_floors": chosen.max_floors,
-        "max_coverage_pct": chosen.max_coverage_pct,
-        "min_plot_m2": chosen.min_plot_m2,
         "permit_required": chosen.permit_required,
         "build_in_flood_area": chosen.build_in_flood_area,
+        "prohibited_uses": [str(w).lower() for w in chosen.prohibited_uses or [] if str(w).strip()],
     }
+
+
+@dataclass
+class Edges:
+    """A property's plot, seen from the street: how far the building stands
+    from the front, the sides and the back, and how wide the plot's front is."""
+
+    front_m: float | None = None
+    side_m: float | None = None
+    rear_m: float | None = None
+    width_m: float | None = None
+
+
+def plot_edges(pairs: list[tuple[int, int]], streets_layer: int) -> dict[int, Edges]:
+    """For each (property, parcel): the parcel's boundary taken edge by edge.
+    The edges nearest a street are its front, the farthest its back, the rest
+    its sides. Parcels with no street nearby are left out: their front is unknown."""
+    if not pairs:
+        return {}
+    sql = (
+        "SELECT p.sid, ST_Distance(b.geom_4326::geography, seg.geom::geography),"
+        " ST_Length(seg.geom::geography),"
+        " (SELECT min(ST_Distance(st.geom_4326::geography, ST_Centroid(seg.geom)::geography))"
+        "  FROM projects_feature st WHERE st.layer_id = %s"
+        "  AND st.geom_4326 && ST_Expand(seg.geom, %s))"
+        " FROM unnest(%s::bigint[], %s::bigint[]) AS p(sid, oid)"
+        " JOIN projects_feature b ON b.id = p.sid"
+        " JOIN projects_feature o ON o.id = p.oid"
+        " CROSS JOIN LATERAL ST_DumpSegments(o.geom_4326) AS seg"
+        " WHERE ST_Dimension(o.geom_4326) = 2"
+    )
+    params = [streets_layer, FRONT_SEARCH_DEG, [p[0] for p in pairs], [p[1] for p in pairs]]
+    by_property: dict[int, list[tuple[float, float, float]]] = {}
+    for subject, gap, length, to_street in _rows(sql, params):
+        if to_street is None or float(length) < 0.01:
+            continue
+        by_property.setdefault(subject, []).append((float(gap), float(length), float(to_street)))
+    found: dict[int, Edges] = {}
+    for subject, segments in by_property.items():
+        near = min(s[2] for s in segments)
+        far = max(s[2] for s in segments)
+        spread = far - near
+        if spread < 1.0:
+            continue  # every edge is as near the street as any other: no front to speak of
+        front = [s for s in segments if s[2] <= near + EDGE_BAND * spread]
+        rear = [s for s in segments if s[2] >= far - EDGE_BAND * spread]
+        side = [s for s in segments if s not in front and s not in rear]
+        found[subject] = Edges(
+            front_m=min(s[0] for s in front),
+            side_m=min((s[0] for s in side), default=None),
+            rear_m=min(s[0] for s in rear),
+            width_m=sum(s[1] for s in front),
+        )
+    return found
 
 
 def rules(
     roles: Roles, scope: Scope, district_id: int, project_id: int
 ) -> dict[str, list[Candidate]]:
-    """Checks each property against the standard for its zone: setback from
-    the parcel boundary, floors, plot coverage, plot size, permit, building
-    in a flood-prone area."""
+    """Checks each property against the standard for its zone: setbacks from
+    the parcel boundary (front, sides and back where the street is known),
+    storeys, plot coverage, plot size and width, a prohibited use, permit,
+    building in a flood-prone area."""
     properties, parcels = roles["properties"], roles["parcels"]
     zone_field = parcels.config.get("zone_field", "land_use")
     floors_field = properties.config.get("floors_field", "floors")
+    use_field = properties.config.get("use_field", "use")
 
     # Each property with its parcel (the one covering most of it), the gap to
     # the parcel's boundary, and both areas.
@@ -390,18 +470,30 @@ def rules(
         for pid, a in _rows(coverage_sql, [properties.layer_id, parcels.layer_id])
     }
 
+    on_parcel = [(row[0], row[1]) for row in rows if float(row[2]) >= MIN_SHARE]
+    edges = plot_edges(on_parcel, roles["streets"].layer_id) if "streets" in roles else {}
+
     linked = Relationship.objects.filter(project_id=project_id, status=Relationship.Status.ACTIVE)
     has_permit = set(linked.filter(type="has_permit").values_list("subject_id", flat=True))
     in_flood = set(linked.filter(type="affected_by").values_list("subject_id", flat=True))
     standards: dict[str, dict[str, Any]] = {}
     found: list[Candidate] = []
 
-    def breach(subject: int, rule: str, standard: dict[str, Any], **details: Any) -> None:
+    def breach(
+        subject: int,
+        rule: str,
+        standard: dict[str, Any],
+        method: str = Relationship.Method.CALCULATED,
+        confidence: float = 1.0,
+        **details: Any,
+    ) -> None:
         found.append(
             Candidate(
                 "violates",
                 subject,
                 None,
+                method=method,
+                confidence=confidence,
                 rule=rule,
                 details={
                     "standard": standard["id"],
@@ -430,10 +522,72 @@ def rules(
                 required_m=setback,
                 **base,
             )
+        # Front, sides and back, where the standard sets them. Without a street
+        # nearby the front is unknown: the smallest of them is asked of every side.
+        sides = {
+            name: standard[f"{name}_setback_m"]
+            for name in ("front", "side", "rear")
+            if standard[f"{name}_setback_m"] is not None
+        }
+        edge = edges.get(subject)
+        if sides and edge is not None:
+            for name, required in sides.items():
+                measured = getattr(edge, f"{name}_m")
+                if measured is not None and measured < required - SETBACK_TOLERANCE_M:
+                    breach(
+                        subject,
+                        f"setback_{name}",
+                        standard,
+                        measured_m=round(measured, 2),
+                        required_m=required,
+                        **base,
+                    )
+        elif sides and setback is None:
+            least = min(sides.values())
+            if float(gap) < least - SETBACK_TOLERANCE_M:
+                breach(
+                    subject,
+                    "setback",
+                    standard,
+                    measured_m=round(float(gap), 2),
+                    required_m=least,
+                    front_unknown=True,
+                    **base,
+                )
+        min_width = standard["min_width_m"]
+        if min_width is not None and edge is not None and edge.width_m is not None:
+            if edge.width_m < min_width - WIDTH_TOLERANCE_M:
+                breach(
+                    subject,
+                    "plot_width",
+                    standard,
+                    measured_m=round(edge.width_m, 1),
+                    required_m=min_width,
+                    **base,
+                )
         floors = _obj(props).get(floors_field)
         limit = standard["max_floors"]
         if limit is not None and isinstance(floors, int | float) and floors > limit:
             breach(subject, "floors", standard, measured=floors, allowed=limit, **base)
+        least_floors = standard["min_floors"]
+        if least_floors is not None and isinstance(floors, int | float) and floors < least_floors:
+            breach(
+                subject, "too_few_floors", standard, measured=floors, required=least_floors, **base
+            )
+        use = str(_obj(props).get(use_field) or "").lower()
+        matched = next((word for word in standard["prohibited_uses"] if word in use), None)
+        if use and matched:
+            # The recorded use only suggests it: a person confirms or rejects.
+            breach(
+                subject,
+                "prohibited_use",
+                standard,
+                method=Relationship.Method.INFERRED,
+                confidence=0.7,
+                use=_obj(props).get(use_field),
+                matched=matched,
+                **base,
+            )
         max_cover = standard["max_coverage_pct"]
         if max_cover is not None and parcel_area:
             cover = 100.0 * built.get(parcel, 0.0) / float(parcel_area)

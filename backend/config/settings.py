@@ -178,6 +178,7 @@ SPECTACULAR_SETTINGS = {
         "DistrictKindEnum": "core.models.District.Kind",
         "CrsKindEnum": "crs.models.CoordinateSystem.Kind",
         "ImageryKindEnum": "imagery.models.Imagery.Kind",
+        "ZoningSchemeStatusEnum": "relations.models.ZoningScheme.Status",
     },
     "DESCRIPTION": "Community planning GIS platform for Ghanaian MMDAs.",
     "VERSION": "0.1.0",

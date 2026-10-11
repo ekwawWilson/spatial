@@ -33,10 +33,22 @@ class DevelopmentStandard(models.Model):
 
     district = models.ForeignKey("core.District", on_delete=models.CASCADE, related_name="+")
     zone = models.CharField(max_length=100, blank=True)
+    # From any boundary of the plot. The three below, where set, apply to the
+    # side facing the street, the sides, and the back.
     min_setback_m = models.FloatField(null=True, blank=True)
+    front_setback_m = models.FloatField(null=True, blank=True)
+    side_setback_m = models.FloatField(null=True, blank=True)
+    rear_setback_m = models.FloatField(null=True, blank=True)
+    min_floors = models.PositiveSmallIntegerField(null=True, blank=True)
     max_floors = models.PositiveSmallIntegerField(null=True, blank=True)
     max_coverage_pct = models.FloatField(null=True, blank=True)
     min_plot_m2 = models.FloatField(null=True, blank=True)
+    min_width_m = models.FloatField(null=True, blank=True, help_text="Along the street")
+    prohibited_uses = models.JSONField(
+        default=list, blank=True, help_text="Words that, in a property's use, suggest a breach"
+    )
+    # "luspa-2025" when adopted from the national standards and not changed since.
+    source = models.CharField(max_length=20, blank=True)
     permit_required = models.BooleanField(default=False)
     build_in_flood_area = models.BooleanField(
         default=True, help_text="False: building in a flood-prone area breaks the standard"
@@ -52,6 +64,43 @@ class DevelopmentStandard(models.Model):
 
     def __str__(self) -> str:
         return self.zone or "Default"
+
+
+class ZoningScheme(models.Model):
+    """The register entry for a project's zoning scheme: when it was approved
+    and took effect, when it was sent to LUSPA, and when it is next due for
+    update (L.I. 2384 r.29)."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        APPROVED = "approved", "Approved"
+        ADOPTED = "adopted", "Existing scheme adopted"
+
+    district = models.ForeignKey("core.District", on_delete=models.CASCADE, related_name="+")
+    project = models.ForeignKey(
+        "projects.PlanProject", on_delete=models.CASCADE, related_name="zoning_schemes"
+    )
+    name = models.CharField(max_length=200)
+    status = models.CharField(max_length=8, choices=Status.choices, default=Status.DRAFT)
+    structure_plan_approved_on = models.DateField(null=True, blank=True)
+    approved_on = models.DateField(null=True, blank=True)
+    effective_on = models.DateField(null=True, blank=True)
+    sent_to_luspa_on = models.DateField(null=True, blank=True)
+    update_every_months = models.PositiveSmallIntegerField(
+        default=60, help_text="The scheme's schedule for periodic updates"
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+"
+    )
+
+    class Meta:
+        ordering = ["-id"]
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Relationship(models.Model):

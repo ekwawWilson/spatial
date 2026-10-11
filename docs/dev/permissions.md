@@ -37,6 +37,11 @@ A person can hold a different role in each district they belong to. System admin
 | `sync.resolve` | district_admin, planner |
 | `relations.edit` | district_admin, planner |
 | `standards.manage` | district_admin |
+| `permit.view` | district_admin, planner, field_officer, viewer |
+| `permit.process` | district_admin, planner |
+| `permit.inspect` | district_admin, planner, field_officer |
+| `permit.decide` | district_admin |
+| `permit.settings` | district_admin |
 | `data.sensitive` | district_admin, planner |
 
 ## System administrator only

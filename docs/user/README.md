@@ -14,6 +14,7 @@ Written for physical planners, district administrators and field officers. Secti
 - [The readiness checklist](readiness-checklist.md)
 - [Relationships between features](relationships.md)
 - [Zoning and the national standards](zoning.md)
+- [Planning and development permits](permits.md)
 - [Project files (.spp)](project-files.md)
 - [The field app (Android)](field-app.md)
 - [Field data in the office: sync, conflicts and ground-truthing](field-sync.md)

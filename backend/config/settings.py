@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "sync",
     "imagery",
     "relations",
+    "permits",
 ]
 
 MIDDLEWARE = [
@@ -179,6 +180,8 @@ SPECTACULAR_SETTINGS = {
         "CrsKindEnum": "crs.models.CoordinateSystem.Kind",
         "ImageryKindEnum": "imagery.models.Imagery.Kind",
         "ZoningSchemeStatusEnum": "relations.models.ZoningScheme.Status",
+        "PermitKindEnum": "permits.models.Application.Kind",
+        "PermitRecommendationEnum": "permits.models.Application.Recommendation",
     },
     "DESCRIPTION": "Community planning GIS platform for Ghanaian MMDAs.",
     "VERSION": "0.1.0",

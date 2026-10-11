@@ -14,12 +14,15 @@ import { HomePage } from "./pages/HomePage";
 import { ImageryPage } from "./pages/ImageryPage";
 import { LoginPage } from "./pages/LoginPage";
 import { MembersPage } from "./pages/MembersPage";
+import { PermitPage } from "./pages/PermitPage";
+import { PermitsPage } from "./pages/PermitsPage";
 import { ProjectWorkspace } from "./pages/ProjectWorkspace";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { ReadinessPage } from "./pages/ReadinessPage";
 import { RelationsPage } from "./pages/RelationsPage";
 import { StatusPage } from "./pages/StatusPage";
 import { UsersPage } from "./pages/UsersPage";
+import { VerifyPage } from "./pages/VerifyPage";
 import { ZoningPage } from "./pages/ZoningPage";
 
 export function App() {
@@ -29,6 +32,7 @@ export function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/status" element={<StatusPage />} />
+      <Route path="/verify/:token" element={<VerifyPage />} />
       <Route
         element={
           <RequireAuth>
@@ -69,6 +73,22 @@ export function App() {
           element={
             <RequirePermission permission="project.view">
               <RelationsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="projects/:projectId/permits"
+          element={
+            <RequirePermission permission="permit.view">
+              <PermitsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="projects/:projectId/permits/:permitId"
+          element={
+            <RequirePermission permission="permit.view">
+              <PermitPage />
             </RequirePermission>
           }
         />

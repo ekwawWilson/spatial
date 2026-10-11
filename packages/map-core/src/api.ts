@@ -56,6 +56,13 @@ import type {
   ImageryUpload,
   DevelopmentStandard,
   AdoptReport,
+  NewPermit,
+  PermitApplication,
+  PermitDecision,
+  PermitFee,
+  PermitList,
+  PermitRegistry,
+  PermitVerification,
   NationalZones,
   ZoningScheme,
   LayerRoleRow,
@@ -584,6 +591,55 @@ export function createApiClient(options: ApiClientOptions = {}) {
       request<ZoningScheme>("POST", "/api/zoning-schemes/", data),
     updateZoningScheme: (id: number, data: Partial<ZoningScheme>) => request<ZoningScheme>("PATCH", `/api/zoning-schemes/${id}/`, data),
     deleteZoningScheme: (id: number) => request<void>("DELETE", `/api/zoning-schemes/${id}/`),
+
+    // --- Permits ---------------------------------------------------------------------------
+    permitRegistry: () => request<PermitRegistry>("GET", "/api/permits/registry/"),
+    listPermits: (filters: { project?: number; status?: string; q?: string; overdue?: boolean } = {}) =>
+      request<PermitList>("GET", `/api/permits/applications/${query({ ...filters, overdue: filters.overdue ? "true" : undefined })}`),
+    getPermit: (id: number) => request<PermitApplication>("GET", `/api/permits/applications/${id}/`),
+    /** Receives an application: it gets its number and its deadlines start. */
+    createPermit: (data: NewPermit) => request<PermitApplication>("POST", "/api/permits/applications/", data),
+    updatePermit: (id: number, data: Partial<Omit<NewPermit, "project" | "kind" | "received_on">>) =>
+      request<PermitApplication>("PATCH", `/api/permits/applications/${id}/`, data),
+    acknowledgePermit: (id: number, on?: string) => request<PermitApplication>("POST", `/api/permits/applications/${id}/acknowledge/`, { on }),
+    checkPermit: (id: number) => request<PermitApplication>("POST", `/api/permits/applications/${id}/check/`),
+    inspectPermit: (id: number, data: { on?: string; findings: Record<string, string>; summary?: string; purpose?: "application" | "completion" }) =>
+      request<PermitApplication>("POST", `/api/permits/applications/${id}/inspect/`, data),
+    commentOnPermit: (id: number, data: { agency: string; body: string; objection?: boolean }) =>
+      request<PermitApplication>("POST", `/api/permits/applications/${id}/comments/`, data),
+    reportPermit: (id: number, data: { recommendation: PermitDecision; report?: string; on?: string }) =>
+      request<PermitApplication>("POST", `/api/permits/applications/${id}/report/`, data),
+    decidePermit: (id: number, data: { decision: PermitDecision; reasons?: string; conditions?: string; on?: string }) =>
+      request<PermitApplication>("POST", `/api/permits/applications/${id}/decide/`, data),
+    recordPermitFee: (id: number, data: { stage: "processing" | "permit"; amount: string; receipt: string; paid_on?: string }) =>
+      request<PermitApplication>("POST", `/api/permits/applications/${id}/fees/`, data),
+    issuePermit: (id: number, on?: string) => request<PermitApplication>("POST", `/api/permits/applications/${id}/issue/`, { on }),
+    withdrawPermit: (id: number, note = "") => request<PermitApplication>("POST", `/api/permits/applications/${id}/withdraw/`, { note }),
+    async uploadPermitDocument(id: number, file: File, requirement = ""): Promise<PermitApplication> {
+      const form = new FormData();
+      form.set("file", file);
+      if (requirement) form.set("requirement", requirement);
+      const send = () => doFetch(`${root}/api/permits/applications/${id}/documents/`, { method: "POST", headers: headers(false), body: form });
+      let response = await send();
+      if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
+      if (!response.ok) throw await toApiError(response);
+      return (await response.json()) as PermitApplication;
+    },
+    downloadPermitDocument: (id: number) => blob(`/api/permits/documents/${id}/download/`),
+    deletePermitDocument: (id: number) => request<void>("DELETE", `/api/permits/documents/${id}/`),
+    /** The acknowledgement of receipt, the refusal or deferral letter, or the certificate, as PDF. */
+    permitPaper: (id: number, paper: "acknowledgement" | "letter" | "certificate") => blob(`/api/permits/applications/${id}/${paper}/`),
+    listPermitFees: () => request<PermitFee[]>("GET", "/api/permits/fees/"),
+    createPermitFee: (data: Omit<PermitFee, "id" | "updated_at">) => request<PermitFee>("POST", "/api/permits/fees/", data),
+    updatePermitFee: (id: number, data: Partial<PermitFee>) => request<PermitFee>("PATCH", `/api/permits/fees/${id}/`, data),
+    deletePermitFee: (id: number) => request<void>("DELETE", `/api/permits/fees/${id}/`),
+    /** Checks a certificate's code against the Assembly's record. Needs no sign-in. */
+    async verifyPermit(token: string): Promise<PermitVerification | null> {
+      const response = await doFetch(`${root}/api/public/permits/${encodeURIComponent(token)}/`);
+      if (response.status === 404) return null;
+      if (!response.ok) throw await toApiError(response);
+      return (await response.json()) as PermitVerification;
+    },
 
     // --- Audit log ---------------------------------------------------------------
     listAudit: (filters: AuditFilters = {}) =>

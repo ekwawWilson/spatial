@@ -31,6 +31,11 @@ export type Permission =
   | "sync.resolve"
   | "relations.edit"
   | "standards.manage"
+  | "permit.view"
+  | "permit.process"
+  | "permit.inspect"
+  | "permit.decide"
+  | "permit.settings"
   | "data.sensitive";
 
 export interface DistrictBrief {
@@ -900,4 +905,165 @@ export interface ZoningScheme {
   notes: string;
   deadlines: Partial<Record<"prepare" | "send_to_luspa" | "update", SchemeDeadline>>;
   updated_at: string;
+}
+
+// --- Permits (Phase 15) --------------------------------------------------------------------
+
+export type PermitKind = "planning" | "development";
+export type PermitStatus = "received" | "review" | "reported" | "granted" | "deferred" | "refused" | "issued" | "withdrawn";
+export type PermitDecision = "grant" | "refuse" | "defer";
+
+/** What the Regulations fix: categories, documents, deadlines, inspection points. */
+export interface PermitRegistry {
+  categories: { code: string; label: string; kind: PermitKind }[];
+  requirements: { code: string; label: string; applies: string[]; rule: string }[];
+  clocks: { code: string; label: string; days: number; rule: string }[];
+  inspection_points: { code: string; label: string }[];
+  considerations: string[];
+  permit_valid_years: number;
+}
+
+/** A statutory step of an application: when it is due and whether it was done. */
+export interface PermitClock {
+  code: string;
+  label: string;
+  rule: string;
+  days: number;
+  due_on: string;
+  done_on: string | null;
+  /** Done, but after the due date. */
+  late: boolean;
+  /** Not done, and the due date has passed. */
+  overdue: boolean;
+}
+
+export interface PermitCheck {
+  code: string;
+  label: string;
+  outcome: "pass" | "fail" | "warn" | "unknown";
+  detail: string;
+}
+
+export interface PermitChecks {
+  ran_at: string;
+  zone: { value: string | null; from: string; national: string | null; name: string | null } | null;
+  standard: Record<string, unknown> | null;
+  results: PermitCheck[];
+  counts: Record<PermitCheck["outcome"], number>;
+}
+
+/** An application as it appears in a list. */
+export interface PermitSummary {
+  id: number;
+  project: number;
+  number: string;
+  kind: PermitKind;
+  category: string;
+  category_label: string;
+  status: PermitStatus;
+  status_label: string;
+  applicant_name: string;
+  proposed_use: string;
+  proposed_floors: number | null;
+  /** The site's feature in the project's permits layer. */
+  site: number | null;
+  received_on: string;
+  decided_on: string | null;
+  issued_on: string | null;
+  expires_on: string | null;
+  expired: boolean;
+  /** The first statutory step not done yet; null once the application is closed. */
+  next_due: PermitClock | null;
+  check_counts: Record<PermitCheck["outcome"], number> | null;
+}
+
+export interface PermitRequirement {
+  code: string;
+  label: string;
+  rule: string;
+  /** Asked for by the officer ("where applicable"), not required of every application. */
+  asked_for: boolean;
+  submitted: number;
+}
+
+export interface PermitApplication extends PermitSummary {
+  /** "restricted" for roles that may not see personal data. */
+  applicant_phone: string;
+  applicant_email: string;
+  applicant_address: string;
+  description: string;
+  acknowledged_on: string | null;
+  inspected_on: string | null;
+  reported_on: string | null;
+  clocks: PermitClock[];
+  requirements: PermitRequirement[];
+  extra_requirements: string[];
+  documents: { id: number; requirement: string; name: string; size: number; uploaded_at: string }[];
+  comments: { id: number; agency: string; body: string; objection: boolean; recorded_by: string | null; recorded_at: string }[];
+  inspections: { id: number; purpose: "application" | "completion"; inspected_on: string; findings: Record<string, string>; summary: string; inspected_by: string | null }[];
+  checks: PermitChecks | null;
+  checked_at: string | null;
+  recommendation: PermitDecision | "";
+  report: string;
+  reasons: string;
+  conditions: string;
+  processing_fee: string | null;
+  processing_receipt: string;
+  processing_paid_on: string | null;
+  permit_fee: string | null;
+  permit_receipt: string;
+  permit_paid_on: string | null;
+  /** Where the certificate's QR code leads; null until the permit is issued. */
+  verify_url: string | null;
+  events: { kind: string; on: string; note: string; by: string | null }[];
+}
+
+export interface PermitList {
+  results: PermitSummary[];
+  summary: { total: number; open: number; overdue: number; by_status: Record<PermitStatus, number> };
+}
+
+export interface NewPermit {
+  project: number;
+  kind: PermitKind;
+  category: string;
+  applicant_name: string;
+  applicant_phone?: string;
+  applicant_email?: string;
+  applicant_address?: string;
+  description?: string;
+  proposed_use?: string;
+  proposed_floors?: number | null;
+  received_on?: string;
+  extra_requirements?: string[];
+  /** The site as a shape, in site_crs (default: the project's coordinate system). */
+  site_geometry?: GeoJSONGeometry;
+  site_crs?: string;
+  /** Or: use this feature's shape (a parcel) as the site. */
+  site_feature?: number;
+}
+
+/** A line of the Assembly's fee-fixing resolution. */
+export interface PermitFee {
+  id: number;
+  stage: "processing" | "permit";
+  kind: PermitKind;
+  category: string;
+  label: string;
+  amount: string;
+  updated_at: string;
+}
+
+/** What anyone holding a certificate is told about it. */
+export interface PermitVerification {
+  assembly: string;
+  number: string;
+  permit: string;
+  for: string;
+  applicant: string;
+  locality: string;
+  proposed_use: string;
+  issued_on: string;
+  expires_on: string;
+  valid: boolean;
 }

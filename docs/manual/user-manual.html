@@ -44,6 +44,8 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <li><a href="#readiness-checklist">The readiness checklist</a></li>
 <li><a href="#relationships">Relationships between features</a></li>
 <li><a href="#zoning">Zoning and the national standards</a></li>
+</ul><p class="part">Development control</p><ul>
+<li><a href="#permits">Planning and development permits</a></li>
 </ul><p class="part">Working in the field</p><ul>
 <li><a href="#field-app">The field app (Android)</a></li>
 <li><a href="#field-sync">Field data in the office: sync, conflicts and ground-truthing</a></li>
@@ -412,6 +414,72 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <p>Overdue duties are shown in red.</p>
 <h3>Who can do this</h3>
 <p>Everyone in the district can see the zones, the standards and the register. Planners and district administrators record schemes and colour the zoning layer. Only district administrators adopt or change the district's standards.</p>
+<h2 id="permits">Planning and development permits</h2>
+<p><em>Physical Planning Department staff; the district administrator for decisions and fees.</em></p>
+<p>The platform runs a permit application from the day it is received to the certificate, in the steps and by the dates the Regulations set (L.I. 2384 r.43–46, and LUSPA's Guidelines on Development Permitting). Open a project and choose <strong>Permits</strong>.</p>
+<h3>The two permits</h3>
+<ul>
+<li>A <strong>development permit</strong> is for building: erecting a building, altering or renovating one, civil and engineering works, regularising an existing structure, redevelopment (r.45(1)). It carries both the planning and the building permission.</li>
+<li>A <strong>planning permit</strong> is for the rest: a temporary structure, a change of use, demolition, an advertisement, subdivision or consolidation, hoarding, excavation, sand winning and quarrying, tree removal, a change of colour scheme (r.44(1)).</li>
+</ul>
+<h3>Receiving an application</h3>
+<p>Choose <strong>Receive an application</strong> and enter the permit, what it is for, the applicant, the proposed use and the number of storeys. Then say where the site is:</p>
+<ul>
+<li><strong>A parcel on the map:</strong> type the parcel's id. The parcel's shape becomes the site.</li>
+<li><strong>Its corner coordinates:</strong> one corner per line, easting then northing, in the project's coordinate system (from the site plan).</li>
+<li><strong>Add it later.</strong></li>
+</ul>
+<p>The application gets its <strong>number</strong> straight away (r.44(7)(b)): district, DP or PP, year, and a running number, for example <code>SMA/DP/2026/0014</code>. The site is added to the project's <strong>Permit applications</strong> layer, so it shows on the map.</p>
+<p>Enter the date the application was actually <strong>received</strong> if that isn't today: every deadline runs from it.</p>
+<h3>The deadlines</h3>
+<p>Each application shows its four dates, and the list shows the next one due. A date that has passed is in red; <strong>Only those with a deadline passed</strong> filters the list to them.</p>
+<table><thead><tr><th>Step</th><th>Days from receipt</th><th>Rule</th></tr></thead><tbody>
+<tr><td>Acknowledge receipt in writing</td><td>7</td><td>r.44(6)</td></tr>
+<tr><td>Technical Sub-Committee: zoning checks and site inspection</td><td>14</td><td>r.44(7)</td></tr>
+<tr><td>Technical Sub-Committee's report to the Spatial Planning Committee</td><td>21</td><td>r.44(8)</td></tr>
+<tr><td>Decision, and the certificate where granted</td><td>30</td><td>r.44(10)</td></tr>
+</tbody></table>
+<h3>The steps</h3>
+<p>The application's page always shows the <strong>next step</strong>.</p>
+<ol>
+<li><strong>Acknowledge receipt.</strong> Download the acknowledgement for the applicant: it gives the application number and the dates that follow. It is not a permit.</li>
+<li><strong>Documents.</strong> The page lists what this application must carry (r.44(3), r.45(9)) and what is still missing. Add each submitted document against the requirement it meets. A building of two or more storeys needs structural drawings too. Ask for a report "where applicable" (traffic, fire, environmental, and so on) by adding it to the application.</li>
+<li><strong>Comments.</strong> Record what the Works Department and other institutions say (r.44(7)(d)), and whether it is an objection.</li>
+<li><strong>Site inspection.</strong> Record what was found on each of the points the Regulations list (r.44(7)(f)): plot size and location, access, whether work has started, adjoining development and uses, fire safety, environmental concerns, the parcel's coordinates. Field officers can record inspections.</li>
+<li><strong>Report.</strong> The Technical Sub-Committee's findings and recommendation go to the Spatial Planning Committee (r.44(8)). The inspection comes first.</li>
+<li><strong>Decision.</strong> The district administrator records the committee's decision (r.44(9)): grant (with any conditions), refuse or defer. A refusal or deferral needs its <strong>reasons</strong>, which go to the applicant in a letter you can download (r.44(13)). A deferred application can be inspected and reported again.</li>
+<li><strong>Permit fee and certificate.</strong> Once granted, record the permit fee's receipt (r.44(11)); the district administrator then <strong>issues the permit</strong>. Download the certificate. It is valid for five years.</li>
+</ol>
+<p>An application can be <strong>withdrawn</strong> while it is open; its deadlines then stop.</p>
+<h3>The automatic checks</h3>
+<p>When an application is received, and whenever its details change, the platform checks the site against the map (the "initial zoning checks" of r.44(7)(a)):</p>
+<table><thead><tr><th>Check</th><th>What it compares</th></tr></thead><tbody>
+<tr><td>Zone</td><td>The zone the site is in, from the zoning layer or the parcel's land use</td></tr>
+<tr><td>Proposed use</td><td>Words in the proposed use against the uses the zone prohibits</td></tr>
+<tr><td>Plot size and width</td><td>The site's area and its width at the street against the zone's minimums</td></tr>
+<tr><td>Storeys</td><td>The number of storeys against the zone's limits</td></tr>
+<tr><td>Flood-prone land</td><td>Whether the site is in a flood-prone area</td></tr>
+<tr><td>Access</td><td>How far the nearest street is</td></tr>
+<tr><td>Local plan</td><td>Whether the site is within a local plan</td></tr>
+<tr><td>Other applications</td><td>Other applications on the same land</td></tr>
+</tbody></table>
+<p>Setbacks and coverage are read off the block plan: the check tells you what the zone asks for, and the area of this plot that may be built on.</p>
+<p>Each result is <strong>Meets it</strong>, <strong>Doesn't meet it</strong>, <strong>Look into it</strong> or <strong>Can't tell from the map</strong>. They are advice to the Technical Sub-Committee and the Spatial Planning Committee. They are never the decision.</p>
+<p>The checks use the district's standards (zoning and the national standards) and the project's layers (relationships, Layers).</p>
+<h3>The certificate and its QR code</h3>
+<p>The certificate carries a <strong>QR code</strong>. Anyone who scans it, or opens the address printed beside it, sees the Assembly's own record of that permit: its number, who it was issued to, what for, where, and whether it is still in force. No sign-in is needed. A certificate whose details differ from the record has been altered; a code that matches nothing is not from the Assembly.</p>
+<p>The certificate's layout is plain for now. When the Assembly supplies its letterhead and the exact Schedule forms, they replace it.</p>
+<h3>Fees</h3>
+<p>The district administrator enters the lines of the Assembly's <strong>fee-fixing resolution</strong> under <strong>Fees</strong>: a processing fee and a permit fee for each kind of permit, or for one category. Staff record each receipt on the application.</p>
+<h3>Who can do this</h3>
+<table><thead><tr><th></th><th>Viewer</th><th>Field officer</th><th>Planner</th><th>District administrator</th></tr></thead><tbody>
+<tr><td>See applications</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>See the applicant's phone, email and address</td><td></td><td></td><td>✓</td><td>✓</td></tr>
+<tr><td>Record a site inspection</td><td></td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>Receive, acknowledge, add documents and comments, report, record receipts</td><td></td><td></td><td>✓</td><td>✓</td></tr>
+<tr><td>Record the committee's decision; issue the permit</td><td></td><td></td><td></td><td>✓</td></tr>
+<tr><td>Enter the fees</td><td></td><td></td><td></td><td>✓</td></tr>
+</tbody></table>
 <h2 id="field-app">The field app (Android)</h2>
 <p><em>Field officers, planners and district administrators.</em></p>
 <p>The field app lets you take a project out of the office, see its layers with no connection, and record new features with the phone's GPS, a form and photos.</p>

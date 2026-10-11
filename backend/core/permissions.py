@@ -38,6 +38,12 @@ PERMISSIONS: dict[str, frozenset[Role]] = {
     "sync.resolve": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
     "relations.edit": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
     "standards.manage": frozenset({Role.DISTRICT_ADMIN}),
+    # Planning and development permits (permits app).
+    "permit.view": ALL_ROLES,
+    "permit.process": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
+    "permit.inspect": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER, Role.FIELD_OFFICER}),
+    "permit.decide": frozenset({Role.DISTRICT_ADMIN}),
+    "permit.settings": frozenset({Role.DISTRICT_ADMIN}),
     # Restricted (personal) attribute values: see projects/privacy.py.
     "data.sensitive": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
 }

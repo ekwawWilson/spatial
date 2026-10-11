@@ -32,6 +32,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 12 | Relationship layer and procedures | **complete** (decision 2026-10-06): gate passed in CI (`1ce4708`) |
 | 13 | Hardening and release | **complete except an iOS build, an RTK receiver test and an independent security test** (decision 2026-10-06): gate passed in CI (`bf4c73d`); see the Phase 13 notes |
 | 14 | Zoning standards and zoning register | in progress on `main` |
+| 15 | Development and planning permits | in progress on `main` |
 
 ## Open items carried forward
 - **Phase 3:** Martin (vector tiles) connects as the app role, so row-level security hides tenant tables from it until tile requests carry a district context (e.g. per-district function sources, or tiles served through the API). Design this in Phase 3; don't grant Martin BYPASSRLS.
@@ -169,3 +170,14 @@ Built from the published law and standards. What needs the Assembly's own docume
 - **Prohibited uses** are keyword matches on the recorded use: inferred, confidence 0.7, for a person to decide.
 - **Zone colours:** patterns in the standards (stripes, dots) aren't drawn; such zones get their background colour.
 - **Not done:** site standards for non-residential zones (the national document gives facility standards, not a site table, for those); they are Phase 19's facility checks.
+
+## Phase 15 notes
+- **Gate:** `permits/tests/test_permits.py`: one application through every step with the right role at each (`test_an_application_from_receipt_to_certificate`), the deadlines at their boundaries, each automatic check against a seeded problem, and the certificate's code checked by an anonymous client. `e2e/phase15.spec.ts` does the journey in the browser and opens the public check page signed out.
+- **What the Regulations fix is data** (`permits/registry.py`): the categories of r.44(1) and r.45(1), the documents of r.44(3) and r.45(9), the four deadlines of r.44(6)-(10), the 13 inspection points of r.44(7)(f).
+- **The site is a feature** in the project's layer in the "permits" role (made on first use), so it is on the map, in field packages and in the relationship layer's permit matching.
+- **Automatic checks** (`permits/checks.py`) are stored on the application as advice; setbacks and coverage need the block plan and are reported as "check on the drawings" with the zone's values.
+- **Deadlines are calendar days** from the day of receipt, as the Regulations word them.
+- **The public check** (`/api/public/permits/<token>/`) needs no sign-in: the token (24 random bytes) is made when the permit is issued, kept out of the audit log, and looked up across districts. Only issued permits answer.
+- **Waiting for the Assembly:** the certificate and letters are plain layouts until its letterhead and the exact Schedule forms (42B, 43C, 43E) arrive; fees are entered by the district administrator from the fee-fixing resolution; acknowledgements are PDFs to hand over or send, with SMS and email to follow once a sender is agreed.
+- **Not done yet:** the Certificate of Habitation and Land Use Certificate (r.45(15)-(18), r.46), reviews and appeals (Form 53), renewals, site inspection from the field app, committee agendas and minutes, and drawing the site on the map from the form.
+

@@ -83,7 +83,7 @@ def _round_interval(target: float) -> float:
 
 def _symbol(style: dict[str, Any], properties: dict[str, Any]) -> dict[str, Any]:
     if style.get("kind") == "categorized":
-        value = properties.get(style.get("field"))
+        value = properties.get(str(style.get("field")))
         for category in style.get("categories", []):
             if str(category.get("value")) == str(value):
                 return dict(category)
@@ -93,7 +93,8 @@ def _symbol(style: dict[str, Any], properties: dict[str, Any]) -> dict[str, Any]
 
 def _rings(geometry: dict[str, Any]) -> list[tuple[str, list[Any]]]:
     """(kind, parts): "area" with rings, "line" with paths, "point" with positions."""
-    kind, coordinates = geometry.get("type"), geometry.get("coordinates")
+    kind = geometry.get("type")
+    coordinates: Any = geometry.get("coordinates") or []
     if kind == "Polygon":
         return [("area", coordinates)]
     if kind == "MultiPolygon":
@@ -180,7 +181,8 @@ def plan_sheet(
         if not features:
             continue
         if style.get("kind") == "categorized":
-            present = {str(p.get(style.get("field"))) for _id, p, _g in features}
+            field_name = str(style.get("field"))
+            present = {str(p.get(field_name)) for _id, p, _g in features}
             for category in style.get("categories", []):
                 if str(category.get("value")) in present:
                     legend.append(

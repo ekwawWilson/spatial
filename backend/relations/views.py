@@ -1,10 +1,13 @@
 import calendar
+import csv
+import io
 from datetime import date, timedelta
 from typing import Any
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Q, QuerySet
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
@@ -22,7 +25,7 @@ from projects import privacy
 from projects.models import Feature, Layer, PlanProject
 from projects.styles import DEFAULT_SYMBOL, validate_style
 
-from . import procedures, services, zoning
+from . import addressing, procedures, services, zoning
 from .models import DevelopmentStandard, LayerRole, Relationship, Run, ZoningScheme
 from .registry import (
     LINK_TYPES,
@@ -741,3 +744,110 @@ class ZoningSchemeViewSet(viewsets.ModelViewSet[ZoningScheme]):
             if serializer.validated_data["project"].pk != current.project_id:
                 raise serializers.ValidationError({"project": "A scheme stays with its project."})
         serializer.save()
+
+
+# --- Street addressing ---------------------------------------------------------------------------
+
+ADDRESSING_PARAMETERS = [
+    DISTRICT_HEADER,
+    OpenApiParameter("method", str, description="decametric (default), metric or sequential"),
+    OpenApiParameter("odd_side", str, description="left (default) or right"),
+    OpenApiParameter(
+        "lon", float, description="With lat: number each street from the end nearer here"
+    ),
+    OpenApiParameter("lat", float),
+]
+ADDRESSING_PREVIEW = 300
+
+
+class AddressingView(APIView):
+    """Street codes and property numbers for the project (L.I. 2384 r.28). GET
+    proposes them, changing nothing (?type=csv for the whole schedule); POST
+    writes the proposal to the map."""
+
+    def get_permissions(self) -> list[BasePermission]:
+        return _perms("project.view" if self.request.method == "GET" else "relations.edit")
+
+    def _proposal(self, request: Request, project_id: int, values: Any) -> tuple[Any, Any, Any]:
+        project = get_object_or_404(
+            PlanProject.objects.select_related("district"),
+            pk=project_id,
+            district_id=require_district_id(request),
+        )
+        roles = services.roles_of(project)
+        start = None
+        if values.get("lon") not in (None, "") or values.get("lat") not in (None, ""):
+            try:
+                start = (float(values.get("lon")), float(values.get("lat")))
+            except (TypeError, ValueError) as exc:
+                raise serializers.ValidationError({"lon": "Give lon and lat as numbers."}) from exc
+        try:
+            proposal = addressing.propose(
+                project,
+                roles,
+                method=str(values.get("method") or "decametric"),
+                odd_side=str(values.get("odd_side") or "left"),
+                start_near=start,
+            )
+        except DjangoValidationError as exc:
+            detail = exc.message_dict if hasattr(exc, "error_dict") else {"detail": exc.messages}
+            raise serializers.ValidationError(detail) from exc
+        return project, roles, proposal
+
+    @extend_schema(
+        parameters=[*ADDRESSING_PARAMETERS, OpenApiParameter("type", str, description="csv")],
+        responses=OpenApiTypes.OBJECT,
+    )
+    def get(self, request: Request, project_id: int) -> Response | HttpResponse:
+        _project, _roles, proposal = self._proposal(request, project_id, request.query_params)
+        if request.query_params.get("type") == "csv":
+            out = io.StringIO()
+            writer = csv.writer(out)
+            writer.writerow(
+                [
+                    "Street",
+                    "Street code",
+                    "Number",
+                    "Side",
+                    "Metres from the start",
+                    "Property",
+                    "Address",
+                ]
+            )
+            for row in proposal["rows"]:
+                writer.writerow(
+                    [
+                        row["street_name"],
+                        row["street_code"],
+                        row["number"],
+                        row["side"],
+                        row["distance_m"],
+                        row["label"],
+                        row["address"],
+                    ]
+                )
+            # A byte-order mark so Excel opens the UTF-8 file correctly.
+            response = HttpResponse(
+                ("\ufeff" + out.getvalue()).encode("utf-8"), content_type="text/csv"
+            )
+            response["Content-Disposition"] = (
+                f'attachment; filename="address-schedule-{project_id}.csv"'
+            )
+            return response
+        shown = proposal["rows"][:ADDRESSING_PREVIEW]
+        return Response(
+            {**proposal, "rows": shown, "methods": {k: v[0] for k, v in addressing.METHODS.items()}}
+        )
+
+    @extend_schema(
+        parameters=[DISTRICT_HEADER], request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT
+    )
+    def post(self, request: Request, project_id: int) -> Response:
+        project, roles, proposal = self._proposal(request, project_id, request.data)
+        if proposal["truncated"]:
+            raise serializers.ValidationError(
+                "Too many properties to address in one go: address one community's project at a"
+                " time."
+            )
+        written = addressing.apply(project, roles, proposal, request_user(request))
+        return Response({"written": written, "numbered": proposal["numbered"]})

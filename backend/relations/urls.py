@@ -12,6 +12,11 @@ urlpatterns = [
     path("relations/registry/", views.RegistryView.as_view(), name="relations-registry"),
     path("relations/zones/", views.ZonesView.as_view(), name="relations-zones"),
     path(
+        "projects/<int:project_id>/addressing/",
+        views.AddressingView.as_view(),
+        name="project-addressing",
+    ),
+    path(
         "projects/<int:project_id>/zoning-style/",
         views.ZoningStyleView.as_view(),
         name="project-zoning-style",

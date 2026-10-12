@@ -77,7 +77,7 @@ test("a re-zoning: the abutting land from the map, the display clock, and the de
   await expect(steps.getByRole("row").filter({ hasText: "Displayed in the Public Data Room" })).toContainText("r.33(5)(a)-(b): 7 days");
   await steps.getByRole("button", { name: /^Done today: Displayed/ }).click();
   await expect(page.getByRole("status")).toContainText("Step recorded.");
-  await expect(steps.getByRole("row").filter({ hasText: "Displayed in the Public Data Room" })).toContainText("Done ");
+  await expect(steps.getByRole("row").filter({ hasText: "Displayed in the Public Data Room" })).toContainText(/Done \d{4}-\d{2}-\d{2}/);
   await expect(page.getByLabel("Application")).toContainText("(r.33(7))");
 
   // An objection is recorded; approval must wait for the comment period, a refusal need not.

@@ -51,9 +51,9 @@ test("a local plan: its steps, a consultation on display, and a comment from the
   await steps.getByRole("button", { name: /^Done today: Draft opened for inspection/ }).click();
   await expect(page.getByRole("alert")).toContainText("First: draft local plan completed.");
   await steps.getByRole("button", { name: /^Done today: Notice of commencement/ }).click();
-  await expect(page.getByRole("status")).toContainText("Step recorded.");
+  await expect(steps.getByRole("row").filter({ hasText: "Notice of commencement" })).toContainText(/Done \d{4}-\d{2}-\d{2}/);
   await steps.getByRole("button", { name: /^Done today: Draft local plan completed/ }).click();
-  await expect(steps.getByRole("row").filter({ hasText: "Draft local plan completed" })).toContainText("Done ");
+  await expect(steps.getByRole("row").filter({ hasText: "Draft local plan completed" })).toContainText(/Done \d{4}-\d{2}-\d{2}/);
   await steps.getByRole("button", { name: /^Done today: Draft opened for inspection/ }).click();
   await expect(steps).toContainText("The public may comment on the draft until");
   // Sixty days for the public first.

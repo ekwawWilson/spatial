@@ -36,7 +36,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 16 | Online Public Data Room and public register | **complete** (2026-10-12): gate passed in CI and deployed (`ffa5a8d`); what is left is listed in the phase's notes |
 | 17 | Enforcement notices and change detection | **complete** (2026-10-12): gate passed in CI and deployed (`ffa5a8d`); what is left is listed in the phase's notes |
 | 18 | Re-zoning, change of use, subdivision and consolidation | **complete** (2026-10-12): gate passed in CI and deployed (`4024030`); what is left is listed in the phase's notes |
-| 19 | Plan preparation and consultation; plan sheets | in progress on `main` |
+| 19 | Plan preparation and consultation; plan sheets | **complete** (2026-10-12): gate passed in CI and deployed (`fc79118`); what is left is listed in the phase's notes |
 | 20 | Street naming and property addressing | codes and numbers **complete** (2026-10-12, `ffa5a8d`); street naming as a workflow is not built |
 
 ## Open items carried forward

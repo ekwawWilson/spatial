@@ -11,6 +11,8 @@ from dataroom.models import DataRoom, InformationRequest, Publication, RoomDocum
 from dataroom.public import ANSWER_WITHIN_DAYS, due_on
 from enforcement import services as enforcement
 from enforcement.models import Case
+from landchange import services as land
+from landchange.models import Application as LandApplication
 from permits import registry as permit_registry
 from permits import services as permits
 from permits.models import Application
@@ -107,6 +109,30 @@ def compliance(district_id: int, today: date | None = None) -> dict[str, Any]:
         ][:50],
     }
 
+    # --- Re-zoning, change of use, subdivision and consolidation (r.33, r.34, r.54) --------------
+    land_apps = list(
+        LandApplication.objects.filter(district_id=district_id)
+        .exclude(status__in=(LandApplication.Status.REFUSED, LandApplication.Status.WITHDRAWN))
+        .prefetch_related("comments")
+    )
+    land_steps = [(a, land.next_due(a, today)) for a in land_apps]
+    land_out: dict[str, Any] = {
+        "open": sum(1 for a in land_apps if a.status in land.OPEN),
+        "overdue": sum(1 for _a, step in land_steps if step and step["overdue"]),
+        "late": [
+            {
+                "id": a.pk,
+                "project": a.project_id,
+                "number": a.number,
+                "step": step["label"],
+                "rule": step["rule"],
+                "due_on": step["due_on"],
+            }
+            for a, step in land_steps
+            if step and step["overdue"]
+        ][:50],
+    }
+
     # --- Zoning schemes (r.29) -------------------------------------------------------------------
     schemes = list(ZoningScheme.objects.filter(district_id=district_id).select_related("project"))
     duties: list[dict[str, Any]] = []
@@ -137,7 +163,11 @@ def compliance(district_id: int, today: date | None = None) -> dict[str, Any]:
     }
 
     overdue = (
-        len(late) + int(requests_out["overdue"]) + int(enforcement_out["overdue"]) + len(duties)
+        len(late)
+        + int(requests_out["overdue"])
+        + int(enforcement_out["overdue"])
+        + int(land_out["overdue"])
+        + len(duties)
     )
     return {
         "as_of": today.isoformat(),
@@ -145,6 +175,7 @@ def compliance(district_id: int, today: date | None = None) -> dict[str, Any]:
         "permits": permits_out,
         "requests": requests_out,
         "enforcement": enforcement_out,
+        "land": land_out,
         "zoning": zoning_out,
         "dataroom": dataroom_out,
         "week_ahead": _week_ahead(open_apps, today),

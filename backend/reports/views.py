@@ -107,6 +107,12 @@ def report_pdf(district: District, data: dict[str, Any]) -> bytes:
                     "—",
                 ],
                 [
+                    "Re-zoning, change of use and subdivision: the steps of r.33, r.34 and r.54",
+                    str(data["land"]["open"]),
+                    str(data["land"]["overdue"]),
+                    "—",
+                ],
+                [
                     "Zoning schemes: the duties of r.29",
                     str(data["zoning"]["schemes"]),
                     str(data["zoning"]["overdue"]),
@@ -148,7 +154,8 @@ def report_pdf(district: District, data: dict[str, Any]) -> bytes:
             ),
         ]
     late_other = [
-        [r["number"], r["step"], r["due_on"] or "—"] for r in data["enforcement"]["late"]
+        [r["number"], r["step"], r["due_on"] or "—"]
+        for r in [*data["enforcement"]["late"], *data["land"]["late"]]
     ] + [
         [r["scheme"], f"{r['duty']} ({r['rule'].split(':')[0]})", r["due_on"]]
         for r in data["zoning"]["late"]
@@ -156,8 +163,11 @@ def report_pdf(district: District, data: dict[str, Any]) -> bytes:
     if late_other:
         story += [
             Spacer(1, 4 * mm),
-            Paragraph("Enforcement steps and zoning duties past their date", styles["Heading3"]),
-            table([["Case or scheme", "Step", "Due"], *late_other], [50 * mm, 96 * mm, 24 * mm]),
+            Paragraph("Other steps and duties past their date", styles["Heading3"]),
+            table(
+                [["Case, application or scheme", "Step", "Due"], *late_other],
+                [50 * mm, 96 * mm, 24 * mm],
+            ),
         ]
     doc.build(story)
     return buffer.getvalue()

@@ -1346,6 +1346,8 @@ export interface Compliance {
   };
   requests: { open: number; overdue: number; answered_this_year: number; answered_within_limit_pct: number | null; limit_days: number };
   enforcement: { open: number; overdue: number; late: LateRow[] };
+  /** Re-zoning, change of use, subdivision and consolidation (r.33, r.34, r.54). */
+  land: { open: number; overdue: number; late: LateRow[] };
   zoning: { schemes: number; overdue: number; late: LateRow[] };
   dataroom: { is_open: boolean; published_projects: number; documents_on_display: number };
   week_ahead: LateRow[];

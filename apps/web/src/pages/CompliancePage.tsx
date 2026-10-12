@@ -45,6 +45,7 @@ function Body({ data }: { data: Compliance }) {
           <Row duty={`Permit applications: decision within ${permits.limit_days} days (r.44)`} open={permits.open} overdue={permits.overdue} met={`${pct(permits.decided_within_limit_pct)} of ${permits.decided_this_year} decided`} />
           <Row duty={`Requests for information: answer within ${requests.limit_days} days (r.64)`} open={requests.open} overdue={requests.overdue} met={`${pct(requests.answered_within_limit_pct)} of ${requests.answered_this_year} answered`} />
           <Row duty="Enforcement cases: the steps of r.57" open={data.enforcement.open} overdue={data.enforcement.overdue} met="—" />
+          <Row duty="Re-zoning, change of use and subdivision: the steps of r.33, r.34 and r.54" open={data.land.open} overdue={data.land.overdue} met="—" />
           <Row duty="Zoning schemes: the duties of r.29" open={data.zoning.schemes} overdue={data.zoning.overdue} met="—" />
         </tbody>
       </table>
@@ -84,13 +85,18 @@ function Body({ data }: { data: Compliance }) {
         </section>
       )}
 
-      {(data.enforcement.late.length > 0 || data.zoning.late.length > 0) && (
+      {(data.enforcement.late.length > 0 || data.land.late.length > 0 || data.zoning.late.length > 0) && (
         <section aria-label="Other duties past their date" className="card wide">
-          <h2>Enforcement steps and zoning duties past their date</h2>
+          <h2>Other steps and duties past their date</h2>
           <ul>
             {data.enforcement.late.map((row) => (
               <li key={`case-${row.id}`}>
                 <Link to={`/projects/${row.project}/enforcement/${row.id}`}>{row.number}</Link>: {row.step}, due {row.due_on}
+              </li>
+            ))}
+            {data.land.late.map((row) => (
+              <li key={`land-${row.id}`}>
+                <Link to={`/projects/${row.project}/land/${row.id}`}>{row.number}</Link>: {row.step}, due {row.due_on} <span className="muted small">{row.rule}</span>
               </li>
             ))}
             {data.zoning.late.map((row) => (

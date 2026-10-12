@@ -13,6 +13,7 @@ const clean: Compliance = {
   permits: { open: 0, overdue: 0, overdue_by_step: { acknowledge: 0, inspect: 0, report: 0, issue: 0 }, received_this_year: 0, decided_this_year: 0, decided_within_limit_pct: null, average_days_to_decision: null, limit_days: 30, late: [] },
   requests: { open: 0, overdue: 0, answered_this_year: 0, answered_within_limit_pct: null, limit_days: 5 },
   enforcement: { open: 0, overdue: 0, late: [] },
+  land: { open: 0, overdue: 0, late: [] },
   zoning: { schemes: 0, overdue: 0, late: [] },
   dataroom: { is_open: false, published_projects: 0, documents_on_display: 0 },
   week_ahead: [],

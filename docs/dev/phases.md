@@ -35,7 +35,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 15 | Development and planning permits | **complete** (2026-10-12): gate passed in CI and deployed (`ffa5a8d`); what is left is listed in the phase's notes |
 | 16 | Online Public Data Room and public register | **complete** (2026-10-12): gate passed in CI and deployed (`ffa5a8d`); what is left is listed in the phase's notes |
 | 17 | Enforcement notices and change detection | **complete** (2026-10-12): gate passed in CI and deployed (`ffa5a8d`); what is left is listed in the phase's notes |
-| 18 | Re-zoning, change of use, subdivision and consolidation | in progress on `main` |
+| 18 | Re-zoning, change of use, subdivision and consolidation | **complete** (2026-10-12): gate passed in CI and deployed (`4024030`); what is left is listed in the phase's notes |
 | 20 | Street naming and property addressing | codes and numbers **complete** (2026-10-12, `ffa5a8d`); street naming as a workflow is not built |
 
 ## Open items carried forward
@@ -230,5 +230,6 @@ Built from the published law and standards. What needs the Assembly's own docume
 - Public: `GET /api/public/rooms/<code>/land-applications/` lists what is on display, without personal details.
 - Permissions: the permit ones (`permit.view`, `permit.process`, `permit.decide`).
 - Gate: `landchange/tests/test_landchange.py` (every clock of r.33 and r.54, r.34's tests, the abutting list, the map change, the public listing); `apps/web/e2e/phase18.spec.ts`.
-- **Not done:** the public sending Form 59 online; these clocks on the statutory deadlines page; the draft re-zoning report (Form 34); drawing an approved subdivision from the application; fees.
+- The statutory deadlines page counts these applications too (`land` in `reports/services.compliance`).
+- **Not done:** the public sending Form 59 online; the draft re-zoning report (Form 34); drawing an approved subdivision from the application; fees.
 

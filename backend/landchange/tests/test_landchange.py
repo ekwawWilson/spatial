@@ -400,6 +400,13 @@ def test_a_subdivision_and_what_the_public_sees(world, admin):
     assert (clock(app, "decide")["due_on"], clock(app, "decide")["rule"]) == (days(30), "r.54(9)")
     assert app["next_step"]["code"] == "acknowledge"
     assert do(admin, "decide", app, {"approve": True}, expect=(400,))  # not advertised yet
+    # The district's statutory deadlines count it: one open application with a step past its date.
+    report = planner.get(reverse("reports-compliance")).json()
+    assert (report["land"]["open"], report["land"]["overdue"], report["overdue"]) == (2, 1, 1)
+    assert (report["land"]["late"][0]["number"], report["land"]["late"][0]["rule"]) == (
+        app["number"],
+        "r.54(2)(a)",
+    )
 
     admin.patch(reverse("dataroom-settings"), {"is_open": True}, format="json")
     admin.post(reverse("dataroom-publication-list"), {"project": world.project}, format="json")

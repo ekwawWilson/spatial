@@ -16,6 +16,10 @@ scripts/backup.sh /srv/spatial-backups
 ```
 Backups older than 14 days are removed (`KEEP_DAYS=30 scripts/backup.sh ...` to keep more).
 
+Every backup holds a full copy of the uploaded files, so the folder grows by the size of your imagery each night. Check the disk has room for the days you keep: with 5 GB of imagery, 14 days is 70 GB.
+
+**Before each update** the server takes a copy of the database only (`DB_ONLY=true`) into `backups/before-update/`, keeping the last ten. An update changes the database's shape, never the uploaded files, so these are small. Restoring one replaces the database and leaves the files as they are.
+
 Run it every night from cron, then copy the folder **off the server** (another machine, or cloud storage). A backup on the same disk doesn't survive that disk failing.
 ```
 30 0 * * *  cd /srv/spatial && scripts/backup.sh /srv/spatial-backups >> /var/log/spatial-backup.log 2>&1

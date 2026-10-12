@@ -96,8 +96,10 @@ main() {
   cd "$DIR"
   if [ "$UPDATE" = true ]; then
     if [ -n "$(docker compose ps -q backend 2>/dev/null)" ]; then
-      echo "  backing up before the update"
-      scripts/backup.sh "$DIR/backups"
+      # The database only: an update changes its shape, never the uploaded
+      # files, and a full copy at every update fills a small disk in a day.
+      echo "  backing up the database before the update"
+      DB_ONLY=true KEEP_LAST=10 scripts/backup.sh "$DIR/backups/before-update"
     fi
     git fetch -q origin "$BRANCH"
     git checkout -q "$BRANCH"
@@ -123,6 +125,13 @@ main() {
   chmod 600 .env
 
   step "Build and start (the first build takes 10-20 minutes)"
+  # Room for the build: what the last one left behind, and a clear word if there is too little.
+  docker image prune -f >/dev/null 2>&1 || true
+  FREE_MB=$(df -Pm /var/lib/docker 2>/dev/null | awk 'NR==2 {print $4}')
+  if [ -n "$FREE_MB" ] && [ "$FREE_MB" -lt 4000 ]; then
+    echo "  WARNING: only ${FREE_MB} MB free on the disk; the build needs about 4000 MB."
+    echo "  Largest folders: $(du -sh "$DIR/backups" /var/lib/docker /var/lib/containerd 2>/dev/null | tr '\n' ' ')"
+  fi
   docker compose up -d --build --wait --remove-orphans
   # Old images and the build cache would otherwise fill a small disk, deploy by deploy.
   docker image prune -f >/dev/null

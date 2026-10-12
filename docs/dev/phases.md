@@ -35,6 +35,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 15 | Development and planning permits | **complete** (2026-10-12): gate passed in CI and deployed (`ffa5a8d`); what is left is listed in the phase's notes |
 | 16 | Online Public Data Room and public register | **complete** (2026-10-12): gate passed in CI and deployed (`ffa5a8d`); what is left is listed in the phase's notes |
 | 17 | Enforcement notices and change detection | **complete** (2026-10-12): gate passed in CI and deployed (`ffa5a8d`); what is left is listed in the phase's notes |
+| 18 | Re-zoning, change of use, subdivision and consolidation | in progress on `main` |
 | 20 | Street naming and property addressing | codes and numbers **complete** (2026-10-12, `ffa5a8d`); street naming as a workflow is not built |
 
 ## Open items carried forward
@@ -218,4 +219,16 @@ Built from the published law and standards. What needs the Assembly's own docume
 - The side of the street is the turn from the street's heading to the property's bearing; numbering from the far end swaps the sides.
 - `relations/tests/test_addressing.py` checks the fixture's six buildings on Main Street against numbers worked out by hand.
 - **Not done:** street naming as a workflow (proposal, Assembly approval, gazette); a street drawn as several lines is numbered per line; address labels on the plan sheet; ghanapostgps digital addresses; the national manual's exact convention is a setting until the Assembly confirms its own.
+
+## Phase 18 notes (re-zoning, change of use, subdivision and consolidation)
+- App `landchange`. `registry.py` holds what L.I. 2384 fixes for each kind, read from the published text: the steps of r.33 and r.54 with their days and what the days run from, the grounds of r.33(2)-(3), and the tests of r.34. `services.clocks` works every due date from that registry, so a step is added or corrected in one place.
+- Steps are stored as `{code: {on, note}}` on the application. Steps that apply only in some cases (referral of objections; what follows an approval) appear when the case arises.
+- **Abutting land** (`services.abutting`): the parcels within 0.5 m of the application's parcels, in the same layer. Gate: on the fixture, exactly the parcels that touch.
+- **Readings of the text where it is silent or loose:** with no objection, the 60 days of r.33(15) are counted from the end of the 28-day comment period; a change of use takes the 30 days of a planning permit (r.44(10)); an approval is refused while the comment period runs, a refusal is not.
+- An approved re-zoning is written to the parcels' zone field by `services.apply_zone`, one audited change per parcel. Subdivision and consolidation are not drawn automatically.
+- Papers (`documents.py`): public notice, notice to abutting owners, decision, notice to the Lands Commission. They say what the Regulations require; the Schedule's layouts (Forms 33A/B, 35, 46, 59) are wanted from the Assembly.
+- Public: `GET /api/public/rooms/<code>/land-applications/` lists what is on display, without personal details.
+- Permissions: the permit ones (`permit.view`, `permit.process`, `permit.decide`).
+- Gate: `landchange/tests/test_landchange.py` (every clock of r.33 and r.54, r.34's tests, the abutting list, the map change, the public listing); `apps/web/e2e/phase18.spec.ts`.
+- **Not done:** the public sending Form 59 online; these clocks on the statutory deadlines page; the draft re-zoning report (Form 34); drawing an approved subdivision from the application; fees.
 

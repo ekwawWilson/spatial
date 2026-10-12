@@ -288,6 +288,48 @@ function Register({ code }: { code: string }) {
   );
 }
 
+function LandApplications({ code }: { code: string }) {
+  const { api } = useSession();
+  const shown = useLoad(() => api.publicLandApplications(code), [api, code]);
+  if (!shown.data || shown.data.results.length === 0) return null;
+  return (
+    <section aria-label="Applications on display" className="card wide">
+      <h2>Re-zoning and subdivision applications on display</h2>
+      <p className="muted small">
+        Anyone may send the Assembly a comment or objection on an application before its closing date (Form 59 of L.I. 2384).
+      </p>
+      <table className="data">
+        <thead>
+          <tr>
+            <th>Application</th>
+            <th>What is asked for</th>
+            <th>Locality</th>
+            <th>Comments</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {shown.data.results.map((a) => (
+            <tr key={a.number}>
+              <td>
+                {a.number}
+                <div className="muted small">{a.kind}</div>
+              </td>
+              <td>{a.proposal}</td>
+              <td>{a.locality}</td>
+              <td className="small">{a.comments_close_on ? `until ${a.comments_close_on}` : "—"}</td>
+              <td className="small">
+                {a.status}
+                {a.decided_on && ` on ${a.decided_on}`}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
 function Notices({ code }: { code: string }) {
   const { api } = useSession();
   const notices = useLoad(() => api.publicNotices(code), [api, code]);
@@ -420,6 +462,7 @@ export function PublicRoomPage() {
           <WhatCanIBuild code={code} />
           <CheckApplication code={code} />
           <Register code={code} />
+          <LandApplications code={code} />
           <Notices code={code} />
           <section aria-label="Plans and notices" className="card wide">
             <h2>Plans and notices</h2>

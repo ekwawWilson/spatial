@@ -63,6 +63,11 @@ import type {
   DetectionRun,
   EnforcementCase,
   EnforcementRegistry,
+  LandApplication,
+  LandRegistry,
+  LandSummary,
+  NewLandApplication,
+  PublicLandApplication,
   NewCase,
   DataRoomSettings,
   InformationRequest,
@@ -671,6 +676,27 @@ export function createApiClient(options: ApiClientOptions = {}) {
       if (!response.ok) throw await toApiError(response);
       return { blob: await response.blob(), scale: Number(response.headers.get("X-Sheet-Scale") ?? 0) };
     },
+
+    // --- Re-zoning, change of use, subdivision and consolidation ---------------------------
+    landRegistry: () => request<LandRegistry>("GET", "/api/land/registry/"),
+    listLandApplications: (filters: { project?: number; status?: string; kind?: string } = {}) =>
+      request<{ results: LandSummary[]; summary: { total: number; open: number; overdue: number } }>("GET", `/api/land/applications/${query(filters)}`),
+    getLandApplication: (id: number) => request<LandApplication>("GET", `/api/land/applications/${id}/`),
+    receiveLandApplication: (data: NewLandApplication) => request<LandApplication>("POST", "/api/land/applications/", data),
+    landStep: (id: number, data: { step: string; on?: string; note?: string }) => request<LandApplication>("POST", `/api/land/applications/${id}/step/`, data),
+    landComment: (id: number, data: { kind: string; name: string; contact?: string; text: string; on?: string }) =>
+      request<LandApplication>("POST", `/api/land/applications/${id}/comments/`, data),
+    landRespond: (id: number, data: { comment: number; response: string; on?: string }) => request<LandApplication>("POST", `/api/land/applications/${id}/respond/`, data),
+    landAssess: (id: number, answers: Record<string, { met: boolean; note?: string }>) => request<LandApplication>("POST", `/api/land/applications/${id}/assess/`, { answers }),
+    landDefer: (id: number, reason: string) => request<LandApplication>("POST", `/api/land/applications/${id}/defer/`, { reason }),
+    landDecide: (id: number, data: { approve: boolean; conditions?: string; reasons?: string; on?: string }) =>
+      request<LandApplication>("POST", `/api/land/applications/${id}/decide/`, data),
+    landWithdraw: (id: number) => request<LandApplication>("POST", `/api/land/applications/${id}/withdraw/`),
+    /** Writes an approved re-zoning to the map: the new zone on each parcel. */
+    landApply: (id: number) =>
+      request<{ written: { parcels_changed: number; field: string; zoning_layer: boolean }; application: LandApplication }>("POST", `/api/land/applications/${id}/apply/`),
+    landPaper: (id: number, kind: string) => blob(`/api/land/applications/${id}/paper/${query({ kind })}`),
+    publicLandApplications: (code: string) => open<{ results: PublicLandApplication[] }>(`/api/public/rooms/${encodeURIComponent(code)}/land-applications/`),
 
     // --- Street addressing -----------------------------------------------------------------
     /** Proposes street codes and property numbers; changes nothing. */

@@ -1398,3 +1398,127 @@ export interface AddressingOptions {
   lon?: number;
   lat?: number;
 }
+
+// --- Re-zoning, change of use, subdivision and consolidation (Phase 18) ---------------------
+
+export type LandKind = "rezoning" | "change_of_use" | "subdivision" | "consolidation";
+export type LandStatus = "received" | "deferred" | "approved" | "refused" | "withdrawn";
+
+export interface LandRegistry {
+  kinds: {
+    code: LandKind;
+    label: string;
+    form: string;
+    rule: string;
+    comment_days: number;
+    decide_days: number;
+    decide_rule: string;
+    steps: { code: string; label: string; rule: string; days: number | null; after: string; when: string }[];
+  }[];
+  grounds: { code: string; label: string }[];
+  circumstances: { code: string; label: string }[];
+  use_tests: { code: string; label: string; rule: string }[];
+  comment_kinds: { code: string; label: string }[];
+  deferred_decision_days: number;
+}
+
+/** One step of an application: when it is due (where the Regulations set a time) and when it was done. */
+export interface LandClock {
+  code: string;
+  label: string;
+  rule: string;
+  days: number | null;
+  due_on: string | null;
+  done_on: string | null;
+  note: string;
+  late: boolean;
+  overdue: boolean;
+}
+
+export interface LandSummary {
+  id: number;
+  project: number;
+  number: string;
+  kind: LandKind;
+  kind_label: string;
+  applicant_name: string;
+  summary: string;
+  status: LandStatus;
+  status_label: string;
+  received_on: string;
+  decided_on: string | null;
+  /** The last day for the public's comments, once the application is on display. */
+  comments_close_on: string | null;
+  next_step: LandClock | null;
+}
+
+export interface LandComment {
+  id: number;
+  kind: string;
+  kind_label: string;
+  /** "restricted" for roles that may not see personal data. */
+  name: string;
+  contact: string;
+  text: string;
+  received_on: string;
+  response: string;
+  responded_on: string | null;
+}
+
+export interface LandApplication extends LandSummary {
+  form: string;
+  rule: string;
+  applicant_phone: string;
+  applicant_email: string;
+  applicant_address: string;
+  description: string;
+  parcels: { id: number; label: string; zone: string; area_m2: number }[];
+  /** The parcels that touch the land: their owners are given notice (r.33(8)). */
+  abutting: { id: number; label: string; owner: string; area_m2: number }[];
+  current_zone: string;
+  proposed_zone: string;
+  ground: string;
+  circumstance: string;
+  current_use: string;
+  proposed_use: string;
+  lots: number | null;
+  zone: { value: string; national: string | null; name: string | null; prohibited_uses: string[] };
+  assessment: Record<string, { met: boolean; note: string }>;
+  clocks: LandClock[];
+  comment_rule: string;
+  comments: LandComment[];
+  deferred_on: string | null;
+  defer_reason: string;
+  conditions: string;
+  reasons: string;
+  applied_on: string | null;
+  papers: { code: string; label: string }[];
+}
+
+export interface NewLandApplication {
+  project: number;
+  kind: LandKind;
+  applicant_name: string;
+  applicant_phone?: string;
+  applicant_address?: string;
+  description?: string;
+  parcels: number[];
+  proposed_zone?: string;
+  ground?: string;
+  circumstance?: string;
+  current_use?: string;
+  proposed_use?: string;
+  lots?: number;
+  received_on?: string;
+}
+
+export interface PublicLandApplication {
+  number: string;
+  kind: string;
+  proposal: string;
+  locality: string;
+  received_on: string;
+  comments_close_on: string | null;
+  status: string;
+  decided_on: string | null;
+}

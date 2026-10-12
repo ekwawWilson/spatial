@@ -45,8 +45,11 @@ test("zoning standards, then a permit from receipt to a certificate anyone can c
   const parcels = await layer("Parcels", "polygon", [{ name: "parcel_id", type: "text" }, { name: "land_use", type: "text" }]);
   const streets = await layer("Streets", "line", [{ name: "name", type: "text" }]);
   const plot = { type: "Polygon", coordinates: [[[1190600, 337700], [1190700, 337700], [1190700, 337800], [1190600, 337800], [1190600, 337700]]] };
-  await api(page, "POST", `/api/layers/${parcels}/features/`, { geometry: plot, properties: { parcel_id: "P-1", land_use: "Re B" } });
-  await api(page, "POST", `/api/layers/${streets}/features/`, { geometry: { type: "LineString", coordinates: [[1190400, 337680], [1190900, 337680]] }, properties: { name: "Station Road" } });
+  const drawn = [
+    await api(page, "POST", `/api/layers/${parcels}/features/`, { geometry: plot, properties: { parcel_id: "P-1", land_use: "Re B" } }),
+    await api(page, "POST", `/api/layers/${streets}/features/`, { geometry: { type: "LineString", coordinates: [[1190400, 337680], [1190900, 337680]] }, properties: { name: "Station Road" } }),
+  ];
+  expect(drawn.map((d) => d.status), JSON.stringify(drawn.map((d) => d.body))).toEqual([201, 201]);
   const roles = await api(page, "PUT", `/api/projects/${project}/layer-roles/`, { roles: [{ role: "parcels", layer: parcels }, { role: "streets", layer: streets }] });
   expect(roles.status).toBe(200);
 
@@ -69,7 +72,11 @@ test("zoning standards, then a permit from receipt to a certificate anyone can c
   await receive.getByLabel("Proposed use").fill("Residential");
   await receive.getByLabel("Storeys").fill("5");
   await receive.getByLabel("Parcel id").fill("P-1");
-  await receive.getByRole("button", { name: "Receive the application" }).click();
+  const [received] = await Promise.all([
+    page.waitForResponse((r) => r.request().method() === "POST" && r.url().endsWith("/api/permits/applications/")),
+    receive.getByRole("button", { name: "Receive the application" }).click(),
+  ]);
+  expect(received.status(), await received.text()).toBe(201);
   await page.waitForURL(/\/permits\/\d+$/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText(/\/DP\/\d{4}\/\d{4}/);
 

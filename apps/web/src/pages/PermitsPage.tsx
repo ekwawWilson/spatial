@@ -207,7 +207,8 @@ function ReceiveForm(props: { projectId: number; registry: PermitRegistry; onRec
         for the Technical Sub-Committee's checks and site visit, 21 for its report, 30 for the certificate.
       </p>
       <div className="inline-form">
-        <button type="submit" disabled={busy}>
+        {/* The parcel is found in the list, so wait for the list. */}
+        <button type="submit" disabled={busy || (siteBy === "parcel" && parcels.loading)}>
           {busy ? "Receiving…" : "Receive the application"}
         </button>
         <button type="button" className="link" onClick={props.onCancel}>

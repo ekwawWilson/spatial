@@ -103,8 +103,12 @@ jobs:
           SKIP_SYSTEM=true DIR="$PWD" BRANCH="${{ github.head_ref || github.ref_name }}" \
             scripts/ci-step.sh bash -c 'bash < scripts/server-setup.sh' | tee update.log
           grep -q "Updated\." update.log
+      # Of the database only: uploaded files are not copied at every update.
       - name: The update made a backup
-        run: ls backups/*/db.dump
+        run: |
+          ls backups/before-update/*/db.dump
+          grep -q "^holds: the database only" backups/before-update/*/manifest.txt
+          ! ls backups/before-update/*/media.tar 2>/dev/null
       - name: Logs on failure
         if: failure()
         run: docker compose logs --tail=200

@@ -36,6 +36,9 @@ from landchange.models import Application as LandApplication
 from permits import registry as permit_registry
 from permits import services as permit_services
 from permits.models import Application, Counter, Fee
+from planmaking import registry as plan_registry
+from planmaking import services as plan_services
+from planmaking.models import Consultation, PlanProcess
 from relations import procedures, zoning
 from relations.models import DevelopmentStandard, LayerRole, ZoningScheme
 
@@ -322,6 +325,105 @@ class LandApplicationsView(PublicView):
                 for a in shown
             ]
         return Response({"results": rows})
+
+
+def _plans_on_display() -> list[PlanProcess]:
+    """The local plans of published projects whose making has been made public."""
+    return [
+        p
+        for p in PlanProcess.objects.filter(project__publication__isnull=False).select_related(
+            "project"
+        )
+        if "commence" in p.steps or "notice" in p.steps
+    ]
+
+
+@extend_schema(responses=OpenApiTypes.OBJECT)
+class PlansView(PublicView):
+    """Local plans being made (L.I. 2384 r.23, r.65): where each has got to,
+    until when the public may comment on the draft, and the minutes of the
+    consultations on display."""
+
+    def get(self, request: Request, code: str) -> Response:
+        with room(code):
+            today = date.today()
+            rows = []
+            for process in _plans_on_display():
+                project = process.project
+                minutes = Consultation.objects.filter(project=project, displayed_on__isnull=False)
+                rows.append(
+                    {
+                        "project": project.pk,
+                        "name": project.name,
+                        "locality": project.community or project.name,
+                        "commenced_on": _day(plan_services.step_date(process, "commence")),
+                        "draft_on_display_from": _day(plan_services.step_date(process, "notice")),
+                        "comments_close_on": _day(plan_services.comments_close(process)),
+                        "comments_open": plan_services.comments_open(process, today),
+                        "approved_on": _day(plan_services.step_date(process, "approve")),
+                        "consultations": [
+                            {
+                                "stage": plan_registry.STAGE_BY_CODE.get(c.stage, c.stage),
+                                "held_on": _day(c.held_on),
+                                "venue": c.venue,
+                                "attendance": c.attendance,
+                                "issues": c.issues,
+                                "outcome": c.outcome,
+                            }
+                            for c in minutes
+                        ],
+                    }
+                )
+            body = {
+                "results": rows,
+                "topics": [{"code": c, "label": label} for c, label in plan_registry.CONTENT],
+            }
+        return Response(body)
+
+
+class PublicPlanCommentSerializer(serializers.Serializer[Any]):
+    name = serializers.CharField(max_length=200)
+    contact = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    topic = serializers.CharField(max_length=2, required=False, allow_blank=True)
+    text = serializers.CharField(max_length=5000)
+
+    def validate_topic(self, value: str) -> str:
+        if value and value not in plan_registry.CONTENT_BY_CODE:
+            raise serializers.ValidationError("Not an item of a local plan.")
+        return value
+
+
+class PlanCommentView(PublicView):
+    """Sends a comment on a draft local plan (Form 59), while the sixty days
+    for comments run (r.23(5))."""
+
+    @extend_schema(request=PublicPlanCommentSerializer, responses={201: OpenApiTypes.OBJECT})
+    def post(self, request: Request, code: str, project_id: int) -> Response:
+        data = PublicPlanCommentSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        with room(code):
+            process = next((p for p in _plans_on_display() if p.project_id == project_id), None)
+            if process is None:
+                raise Http404
+            if not plan_services.comments_open(process):
+                raise serializers.ValidationError(
+                    {"detail": "This plan is not open for comments now."}
+                )
+            today = date.today()
+            plan_services.add_comment(
+                process.project,
+                name=data.validated_data["name"],
+                contact=data.validated_data.get("contact", ""),
+                topic=data.validated_data.get("topic", ""),
+                text=data.validated_data["text"],
+                on=today,
+                online=True,
+            )
+            body = {
+                "received_on": _day(today),
+                "comments_close_on": _day(plan_services.comments_close(process)),
+            }
+        return Response(body, status=status.HTTP_201_CREATED)
 
 
 def _standard_json(standard: dict[str, Any]) -> dict[str, Any]:

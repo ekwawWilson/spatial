@@ -24,6 +24,12 @@ urlpatterns = [
         public.LandApplicationsView.as_view(),
         name="public-land-applications",
     ),
+    path("public/rooms/<str:code>/plans/", public.PlansView.as_view(), name="public-plans"),
+    path(
+        "public/rooms/<str:code>/plans/<int:project_id>/comments/",
+        public.PlanCommentView.as_view(),
+        name="public-plan-comment",
+    ),
     path(
         "public/rooms/<str:code>/requests/", public.RequestsView.as_view(), name="public-requests"
     ),

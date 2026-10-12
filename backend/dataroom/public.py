@@ -29,6 +29,10 @@ from core.models import District
 from core.tenancy import tenant_context
 from enforcement import registry as enforcement_registry
 from enforcement.models import Notice
+from landchange import documents as land_documents
+from landchange import registry as land_registry
+from landchange import services as land_services
+from landchange.models import Application as LandApplication
 from permits import registry as permit_registry
 from permits import services as permit_services
 from permits.models import Application, Counter, Fee
@@ -284,6 +288,38 @@ class NoticesView(PublicView):
                     "complied_on": _day(n.complied_on),
                 }
                 for n in served
+            ]
+        return Response({"results": rows})
+
+
+@extend_schema(responses=OpenApiTypes.OBJECT)
+class LandApplicationsView(PublicView):
+    """Applications for re-zoning, subdivision and consolidation put on
+    display (L.I. 2384 r.33(5)(a), r.54(6) and (10)): what is asked for,
+    until when the public may comment, and what was decided."""
+
+    def get(self, request: Request, code: str) -> Response:
+        with room(code):
+            shown = [
+                a
+                for a in LandApplication.objects.filter(project__publication__permits=True)
+                .exclude(status=LandApplication.Status.WITHDRAWN)
+                .select_related("project")
+                .order_by("-received_on", "-id")[:300]
+                if "display" in a.steps or "advertise" in a.steps
+            ]
+            rows = [
+                {
+                    "number": a.number,
+                    "kind": land_registry.KIND_BY_CODE[a.kind].label,
+                    "proposal": land_documents.what(a),
+                    "locality": a.project.community or a.project.name,
+                    "received_on": _day(a.received_on),
+                    "comments_close_on": _day(land_services.comments_close(a)),
+                    "status": a.get_status_display(),
+                    "decided_on": _day(a.decided_on),
+                }
+                for a in shown
             ]
         return Response({"results": rows})
 

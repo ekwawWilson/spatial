@@ -32,9 +32,10 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 12 | Relationship layer and procedures | **complete** (decision 2026-10-06): gate passed in CI (`1ce4708`) |
 | 13 | Hardening and release | **complete except an iOS build, an RTK receiver test and an independent security test** (decision 2026-10-06): gate passed in CI (`bf4c73d`); see the Phase 13 notes |
 | 14 | Zoning standards and zoning register | **complete** (2026-10-11): gate passed in CI and deployed (`91acc29`) |
-| 15 | Development and planning permits | in progress on `main` |
-| 16 | Online Public Data Room and public register | in progress on `main` |
-| 17 | Enforcement notices and change detection | in progress on `main` |
+| 15 | Development and planning permits | **complete** (2026-10-12): gate passed in CI and deployed (`ffa5a8d`); what is left is listed in the phase's notes |
+| 16 | Online Public Data Room and public register | **complete** (2026-10-12): gate passed in CI and deployed (`ffa5a8d`); what is left is listed in the phase's notes |
+| 17 | Enforcement notices and change detection | **complete** (2026-10-12): gate passed in CI and deployed (`ffa5a8d`); what is left is listed in the phase's notes |
+| 20 | Street naming and property addressing | codes and numbers **complete** (2026-10-12, `ffa5a8d`); street naming as a workflow is not built |
 
 ## Open items carried forward
 - **Phase 3:** Martin (vector tiles) connects as the app role, so row-level security hides tenant tables from it until tile requests carry a district context (e.g. per-district function sources, or tiles served through the API). Design this in Phase 3; don't grant Martin BYPASSRLS.
@@ -211,7 +212,7 @@ Built from the published law and standards. What needs the Assembly's own docume
 - Tested: the helpers (frame, scale fitting, grid interval) on known values, and the endpoint on the fixture community (`projects/tests/test_sheet.py`). The drawing itself is checked by eye.
 - **Not done:** imagery or a basemap under the plan; the national colour patterns (stripes, dots); a sheet index for areas that need several sheets.
 
-## Phase 20 notes (street codes and property numbers; in progress on `main`)
+## Phase 20 notes (street codes and property numbers)
 - `relations/addressing.py`: `propose` gives every street a code (kept where it has one, else the next free `<district code>-nnn`) and every property a number from its distance along its nearest street, odd on one side and even on the other. Three methods: every 10 m, every metre, or one after another. `apply` writes only the values that differ, through the audited feature table.
 - `GET /api/projects/<id>/addressing/` previews (open to `project.view`), `?type=csv` is the whole schedule, `POST` applies (`relations.edit`). No new models: the numbers live in the layers' own fields (`street_code`, `house_no`, `street`).
 - The side of the street is the turn from the street's heading to the property's bearing; numbering from the far end swaps the sides.

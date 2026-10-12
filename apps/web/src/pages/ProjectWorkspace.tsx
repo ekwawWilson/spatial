@@ -235,6 +235,7 @@ export function ProjectWorkspace() {
           {project.data?.community} · {project.data?.crs_detail.code} {project.data?.crs_detail.name}
         </span>
         <span className="spacer" />
+        <Link to={`/projects/${id}/plan`}>Local plan</Link>
         <Link to={`/projects/${id}/checklist`}>Readiness checklist</Link>
         <Link to={`/projects/${id}/imagery`}>Imagery</Link>
         <Link to={`/projects/${id}/relations`}>Relationships</Link>

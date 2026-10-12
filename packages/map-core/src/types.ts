@@ -1524,3 +1524,109 @@ export interface PublicLandApplication {
   status: string;
   decided_on: string | null;
 }
+
+// --- Making a local plan, and its consultation (Phase 19) -----------------------------------
+
+export interface PlanClock {
+  code: string;
+  label: string;
+  rule: string;
+  /** The Schedule form of the notice, if the step has one. */
+  form: string;
+  /** "12 months", "7 days", or "" where the Regulations set no time. */
+  limit: string;
+  /** Recorded only by those who may decide. */
+  decision: boolean;
+  due_on: string | null;
+  done_on: string | null;
+  note: string;
+  late: boolean;
+  overdue: boolean;
+}
+
+export interface PlanConsultation {
+  id: number;
+  stage: string;
+  stage_label: string;
+  held_on: string;
+  venue: string;
+  groups: string;
+  attendance: number | null;
+  issues: string;
+  outcome: string;
+  /** When the minutes went on display in the Public Data Room (r.65(3)). */
+  displayed_on: string | null;
+}
+
+export interface PlanComment {
+  id: number;
+  /** "restricted" for roles that may not see personal data. */
+  name: string;
+  contact: string;
+  topic: string;
+  topic_label: string;
+  text: string;
+  received_on: string;
+  /** Sent in through the Public Data Room, not recorded at the office. */
+  online: boolean;
+  response: string;
+  responded_on: string | null;
+}
+
+export interface PlanProcess {
+  project: number;
+  origin: "committee" | "applicant";
+  origin_label: string;
+  prepared_by: string;
+  structure_plan_on: string | null;
+  application_on: string | null;
+  conditions: string;
+  valid_until: string | null;
+  clocks: PlanClock[];
+  next_step: PlanClock | null;
+  comment_days: number;
+  comment_rule: string;
+  comments_close_on: string | null;
+  comments_open: boolean;
+  /** Each item a local plan must specify (r.24(1)), and whether this plan covers it. */
+  content: { code: string; label: string; covered: boolean; note: string }[];
+  content_rule: string;
+  content_covered: number;
+  possible_conditions: string[];
+  stages: { code: string; label: string }[];
+  consultations: PlanConsultation[];
+  comments: PlanComment[];
+  comments_unanswered: number;
+  papers: { code: string; label: string }[];
+}
+
+export interface PlanSettings {
+  origin?: "committee" | "applicant";
+  prepared_by?: string;
+  structure_plan_on?: string | null;
+  application_on?: string | null;
+  conditions?: string;
+  valid_until?: string | null;
+}
+
+export interface NewConsultation {
+  stage: string;
+  held_on: string;
+  venue: string;
+  groups?: string;
+  attendance?: number | null;
+  issues: string;
+  outcome?: string;
+}
+
+export interface PublicPlan {
+  project: number;
+  name: string;
+  locality: string;
+  commenced_on: string | null;
+  draft_on_display_from: string | null;
+  comments_close_on: string | null;
+  comments_open: boolean;
+  approved_on: string | null;
+  consultations: { stage: string; held_on: string; venue: string; attendance: number | null; issues: string; outcome: string }[];
+}

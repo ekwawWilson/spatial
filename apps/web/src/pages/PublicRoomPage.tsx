@@ -1,4 +1,4 @@
-import type { PublicRoom, PublicStatus, PublicZone, RegisterEntry } from "@spatial/map-core";
+import type { PublicPlan, PublicRoom, PublicStatus, PublicZone, RegisterEntry } from "@spatial/map-core";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -288,6 +288,105 @@ function Register({ code }: { code: string }) {
   );
 }
 
+function PlanCommentForm({ code, plan, topics }: { code: string; plan: PublicPlan; topics: { code: string; label: string }[] }) {
+  const { api } = useSession();
+  const [values, setValues] = useState({ name: "", contact: "", topic: "", text: "" });
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+  const set = (key: keyof typeof values, value: string) => setValues((v) => ({ ...v, [key]: value }));
+  if (done) return <p role="status">Thank you. Your comment on {plan.name} has been received and will be put before the Spatial Planning Committee.</p>;
+  return (
+    <form
+      className="stack"
+      aria-label={`Comment on ${plan.name}`}
+      onSubmit={async (e: FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        try {
+          await api.sendPlanComment(code, plan.project, { name: values.name, text: values.text, contact: values.contact || undefined, topic: values.topic || undefined });
+          setDone(true);
+        } catch (err) {
+          setError(err);
+        }
+      }}
+    >
+      <ErrorMessage error={error} />
+      <div className="inline-form">
+        <label>
+          Your name
+          <input required aria-label={`Your name, for ${plan.name}`} value={values.name} onChange={(e) => set("name", e.target.value)} />
+        </label>
+        <label>
+          Phone or address (optional)
+          <input aria-label={`Phone or address, for ${plan.name}`} value={values.contact} onChange={(e) => set("contact", e.target.value)} />
+        </label>
+        <label>
+          About
+          <select aria-label={`About, for ${plan.name}`} value={values.topic} onChange={(e) => set("topic", e.target.value)}>
+            <option value="">The plan as a whole</option>
+            {topics.map((t) => (
+              <option key={t.code} value={t.code}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <label>
+        Your comment
+        <textarea required aria-label={`Your comment on ${plan.name}`} rows={3} maxLength={5000} value={values.text} onChange={(e) => set("text", e.target.value)} />
+      </label>
+      <div className="inline-form">
+        <button type="submit">Send the comment</button>
+      </div>
+    </form>
+  );
+}
+
+function Plans({ code }: { code: string }) {
+  const { api } = useSession();
+  const plans = useLoad(() => api.publicPlans(code), [api, code]);
+  if (!plans.data || plans.data.results.length === 0) return null;
+  return (
+    <section aria-label="Local plans being made" className="card wide">
+      <h2>Local plans being made</h2>
+      {plans.data.results.map((plan) => (
+        <article key={plan.project} className="stack" aria-label={plan.name}>
+          <h3>
+            {plan.name} <span className="muted small">· {plan.locality}</span>
+          </h3>
+          <p>
+            {plan.approved_on
+              ? `Approved on ${plan.approved_on}.`
+              : plan.comments_open
+                ? `The draft is open for inspection and comment until ${plan.comments_close_on}.`
+                : plan.draft_on_display_from
+                  ? `The draft was open for comment until ${plan.comments_close_on}.`
+                  : `Preparation commenced on ${plan.commenced_on}. The draft is not out yet.`}
+          </p>
+          {plan.consultations.length > 0 && (
+            <>
+              <h4>Consultations held</h4>
+              <ul>
+                {plan.consultations.map((c) => (
+                  <li key={`${c.held_on}-${c.venue}`}>
+                    <strong>
+                      {c.held_on}, {c.venue}
+                    </strong>
+                    {c.attendance !== null && ` (${c.attendance} attending)`}: {c.issues}
+                    {c.outcome && <div className="small">Agreed: {c.outcome}</div>}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {plan.comments_open && <PlanCommentForm code={code} plan={plan} topics={plans.data!.topics} />}
+        </article>
+      ))}
+    </section>
+  );
+}
+
 function LandApplications({ code }: { code: string }) {
   const { api } = useSession();
   const shown = useLoad(() => api.publicLandApplications(code), [api, code]);
@@ -462,6 +561,7 @@ export function PublicRoomPage() {
           <WhatCanIBuild code={code} />
           <CheckApplication code={code} />
           <Register code={code} />
+          <Plans code={code} />
           <LandApplications code={code} />
           <Notices code={code} />
           <section aria-label="Plans and notices" className="card wide">

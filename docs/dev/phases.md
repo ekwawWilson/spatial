@@ -36,6 +36,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 16 | Online Public Data Room and public register | **complete** (2026-10-12): gate passed in CI and deployed (`ffa5a8d`); what is left is listed in the phase's notes |
 | 17 | Enforcement notices and change detection | **complete** (2026-10-12): gate passed in CI and deployed (`ffa5a8d`); what is left is listed in the phase's notes |
 | 18 | Re-zoning, change of use, subdivision and consolidation | **complete** (2026-10-12): gate passed in CI and deployed (`4024030`); what is left is listed in the phase's notes |
+| 19 | Plan preparation and consultation; plan sheets | in progress on `main` |
 | 20 | Street naming and property addressing | codes and numbers **complete** (2026-10-12, `ffa5a8d`); street naming as a workflow is not built |
 
 ## Open items carried forward
@@ -232,4 +233,12 @@ Built from the published law and standards. What needs the Assembly's own docume
 - Gate: `landchange/tests/test_landchange.py` (every clock of r.33 and r.54, r.34's tests, the abutting list, the map change, the public listing); `apps/web/e2e/phase18.spec.ts`.
 - The statutory deadlines page counts these applications too (`land` in `reports/services.compliance`).
 - **Not done:** the public sending Form 59 online; the draft re-zoning report (Form 34); drawing an approved subdivision from the application; fees.
+
+## Phase 19 notes (making a local plan, and consultation)
+- App `planmaking`. `registry.py` holds the steps of L.I. 2384 r.23, r.25 and r.26 with their forms and times, the seventeen items of r.24(1), the conditions of r.27 and the stages of consultation, all read from the published text. One `PlanProcess` per project (made on first write), steps stored as `{code: {on, note}}`.
+- Clocks: twelve calendar months from the structure plan (r.23(1)); sixty days of comment from the notice (r.23(5)); seven days to publish the approval (r.25(5)); for a plan prepared by another person, ninety days to decide (r.25(1)) and the r.26 confirmation steps (28 and 7 days). The approval is refused while the sixty days run.
+- `Consultation` with minutes as a PDF, displayed in the Public Data Room when marked (r.65(3)). `PlanComment` from the office or, through `POST /api/public/rooms/<code>/plans/<project>/comments/`, from anyone while comments are open; commenters are never shown publicly.
+- Permissions: `project.view` to read, `project.edit` to record, `permit.decide` for the approval and confirmation steps.
+- Gate: `planmaking/tests/test_planmaking.py`; `apps/web/e2e/phase19.spec.ts`.
+- **Not done:** the facility checks against the planning standards (schools, clinics, markets per head of population); comments pinned to a place on the map; Forms 27 to 31 and 56 in the Schedule's own layout; the structure plan and Spatial Development Framework procedures (r.9 to r.22), which are regional or district-wide and not per community.
 

@@ -68,6 +68,10 @@ import type {
   LandSummary,
   NewLandApplication,
   PublicLandApplication,
+  NewConsultation,
+  PlanProcess,
+  PlanSettings,
+  PublicPlan,
   NewCase,
   DataRoomSettings,
   InformationRequest,
@@ -697,6 +701,30 @@ export function createApiClient(options: ApiClientOptions = {}) {
       request<{ written: { parcels_changed: number; field: string; zoning_layer: boolean }; application: LandApplication }>("POST", `/api/land/applications/${id}/apply/`),
     landPaper: (id: number, kind: string) => blob(`/api/land/applications/${id}/paper/${query({ kind })}`),
     publicLandApplications: (code: string) => open<{ results: PublicLandApplication[] }>(`/api/public/rooms/${encodeURIComponent(code)}/land-applications/`),
+
+    // --- Making a local plan, and its consultation -----------------------------------------
+    getPlanProcess: (projectId: number) => request<PlanProcess>("GET", `/api/projects/${projectId}/plan/`),
+    updatePlanProcess: (projectId: number, data: PlanSettings) => request<PlanProcess>("PATCH", `/api/projects/${projectId}/plan/`, data),
+    planStep: (projectId: number, data: { step: string; on?: string; note?: string }) => request<PlanProcess>("POST", `/api/projects/${projectId}/plan/step/`, data),
+    planContent: (projectId: number, items: Record<string, { covered: boolean; note?: string }>) => request<PlanProcess>("POST", `/api/projects/${projectId}/plan/content/`, { items }),
+    planPaper: (projectId: number, kind: string) => blob(`/api/projects/${projectId}/plan/paper/${query({ kind })}`),
+    recordConsultation: (projectId: number, data: NewConsultation) => request<PlanProcess>("POST", `/api/projects/${projectId}/plan/consultations/`, data),
+    displayConsultation: (consultationId: number) => request<PlanProcess>("POST", `/api/plan-consultations/${consultationId}/display/`),
+    consultationMinutes: (consultationId: number) => blob(`/api/plan-consultations/${consultationId}/minutes/`),
+    recordPlanComment: (projectId: number, data: { name: string; contact?: string; topic?: string; text: string; on?: string }) =>
+      request<PlanProcess>("POST", `/api/projects/${projectId}/plan/comments/`, data),
+    replyPlanComment: (commentId: number, response: string) => request<PlanProcess>("POST", `/api/plan-comments/${commentId}/reply/`, { response }),
+    publicPlans: (code: string) => open<{ results: PublicPlan[]; topics: { code: string; label: string }[] }>(`/api/public/rooms/${encodeURIComponent(code)}/plans/`),
+    /** A comment on a draft local plan, from anyone, while its sixty days run. */
+    async sendPlanComment(code: string, projectId: number, data: { name: string; contact?: string; topic?: string; text: string }) {
+      const response = await doFetch(`${root}/api/public/rooms/${encodeURIComponent(code)}/plans/${projectId}/comments/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw await toApiError(response);
+      return (await response.json()) as { received_on: string; comments_close_on: string | null };
+    },
 
     // --- Street addressing -----------------------------------------------------------------
     /** Proposes street codes and property numbers; changes nothing. */

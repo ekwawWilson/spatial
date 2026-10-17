@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 from django.core import mail
+from django.core.mail import EmailMultiAlternatives
 from django.urls import reverse
 from django.utils import timezone
 
@@ -103,6 +104,7 @@ def test_adding_an_unknown_email_creates_and_invites_the_user(api, members_a, di
     [message] = mail.outbox
     assert message.to == [user.email] and "District A" in message.subject
     # The same message as branded HTML, with the link and the names escaped.
+    assert isinstance(message, EmailMultiAlternatives)
     html, kind = message.alternatives[0]
     assert kind == "text/html" and "Set my password" in html and "District A" in html
     assert "/reset-password?uid=" in html and "Hello <strong>Abena</strong>" in html

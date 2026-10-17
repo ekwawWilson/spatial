@@ -35,7 +35,7 @@ Then open the site, sign in, and create the region, the district and its first d
 | `WEB_PORT` | The port the web app listens on (80 by default in production). |
 | `HTTPS_ONLY` | Set to `true` once HTTPS is working: redirects to HTTPS and marks cookies secure. |
 | `HSTS_SECONDS` | How long browsers should insist on HTTPS. Start with `3600`; raise to `31536000` when you're sure. |
-| `EMAIL_BACKEND` and mail settings | Needed for password-reset emails. The default only prints them to the log. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Needed for invitations and password-reset emails (Gmail: `smtp.gmail.com`, port 465, an app password). Without `SMTP_HOST` they are only written to the log. |
 | `THROTTLE_*` | Rate limits. The defaults suit an Assembly; raise `THROTTLE_USER` if many people share one account (they shouldn't). |
 | `GUNICORN_WORKERS` | Application processes. About 2 x CPU cores + 1. |
 

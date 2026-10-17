@@ -182,9 +182,12 @@ EMAIL_HOST = SMTP_HOST
 EMAIL_PORT = env.int("SMTP_PORT", default=465)
 EMAIL_HOST_USER: str = env("SMTP_USER", default="")
 EMAIL_HOST_PASSWORD: str = env("SMTP_PASS", default="")
-EMAIL_USE_SSL = EMAIL_PORT == 465
+# SMTP_SECURE=ssl or starttls; by default SSL on 465 and 2465 (a mail
+# service's alternative port, for hosts that block 465 and 587).
+SMTP_SECURE: str = env("SMTP_SECURE", default="ssl" if EMAIL_PORT in (465, 2465) else "starttls")
+EMAIL_USE_SSL = SMTP_SECURE == "ssl"
 EMAIL_USE_TLS = not EMAIL_USE_SSL
-EMAIL_TIMEOUT = 20
+EMAIL_TIMEOUT = 10
 EMAIL_BACKEND = env(
     "EMAIL_BACKEND",
     default="django.core.mail.backends.smtp.EmailBackend"

@@ -2,6 +2,7 @@
 """The platform's emails: a plain-text body (what tests and old mail readers
 use) and the same message as branded HTML, in the style of the DVLA system's."""
 
+import logging
 from html import escape
 
 from django.conf import settings
@@ -11,6 +12,8 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from .models import User
+
+log = logging.getLogger(__name__)
 
 GREEN = "#1f6f4a"
 GOLD = "#FCD116"
@@ -59,7 +62,13 @@ def button(url: str, label: str) -> str:
 def send(user: User, subject: str, text: str, html: str) -> None:
     message = EmailMultiAlternatives(subject, text, None, [user.email])
     message.attach_alternative(layout(_name(user), html), "text/html")
-    message.send()
+    try:
+        message.send()
+    except Exception:
+        # The mail server can't be reached: the person is still added, and the
+        # message (with its link) goes to the log for an administrator to pass on.
+        log.exception("Email to %s not sent", user.email)
+        log.warning("Unsent email to %s: %s\n%s", user.email, subject, text)
 
 
 def send_password_reset(user: User) -> None:

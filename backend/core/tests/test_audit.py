@@ -111,6 +111,22 @@ def test_adding_an_unknown_email_creates_and_invites_the_user(api, members_a, di
     assert "/reset-password?uid=" in html and "Hello <strong>Abena</strong>" in html
 
 
+def test_a_mail_server_that_cannot_be_reached_does_not_stop_a_member_being_added(
+    api, members_a, district_a, settings, caplog
+):
+    settings.EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    settings.EMAIL_HOST, settings.EMAIL_PORT, settings.EMAIL_TIMEOUT = "127.0.0.1", 9, 2
+    response = api(members_a[Role.DISTRICT_ADMIN], district_a).post(
+        reverse("membership-list"),
+        {"email": "kwesi@example.test", "role": "viewer"},
+        format="json",
+    )
+    assert response.status_code == 201, response.data
+    # The link is in the log, for an administrator to pass on.
+    assert "Unsent email to kwesi@example.test" in caplog.text
+    assert "/reset-password?uid=" in caplog.text
+
+
 def test_adding_an_existing_member_is_rejected(api, members_a, district_a):
     response = api(members_a[Role.DISTRICT_ADMIN], district_a).post(
         reverse("membership-list"),

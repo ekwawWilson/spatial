@@ -173,8 +173,33 @@ SIMPLE_JWT = {
 
 # Links in password-reset and invitation emails point at the web app.
 WEB_APP_URL = env("WEB_APP_URL", default="http://localhost:5173").rstrip("/")
-EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@spatial.local")
+# Outgoing email, set the same way as the DVLA system: SMTP_HOST, SMTP_PORT
+# (465: SSL, the Gmail default; 587: STARTTLS), SMTP_USER, SMTP_PASS (for Gmail,
+# an app password) and SMTP_FROM ('"Name" <address>'). Without SMTP_HOST,
+# emails are written to the log instead of being sent.
+SMTP_HOST: str = env("SMTP_HOST", default="")
+EMAIL_HOST = SMTP_HOST
+EMAIL_PORT = env.int("SMTP_PORT", default=465)
+EMAIL_HOST_USER: str = env("SMTP_USER", default="")
+EMAIL_HOST_PASSWORD: str = env("SMTP_PASS", default="")
+EMAIL_USE_SSL = EMAIL_PORT == 465
+EMAIL_USE_TLS = not EMAIL_USE_SSL
+EMAIL_TIMEOUT = 20
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.smtp.EmailBackend"
+    if SMTP_HOST
+    else "django.core.mail.backends.console.EmailBackend",
+)
+DEFAULT_FROM_EMAIL = env(
+    "SMTP_FROM",
+    default=env(
+        "DEFAULT_FROM_EMAIL",
+        default=f"Spatial Planning Platform <{EMAIL_HOST_USER}>"
+        if EMAIL_HOST_USER
+        else "no-reply@spatial.local",
+    ),
+)
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Spatial Planning Platform API",

@@ -5,6 +5,7 @@ OpenStreetMap is never asked: transfer.osm.fetch is replaced by a canned answer.
 from typing import Any
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 
 from core.models import Role
@@ -17,7 +18,8 @@ pytestmark = pytest.mark.django_db
 
 # About 1.1 km square near Kasoa (WGS 84).
 W, S, E, N = -0.430, 5.520, -0.420, 5.530
-AREA = {"type": "Polygon", "coordinates": [[[W, S], [E, S], [E, N], [W, N], [W, S]]]}
+RING = [(W, S), (E, S), (E, N), (W, N), (W, S)]
+AREA = {"type": "Polygon", "coordinates": [[list(p) for p in RING]]}
 
 
 def way(id_: int, tags: dict[str, str], points: list[tuple[float, float]]) -> dict[str, Any]:
@@ -228,7 +230,7 @@ def test_what_is_refused(
 
     # OpenStreetMap unreachable: the job says so, and no layer is left behind.
     def down(ql: str) -> dict[str, Any]:
-        raise osm.ValidationError(
+        raise ValidationError(
             "OpenStreetMap could not be reached just now (test). Try again later."
         )
 
@@ -252,7 +254,7 @@ def test_an_area_in_the_map_s_own_coordinates_is_accepted(
             math.log(math.tan((90 + lat) * math.pi / 360)) * 20037508.34 / math.pi,
         ]
 
-    area = {"type": "Polygon", "coordinates": [[merc(x, y) for x, y in AREA["coordinates"][0]]]}
+    area = {"type": "Polygon", "coordinates": [[merc(x, y) for x, y in RING]]}
     made = start(
         planner, project, django_capture_on_commit_callbacks, area=area, area_crs="EPSG:3857"
     )

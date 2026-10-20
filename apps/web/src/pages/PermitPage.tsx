@@ -41,6 +41,130 @@ function Card(props: { title: string; label?: string; children: ReactNode }) {
 
 type Act = (action: () => Promise<PermitApplication>, done?: string) => Promise<void>;
 
+const BODIES: Record<"review" | "appeal", [string, string][]> = {
+  review: [["assembly", "The District Assembly"]],
+  appeal: [
+    ["rcc", "The Regional Coordinating Council"],
+    ["luspa", "The Land Use and Spatial Planning Authority"],
+  ],
+};
+const OUTCOMES: [string, string][] = [
+  ["upheld", "Decision upheld"],
+  ["varied", "Decision varied"],
+  ["overturned", "Decision overturned"],
+  ["withdrawn", "Withdrawn"],
+];
+
+/** Requests for review (r.62, Form 53) and appeals (r.63, Form 54) against the decision. */
+function Challenges({ permit, act }: { permit: PermitApplication; act: Act }) {
+  const { api, can } = useSession();
+  const reviewed = permit.challenges.some((c) => c.kind === "review");
+  const [kind, setKind] = useState<"review" | "appeal">("review");
+  const [body, setBody] = useState("assembly");
+  const [grounds, setGrounds] = useState("");
+  const [outcome, setOutcome] = useState<Record<number, string>>({});
+  const [decision, setDecision] = useState<Record<number, string>>({});
+  return (
+    <Card title="Review and appeal" label="Review and appeal">
+      <p className="muted small">
+        A request for review goes to the District Assembly (Form 53, r.62); an appeal against its decision to the Regional Coordinating Council,
+        and against the Council's to the Authority (Form 54, r.63). Each is decided and served within 21 days.
+      </p>
+      {permit.challenges.length === 0 && <p className="muted">None lodged.</p>}
+      {permit.challenges.map((c) => (
+        <article key={c.id} className="stack">
+          <p>
+            <strong>
+              {c.kind_label} (Form {c.form}, {c.rule})
+            </strong>{" "}
+            to {c.body_label.toLowerCase()}, lodged {c.lodged_on}
+            {c.clock.lodged_late && <span className="error"> (after the {c.clock.lodge_by} limit)</span>}: {c.grounds}
+          </p>
+          {c.decided_on ? (
+            <p className={c.clock.late ? "error small" : "small"}>
+              {c.outcome_label} on {c.decided_on}
+              {c.decision && `: ${c.decision}`}
+              {c.clock.late && ` (due by ${c.clock.decide_by})`}
+            </p>
+          ) : (
+            <>
+              <p className={c.clock.overdue ? "error small" : "muted small"}>Decision due by {c.clock.decide_by}.</p>
+              {can("permit.decide") && (
+                <div className="inline-form">
+                  <label>
+                    Outcome
+                    <select aria-label={`Outcome of the ${c.kind}`} value={outcome[c.id] ?? "upheld"} onChange={(e) => setOutcome({ ...outcome, [c.id]: e.target.value })}>
+                      {OUTCOMES.map(([code, label]) => (
+                        <option key={code} value={code}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Decision
+                    <input aria-label={`Decision on the ${c.kind}`} value={decision[c.id] ?? ""} onChange={(e) => setDecision({ ...decision, [c.id]: e.target.value })} />
+                  </label>
+                  <button type="button" onClick={() => void act(() => api.decideChallenge(permit.id, { challenge: c.id, outcome: outcome[c.id] ?? "upheld", decision: decision[c.id] ?? "" }), "Decision recorded.")}>
+                    Record the decision
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </article>
+      ))}
+      {can("permit.process") && (
+        <form
+          className="stack"
+          aria-label="Lodge a review or appeal"
+          onSubmit={(e: FormEvent) => {
+            e.preventDefault();
+            void act(() => api.lodgeChallenge(permit.id, { kind, body, grounds }), kind === "review" ? "Request for review recorded." : "Appeal recorded.").then(() => setGrounds(""));
+          }}
+        >
+          <div className="inline-form">
+            <label>
+              Lodge
+              <select
+                aria-label="Lodge"
+                value={kind}
+                onChange={(e) => {
+                  const next = e.target.value as "review" | "appeal";
+                  setKind(next);
+                  setBody(BODIES[next][0]![0]);
+                }}
+              >
+                <option value="review">A request for review (Form 53)</option>
+                <option value="appeal" disabled={!reviewed}>
+                  An appeal (Form 54){reviewed ? "" : ": after a review"}
+                </option>
+              </select>
+            </label>
+            <label>
+              To
+              <select aria-label="To" value={body} onChange={(e) => setBody(e.target.value)}>
+                {BODIES[kind].map(([code, label]) => (
+                  <option key={code} value={code}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label>
+            Grounds
+            <textarea required aria-label="Grounds" rows={2} value={grounds} onChange={(e) => setGrounds(e.target.value)} />
+          </label>
+          <div className="inline-form">
+            <button type="submit">Record it</button>
+          </div>
+        </form>
+      )}
+    </Card>
+  );
+}
+
 function Inspection({ permit, registry, act }: { permit: PermitApplication; registry: PermitRegistry; act: Act }) {
   const { api } = useSession();
   const [findings, setFindings] = useState<Record<string, string>>({});
@@ -236,6 +360,13 @@ function NextStep({ permit, registry, act }: { permit: PermitApplication; regist
         <p>
           Issued on {permit.issued_on}; valid until {permit.expires_on}. If the development isn't finished by then, the permit must be renewed.
         </p>
+        {can("permit.decide") && (
+          <div className="inline-form">
+            <button type="button" className="secondary" onClick={() => void act(() => api.renewPermit(permit.id), "Permit renewed for five more years.")}>
+              Renew the permit (Spatial Planning Committee)
+            </button>
+          </div>
+        )}
         <div className="inline-form">
           <button type="button" onClick={() => void paper("certificate")}>
             Download the certificate
@@ -514,6 +645,7 @@ export function PermitPage() {
           </dl>
 
           <NextStep permit={permit} registry={registry.data} act={act} />
+          {["granted", "issued", "refused"].includes(permit.status) && <Challenges permit={permit} act={act} />}
 
           <Card title="Deadlines">
             <ul>

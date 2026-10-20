@@ -48,6 +48,7 @@ function permit(extra: Partial<PermitApplication> = {}): PermitApplication {
     permit_receipt: "",
     permit_paid_on: null,
     verify_url: null,
+    challenges: [],
     events: [{ kind: "received", on: "2026-10-11", note: "", by: "ama@example.test" }],
     ...extra,
   };
@@ -94,6 +95,32 @@ describe("permit page", () => {
     await userEvent.click(within(form).getByRole("button", { name: "Record the decision" }));
     await waitFor(() => expect(api.calls.find((c) => c.method === "POST")?.body).toEqual({ decision: "refuse", reasons: "The plot is in the road reservation.", conditions: "" }));
     expect(await screen.findByRole("button", { name: "Download the refusal letter" })).toBeInTheDocument();
+  });
+
+  it("records a request for review, its decision, and allows an appeal after it", async () => {
+    const refused = permit({ status: "refused", status_label: "Refused", decided_on: "2026-10-20", next_due: null });
+    const review = {
+      id: 3, kind: "review" as const, kind_label: "Request for review", form: "53", rule: "r.62", body: "assembly", body_label: "The District Assembly",
+      lodged_on: "2026-10-25", grounds: "The reservation was moved.", decided_on: null, outcome: "" as const, outcome_label: "", decision: "",
+      clock: { decide_by: "2026-11-15", overdue: false, late: false, lodge_by: "2026-11-19", lodged_late: false },
+    };
+    const lodged = { ...refused, challenges: [review] };
+    const decided = { ...refused, challenges: [{ ...review, decided_on: "2026-11-01", outcome: "upheld" as const, outcome_label: "Decision upheld", decision: "It stands." }] };
+    const api = backend(refused, {
+      "POST /api/permits/applications/1/challenge/": () => ({ body: lodged }),
+      "POST /api/permits/applications/1/decide-challenge/": () => ({ body: decided }),
+    });
+    renderApp(api.fetch, { tokens: signedIn, route: "/projects/5/permits/1" });
+    const card = await screen.findByRole("region", { name: "Review and appeal" });
+    expect(within(card).getByRole("option", { name: /An appeal \(Form 54\): after a review/ })).toBeDisabled();
+    await userEvent.type(within(card).getByLabelText("Grounds"), "The reservation was moved.");
+    await userEvent.click(within(card).getByRole("button", { name: "Record it" }));
+    expect(await within(card).findByText(/Decision due by 2026-11-15/)).toBeInTheDocument();
+    expect(api.calls.find((c) => c.path.endsWith("/challenge/"))!.body).toEqual({ kind: "review", body: "assembly", grounds: "The reservation was moved." });
+    await userEvent.type(within(card).getByLabelText("Decision on the review"), "It stands.");
+    await userEvent.click(within(card).getByRole("button", { name: "Record the decision" }));
+    expect(await within(card).findByText(/Decision upheld on 2026-11-01: It stands\./)).toBeInTheDocument();
+    expect(within(card).getByRole("option", { name: "An appeal (Form 54)" })).toBeEnabled();
   });
 
   it("leaves the decision to the district administrator and hides contact details from viewers", async () => {

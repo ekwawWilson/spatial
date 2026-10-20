@@ -1029,6 +1029,8 @@ export interface PermitApplication extends PermitSummary {
   permit_paid_on: string | null;
   /** Where the certificate's QR code leads; null until the permit is issued. */
   verify_url: string | null;
+  /** Requests for review (r.62, Form 53) and appeals (r.63, Form 54) against the decision. */
+  challenges: PermitChallenge[];
   events: { kind: string; on: string; note: string; by: string | null }[];
 }
 
@@ -1781,4 +1783,65 @@ export interface ExchangeKey {
   revoked_at: string | null;
   /** Only when just made: the whole key, shown once. */
   key?: string;
+}
+
+export interface PermitChallenge {
+  id: number;
+  kind: "review" | "appeal";
+  kind_label: string;
+  form: string;
+  rule: string;
+  body: string;
+  body_label: string;
+  lodged_on: string;
+  grounds: string;
+  decided_on: string | null;
+  outcome: "" | "upheld" | "varied" | "overturned" | "withdrawn";
+  outcome_label: string;
+  decision: string;
+  clock: { decide_by: string; overdue: boolean; late: boolean; lodge_by: string | null; lodged_late: boolean };
+}
+
+// --- Planning committees and their meetings -------------------------------------------------
+
+export type CommitteeKind = "dspc" | "tsc";
+
+export interface CommitteeMember {
+  name: string;
+  office: string;
+}
+
+export interface Committees {
+  committees: { kind: CommitteeKind; label: string; members: CommitteeMember[] }[];
+  offices: { code: string; label: string }[];
+  outcomes: { code: string; label: string }[];
+}
+
+export interface AgendaItem {
+  type: "permit" | "land" | "plan" | "other";
+  ref: number | null;
+  /** The project an application or plan belongs to. */
+  project: number | null;
+  title: string;
+  outcome: string;
+  minute: string;
+}
+
+export interface MeetingSummary {
+  id: number;
+  committee: CommitteeKind;
+  committee_label: string;
+  held_on: string;
+  venue: string;
+  items: number;
+  considered: number;
+  notice: { serve_by: string; served_on: string | null; late: boolean; overdue: boolean; rule: string };
+  quorum: { present: number; needed: number; missing_offices: string[]; met: boolean; rule: string };
+}
+
+export interface Meeting extends MeetingSummary {
+  members: CommitteeMember[];
+  attendance: string[];
+  agenda: AgendaItem[];
+  notes: string;
 }

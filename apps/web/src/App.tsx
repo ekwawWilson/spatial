@@ -18,6 +18,7 @@ import { LandApplicationPage, LandApplicationsPage } from "./pages/LandApplicati
 import { LocalPlanPage } from "./pages/LocalPlanPage";
 import { RatesPage } from "./pages/RatesPage";
 import { ReturnsPage } from "./pages/ReturnsPage";
+import { CommitteesPage, MeetingPage } from "./pages/CommitteesPage";
 import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPages";
 import { HomePage } from "./pages/HomePage";
 import { ImageryPage } from "./pages/ImageryPage";
@@ -192,6 +193,22 @@ export function App() {
           element={
             <RequirePermission permission="project.view">
               <ConflictsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="committees"
+          element={
+            <RequirePermission permission="permit.view">
+              <CommitteesPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="committees/:meetingId"
+          element={
+            <RequirePermission permission="permit.view">
+              <MeetingPage />
             </RequirePermission>
           }
         />

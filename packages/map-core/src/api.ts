@@ -81,6 +81,12 @@ import type {
   RegisterSummary,
   DistrictReturn,
   ExchangeKey,
+  AgendaItem,
+  CommitteeKind,
+  CommitteeMember,
+  Committees,
+  Meeting,
+  MeetingSummary,
   NewCase,
   DataRoomSettings,
   InformationRequest,
@@ -666,6 +672,11 @@ export function createApiClient(options: ApiClientOptions = {}) {
     issuePermit: (id: number, on?: string) => request<PermitApplication>("POST", `/api/permits/applications/${id}/issue/`, { on }),
     certifyHabitation: (id: number, on?: string) => request<PermitApplication>("POST", `/api/permits/applications/${id}/habitation/`, { on }),
     withdrawPermit: (id: number, note = "") => request<PermitApplication>("POST", `/api/permits/applications/${id}/withdraw/`, { note }),
+    lodgeChallenge: (id: number, data: { kind: "review" | "appeal"; body: string; grounds: string; on?: string }) =>
+      request<PermitApplication>("POST", `/api/permits/applications/${id}/challenge/`, data),
+    decideChallenge: (id: number, data: { challenge: number; outcome: string; decision?: string; on?: string }) =>
+      request<PermitApplication>("POST", `/api/permits/applications/${id}/decide-challenge/`, data),
+    renewPermit: (id: number, note = "") => request<PermitApplication>("POST", `/api/permits/applications/${id}/renew/`, { note }),
     async uploadPermitDocument(id: number, file: File, requirement = ""): Promise<PermitApplication> {
       const form = new FormData();
       form.set("file", file);
@@ -783,6 +794,17 @@ export function createApiClient(options: ApiClientOptions = {}) {
     listExchangeKeys: () => request<{ keys: ExchangeKey[]; scopes: Record<string, string> }>("GET", "/api/exchange/keys/"),
     createExchangeKey: (data: { name: string; scopes: string[] }) => request<ExchangeKey>("POST", "/api/exchange/keys/", data),
     revokeExchangeKey: (id: number) => request<ExchangeKey>("POST", `/api/exchange/keys/${id}/revoke/`, {}),
+
+    // --- Planning committees ---------------------------------------------------------------
+    listCommittees: () => request<Committees>("GET", "/api/committees/"),
+    setCommitteeMembers: (kind: CommitteeKind, members: CommitteeMember[]) => request<Committees>("PUT", `/api/committees/${query({ kind })}`, { members }),
+    listMeetings: () => request<{ results: MeetingSummary[] }>("GET", "/api/committees/meetings/"),
+    getMeeting: (id: number) => request<Meeting>("GET", `/api/committees/meetings/${id}/`),
+    createMeeting: (data: { committee: CommitteeKind; held_on: string; venue?: string }) => request<Meeting>("POST", "/api/committees/meetings/", data),
+    updateMeeting: (id: number, data: Partial<{ held_on: string; venue: string; notice_served_on: string | null; attendance: string[]; agenda: AgendaItem[]; notes: string }>) =>
+      request<Meeting>("PATCH", `/api/committees/meetings/${id}/`, data),
+    refreshAgenda: (id: number) => request<Meeting & { added: number }>("POST", `/api/committees/meetings/${id}/refresh-agenda/`, {}),
+    meetingPaper: (id: number, kind: "notice" | "minutes") => blob(`/api/committees/meetings/${id}/paper/${query({ kind })}`),
 
     // --- Street addressing -----------------------------------------------------------------
     /** Proposes street codes and property numbers; changes nothing. */

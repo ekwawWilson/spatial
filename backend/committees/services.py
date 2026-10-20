@@ -74,11 +74,15 @@ def waiting(meeting_committee: Committee) -> list[dict[str, Any]]:
                 Application.Status.DEFERRED,
             )
         ):
-            items.append({"type": "permit", "ref": a.pk, "title": _permit_title(a)})
+            items.append(
+                {"type": "permit", "ref": a.pk, "project": a.project_id, "title": _permit_title(a)}
+            )
     else:
         # The Spatial Planning Committee decides what the Sub-Committee has reported.
         for a in apps.filter(status=Application.Status.REPORTED):
-            items.append({"type": "permit", "ref": a.pk, "title": _permit_title(a)})
+            items.append(
+                {"type": "permit", "ref": a.pk, "project": a.project_id, "title": _permit_title(a)}
+            )
         for process in PlanProcess.objects.filter(
             district_id=meeting_committee.district_id
         ).select_related("project"):
@@ -87,6 +91,7 @@ def waiting(meeting_committee: Committee) -> list[dict[str, Any]]:
                     {
                         "type": "plan",
                         "ref": process.project_id,
+                        "project": process.project_id,
                         "title": f"Local plan: {process.project.name}",
                     }
                 )
@@ -96,6 +101,7 @@ def waiting(meeting_committee: Committee) -> list[dict[str, Any]]:
             {
                 "type": "land",
                 "ref": land.pk,
+                "project": land.project_id,
                 "title": f"{land.number}: {kind} ({land.project.community or land.project.name})",
             }
         )
@@ -130,6 +136,7 @@ def check_agenda(agenda: Any, current: list[dict[str, Any]]) -> list[dict[str, A
             {
                 "type": kind if kind in ("permit", "land", "plan") else "other",
                 "ref": item.get("ref") if kind in ("permit", "land", "plan") else None,
+                "project": item.get("project") if kind in ("permit", "land", "plan") else None,
                 "title": str(item["title"]).strip()[:300],
                 "outcome": outcome,
                 "minute": str(item.get("minute") or "")[:5000],

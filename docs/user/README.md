@@ -19,6 +19,7 @@ Written for physical planners, district administrators and field officers. Secti
 - [Zoning and the national standards](zoning.md)
 - [Street addressing](addressing.md)
 - [Planning and development permits](permits.md)
+- [Committees](committees.md)
 - [Re-zoning, change of use and subdivision](rezoning-and-subdivision.md)
 - [The Public Data Room](public-data-room.md)
 - [Enforcement](enforcement.md)

@@ -114,6 +114,11 @@ export function Layout() {
             Statutory deadlines
           </Item>
         )}
+        {can("permit.view") && (
+          <Item to="/committees" icon="users">
+            Committees
+          </Item>
+        )}
         {can("reports.view") && (
           <Item to="/returns" icon="file">
             Returns and data exchange

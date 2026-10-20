@@ -89,3 +89,8 @@ The district administrator enters the lines of the Assembly's **fee-fixing resol
 | Receive, acknowledge, add documents and comments, report, record receipts | | | ✓ | ✓ |
 | Record the committee's decision; issue the permit | | | | ✓ |
 | Enter the fees | | | | ✓ |
+
+## Review, appeal and renewal
+- **Review (Form 53, r.62):** after a decision, record the applicant's request for review to the Assembly, with its grounds. It is decided and served within **21 days**; record the outcome (upheld, varied, overturned or withdrawn) and the decision. A request lodged more than 30 days after the decision is marked late (Act 925 s.172).
+- **Appeal (Form 54, r.63):** after a review, an appeal goes to the Regional Coordinating Council, and against the Council's decision to the Authority. It is decided within 21 days of filing.
+- **Renewal:** if the development isn't finished before the permit expires, the Spatial Planning Committee renews it (the note on the development permit): **Renew the permit** extends it five more years from its expiry.

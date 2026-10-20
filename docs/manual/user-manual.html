@@ -53,6 +53,7 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <li><a href="#rezoning-and-subdivision">Re-zoning, change of use and subdivision</a></li>
 <li><a href="#public-data-room">The Public Data Room</a></li>
 <li><a href="#enforcement">Enforcement</a></li>
+<li><a href="#property-rates-and-betterment">Property rates and betterment</a></li>
 <li><a href="#statutory-deadlines">Statutory deadlines</a></li>
 </ul><p class="part">Working in the field</p><ul>
 <li><a href="#field-app">The field app (Android)</a></li>
@@ -799,6 +800,52 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <tr><td>Open a case</td><td></td><td>✓</td><td>✓</td></tr>
 <tr><td>Compare images; issue and serve notices; close a case</td><td></td><td></td><td>✓</td></tr>
 </tbody></table>
+<h2 id="property-rates-and-betterment">Property rates and betterment</h2>
+<p><em>Everyone can see the register; owners' names and contacts only those who may see personal data. Planners and district administrators keep it.</em></p>
+<p>Only the Assembly may levy rates in its district (Local Governance Act, 2016, Act 936). This page keeps the <strong>register of rateable properties</strong>, built from the map, with their valuations and bills; links it to the Assembly's <strong>revenue system</strong>; maps what has <strong>never been billed</strong> and what is <strong>owing</strong>; and runs <strong>betterment</strong> charges (L.I. 2384 r.40–41). Open a project and choose <strong>Rates and betterment</strong>.</p>
+<h3>1. Build the register from the map</h3>
+<p>Say which layer holds the properties (buildings or plots) under Relationships, Layers. Then <strong>Add properties from the map</strong>: one register entry per building, numbered by its property id, with its address where the addressing has given it one. Run it again after new buildings are mapped; only the new ones are added.</p>
+<p>Click a property's number to set its <strong>use</strong>, <strong>owner or ratepayer</strong>, <strong>rateable value</strong>, <strong>valuation reference</strong> and <strong>revenue account</strong>.</p>
+<h3>2. Load the valuation list</h3>
+<p>From the Land Valuation Division, as a CSV with a header row:</p>
+<table><thead><tr><th>Column</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>number</code> or <code>valuation_ref</code></td><td>which property</td></tr>
+<tr><td><code>rateable_value</code></td><td>in GHS</td></tr>
+<tr><td><code>valued_on</code></td><td>YYYY-MM-DD (optional)</td></tr>
+<tr><td><code>owner</code></td><td>fills the owner where the register has none (optional)</td></tr>
+</tbody></table>
+<p>The page says how many rows matched a property, and lists those that didn't.</p>
+<h3>3. Set the rates and bill the year</h3>
+<p>Under <strong>Rates</strong>, add the rate for each use and year from the fee-fixing resolution:</p>
+<ul>
+<li><strong>Impost:</strong> the share of the rateable value, e.g. <code>0.005</code>.</li>
+<li><strong>Minimum:</strong> no bill is less than this.</li>
+<li><strong>Not yet valued:</strong> a flat rate for properties without a rateable value.</li>
+</ul>
+<p>Then <strong>Bill the year</strong>: each property without a bill for that year gets one, numbered like <code>SMA/PR/2026/00001</code>. Properties whose use has no rate are listed, not billed.</p>
+<h3>4. Link to the revenue system</h3>
+<ul>
+<li><strong>Download for the revenue system:</strong> the register as a CSV (number, address, use, owner, valuation, account, the latest bill and what's paid), to load into dLRev or whatever the Assembly uses.</li>
+<li><strong>From the revenue system:</strong> load its bills and payments back, as a CSV with <code>property</code> (or <code>revenue_ref</code>), <code>year</code>, <code>bill</code>, <code>amount</code>, <code>paid</code>, <code>paid_on</code>. Every row is <strong>reconciled</strong>: it matches one property, or it is listed as unmatched so the account can be traced.</li>
+<li>Payments taken at the office can be recorded on a property directly.</li>
+</ul>
+<h3>5. See it on the map</h3>
+<p><strong>Show on the map</strong> keeps a layer, <em>Property rates</em>, with a point on every property, coloured: <strong>red</strong> never billed, <strong>orange</strong> owing, <strong>green</strong> paid up. Use it to plan collection rounds and to find buildings that have never been on the roll.</p>
+<h3>Betterment (L.I. 2384 r.40–41)</h3>
+<p>Where public works such as a road or a drain raise the value of land, the Assembly fixes a charge on the properties bettered.</p>
+<ol>
+<li><strong>Add a betterment scheme:</strong> the works, the date they were completed, the works' feature number on the map (click it with Identify), how far from the works land counts as bettered, and the charge: <strong>a fixed sum</strong> on each property, or <strong>a share of each property's increase in value</strong>.</li>
+<li><strong>Find the bettered properties:</strong> every register property within that distance gets a charge. For a share of the increase, type each property's increase in value (on the advice of the Lands Commission, r.41(1)).</li>
+<li><strong>Publish the notice (Form 40):</strong> download it, and record each way it was published: newspaper, posted on the land, Public Data Room (r.40(3)).</li>
+<li><strong>Serve the assessment notices (Form 41)</strong> on each owner <strong>within 90 days of completion</strong> (r.40(7)). The page counts those not yet served, and those served late.</li>
+<li><strong>Certificates:</strong> for each charge, a certificate of the sum due (conclusive evidence for recovery as a civil debt, r.41(2)–(3)) or, once paid, of payment (r.41(4)).</li>
+</ol>
+<p>The notices and certificates say what the Regulations require; the Schedule's own layouts replace them when the Assembly supplies its forms.</p>
+<h3>Not done yet</h3>
+<ul>
+<li>Business operating permits linked to properties.</li>
+<li>Paying online or by mobile money: that goes through the revenue system or a payment provider, then comes back in its payments file.</li>
+</ul>
 <h2 id="statutory-deadlines">Statutory deadlines</h2>
 <p><em>Everyone in the district: the department to plan its week, management to see how the Assembly is doing.</em></p>
 <p>The Regulations give the Assembly dates for much of its planning work. <strong>Statutory deadlines</strong>, in the menu, counts them all from the platform's own records, for your district, as of today.</p>

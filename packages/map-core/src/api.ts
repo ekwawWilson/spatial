@@ -72,6 +72,13 @@ import type {
   PlanProcess,
   PlanSettings,
   PublicPlan,
+  BettermentCharge,
+  BettermentScheme,
+  PropertyUse,
+  RateBand,
+  RegisterImport,
+  RegisterProperty,
+  RegisterSummary,
   NewCase,
   DataRoomSettings,
   InformationRequest,
@@ -728,6 +735,45 @@ export function createApiClient(options: ApiClientOptions = {}) {
       if (!response.ok) throw await toApiError(response);
       return (await response.json()) as { received_on: string; comments_close_on: string | null };
     },
+
+    // --- Property register, rates and betterment ------------------------------------------
+    registerSummary: (projectId: number) => request<RegisterSummary>("GET", `/api/projects/${projectId}/register/`),
+    listRegister: (projectId: number, filters: { status?: string; q?: string } = {}) =>
+      request<{ results: RegisterProperty[]; count: number }>("GET", `/api/revenue/properties/${query({ project: projectId, ...filters })}`),
+    updateProperty: (id: number, data: Partial<Pick<RegisterProperty, "address" | "use" | "owner_name" | "owner_contact" | "valuation_ref" | "rateable_value" | "valued_on" | "revenue_ref">>) =>
+      request<RegisterProperty>("PATCH", `/api/revenue/properties/${id}/`, data),
+    recordRatePayment: (id: number, data: { year: number; amount: string; on?: string }) =>
+      request<RegisterProperty>("POST", `/api/revenue/properties/${id}/payment/`, data),
+    buildRegister: (projectId: number) => request<{ added: number; already: number; total: number }>("POST", `/api/projects/${projectId}/register/build/`, {}),
+    billYear: (projectId: number, year: number) =>
+      request<{ billed: number; total: string; skipped: { number: string; reason: string }[]; skipped_count: number }>("POST", `/api/projects/${projectId}/register/bills/`, { year }),
+    mapRegister: (projectId: number) => request<{ layer: number; written: number; removed: number }>("POST", `/api/projects/${projectId}/register/map/`, {}),
+    async importRegister(projectId: number, what: "valuations" | "revenue", file: File): Promise<RegisterImport> {
+      const form = new FormData();
+      form.set("file", file);
+      const send = () => doFetch(`${root}/api/projects/${projectId}/register/${what}/`, { method: "POST", headers: headers(false), body: form });
+      let response = await send();
+      if (response.status === 401 && tokens.get() && (await refreshTokens())) response = await send();
+      if (!response.ok) throw await toApiError(response);
+      return (await response.json()) as RegisterImport;
+    },
+    registerCsv: (projectId: number) => blob(`/api/projects/${projectId}/register/csv/`),
+    listRateBands: () => request<RateBand[]>("GET", "/api/revenue/rates/"),
+    createRateBand: (data: { year: number; use: PropertyUse; impost: string; minimum?: string; flat?: string | null }) =>
+      request<RateBand>("POST", "/api/revenue/rates/", data),
+    deleteRateBand: (id: number) => request<void>("DELETE", `/api/revenue/rates/${id}/`),
+    listBetterment: (projectId: number) => request<{ results: BettermentScheme[] }>("GET", `/api/revenue/betterment/${query({ project: projectId })}`),
+    getBetterment: (id: number) => request<BettermentScheme>("GET", `/api/revenue/betterment/${id}/`),
+    createBetterment: (data: { project: number; name: string; works?: string; works_feature?: number | null; reach_m?: string; completed_on: string; basis: "sum" | "rate"; amount: string }) =>
+      request<BettermentScheme>("POST", "/api/revenue/betterment/", data),
+    updateBetterment: (id: number, data: Partial<{ name: string; reach_m: string; basis: "sum" | "rate"; amount: string; works_feature: number | null }>) =>
+      request<BettermentScheme>("PATCH", `/api/revenue/betterment/${id}/`, data),
+    findBettered: (id: number) => request<BettermentScheme>("POST", `/api/revenue/betterment/${id}/find/`, {}),
+    publishBetterment: (id: number, how: string, on?: string) => request<BettermentScheme>("POST", `/api/revenue/betterment/${id}/publish/`, { how, on }),
+    bettermentNotice: (id: number) => blob(`/api/revenue/betterment/${id}/notice/`),
+    updateCharge: (id: number, data: Partial<{ increase: string | null; served_on: string | null; paid: string; paid_on: string | null }>) =>
+      request<BettermentCharge>("PATCH", `/api/revenue/betterment-charges/${id}/`, data),
+    chargePaper: (id: number, kind: "assessment" | "certificate") => blob(`/api/revenue/betterment-charges/${id}/paper/${query({ kind })}`),
 
     // --- Street addressing -----------------------------------------------------------------
     /** Proposes street codes and property numbers; changes nothing. */

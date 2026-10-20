@@ -38,6 +38,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 18 | Re-zoning, change of use, subdivision and consolidation | **complete** (2026-10-12): gate passed in CI and deployed (`4024030`); what is left is listed in the phase's notes |
 | 19 | Plan preparation and consultation; plan sheets | **complete** (2026-10-12): gate passed in CI and deployed (`fc79118`); what is left is listed in the phase's notes |
 | 20 | Street naming and property addressing | codes and numbers **complete** (2026-10-12, `ffa5a8d`); street naming as a workflow is not built |
+| 21 | Property register, revenue link and betterment | in progress on `main` |
 
 ## Open items carried forward
 - **Phase 3:** Martin (vector tiles) connects as the app role, so row-level security hides tenant tables from it until tile requests carry a district context (e.g. per-district function sources, or tiles served through the API). Design this in Phase 3; don't grant Martin BYPASSRLS.
@@ -241,4 +242,13 @@ Built from the published law and standards. What needs the Assembly's own docume
 - Permissions: `project.view` to read, `project.edit` to record, `permit.decide` for the approval and confirmation steps.
 - Gate: `planmaking/tests/test_planmaking.py`; `apps/web/e2e/phase19.spec.ts`.
 - **Not done:** the facility checks against the planning standards (schools, clinics, markets per head of population); comments pinned to a place on the map; Forms 27 to 31 and 56 in the Schedule's own layout; the structure plan and Spatial Development Framework procedures (r.9 to r.22), which are regional or district-wide and not per community.
+
+## Phase 21 notes (property register, rates, revenue link, betterment)
+- App `revenue`. `Property` is one register entry per building or plot on the map (the project's "properties" role, else "parcels"), numbered by its map id; owner and contact are personal data (`data.sensitive`). `RateBand`: impost (share of rateable value), minimum and a flat rate for the unvalued, per use and year. `Bill`: one per property and year, numbered `<district>/PR/<year>/<nnnnn>`, from here or from the revenue system.
+- Imports are CSV with a header row; each row matches one property (by revenue account, valuation reference or number) or is reported unmatched: that is the reconciliation.
+- Status: never billed (no bill ever), owing (any bill not fully paid), paid up. **Show on the map** keeps a derived point layer "Property rates", categorised by status, updated in place.
+- Betterment: a scheme is the works (a feature on the map), a reach in metres, the completion date and the charge (a fixed sum, or a share of each property's increase in value). Properties within reach (PostGIS `ST_DWithin`, metres) get a charge. Clocks: the Form 40 publications (r.40(3)); Form 41 served within 90 days of completion (r.40(7)). Papers: Form 40, Form 41, and the r.41 certificate of the sum due or of payment.
+- Permissions: `revenue.view` (every role), `revenue.manage` (district administrators and planners).
+- Gate: `revenue/tests/test_revenue.py`: every row of a sample revenue file matches one property or is reported; the never-billed list is exactly the property with no bill; the bettered properties are exactly those within reach.
+- **Not done:** business operating permits; online and mobile money payment (through the revenue system or a payment provider); a direct API link to dLRev (needs its interface from the Assembly); arrears and penalties across years.
 

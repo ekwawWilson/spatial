@@ -290,6 +290,7 @@ export function ProjectWorkspace() {
             ["land", "Re-zoning and subdivision", "split"],
             ["enforcement", "Enforcement", "alert"],
             ["addressing", "Addressing", "pin"],
+            ["rates", "Rates and betterment", "building"],
             ["sheet", "Plan sheet", "printer"],
           ] as [string, string, IconName][]
         ).map(([path, label, icon]) => (

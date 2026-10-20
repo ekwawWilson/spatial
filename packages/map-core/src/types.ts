@@ -1632,3 +1632,106 @@ export interface PublicPlan {
   approved_on: string | null;
   consultations: { stage: string; held_on: string; venue: string; attendance: number | null; issues: string; outcome: string }[];
 }
+
+// --- Property register, rates and betterment (Phase 21) -------------------------------------
+
+export type PropertyUse = "residential" | "commercial" | "industrial" | "mixed" | "institutional" | "vacant" | "other";
+export type RateStatus = "never_billed" | "unpaid" | "paid";
+
+export interface RateBill {
+  id: number;
+  year: number;
+  reference: string;
+  amount: string;
+  paid: string;
+  owing: string;
+  issued_on: string;
+  last_paid_on: string | null;
+  source: "platform" | "revenue";
+}
+
+export interface RegisterProperty {
+  id: number;
+  project: number;
+  feature: number | null;
+  number: string;
+  address: string;
+  use: PropertyUse;
+  use_label: string;
+  /** "restricted" for roles that may not see personal data. */
+  owner_name: string;
+  owner_contact: string;
+  valuation_ref: string;
+  rateable_value: string | null;
+  valued_on: string | null;
+  revenue_ref: string;
+  status: RateStatus;
+  bills: RateBill[];
+}
+
+export interface RegisterSummary {
+  properties: number;
+  valued: number;
+  by_status: Record<RateStatus, number>;
+  billed: string;
+  paid: string;
+  owing: string;
+  collected_pct: number | null;
+}
+
+export interface RateBand {
+  id: number;
+  year: number;
+  use: PropertyUse;
+  impost: string;
+  minimum: string;
+  flat: string | null;
+}
+
+/** What an import or a billing run did: rows that matched, and those that didn't. */
+export interface RegisterImport {
+  rows: number;
+  matched: number;
+  unmatched: { row: number; reference: string; reason?: string }[];
+  unmatched_count: number;
+}
+
+export interface BettermentCharge {
+  id: number;
+  property: number;
+  number: string;
+  address: string;
+  owner_name: string;
+  distance_m: string;
+  increase: string | null;
+  amount: string | null;
+  served_on: string | null;
+  paid: string;
+  paid_on: string | null;
+}
+
+export interface BettermentScheme {
+  id: number;
+  project: number;
+  name: string;
+  works: string;
+  works_feature: number | null;
+  reach_m: string;
+  completed_on: string;
+  basis: "sum" | "rate";
+  basis_label: string;
+  amount: string;
+  charges_count: number;
+  total: string;
+  collected: string;
+  clocks: {
+    serve_by: string;
+    rule: string;
+    unserved: number;
+    served_late: number;
+    overdue: boolean;
+    published: { code: string; label: string; on: string | null }[];
+  };
+  charges?: BettermentCharge[];
+  found?: { found: number; added: number };
+}

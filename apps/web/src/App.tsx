@@ -16,6 +16,7 @@ import { DistrictsPage } from "./pages/DistrictsPage";
 import { CasePage, EnforcementPage } from "./pages/EnforcementPage";
 import { LandApplicationPage, LandApplicationsPage } from "./pages/LandApplicationsPage";
 import { LocalPlanPage } from "./pages/LocalPlanPage";
+import { RatesPage } from "./pages/RatesPage";
 import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPages";
 import { HomePage } from "./pages/HomePage";
 import { ImageryPage } from "./pages/ImageryPage";
@@ -102,6 +103,14 @@ export function App() {
           element={
             <RequirePermission permission="permit.view">
               <PermitPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="projects/:projectId/rates"
+          element={
+            <RequirePermission permission="revenue.view">
+              <RatesPage />
             </RequirePermission>
           }
         />

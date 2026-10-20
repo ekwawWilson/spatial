@@ -22,6 +22,7 @@ Written for physical planners, district administrators and field officers. Secti
 - [Re-zoning, change of use and subdivision](rezoning-and-subdivision.md)
 - [The Public Data Room](public-data-room.md)
 - [Enforcement](enforcement.md)
+- [Property rates and betterment](property-rates-and-betterment.md)
 - [Statutory deadlines](statutory-deadlines.md)
 - [Project files (.spp)](project-files.md)
 - [The field app (Android)](field-app.md)

@@ -17,7 +17,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
+from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -47,6 +47,15 @@ SCOPES = {
     "returns": "The district's periodic return (quarter or year)",
 }
 MAX_FEATURES = 5000
+
+
+class KeyRefused(APIException):
+    """401: the exchange has no sign-in of its own, so DRF would otherwise
+    turn an authentication failure into 403."""
+
+    status_code = 401
+    default_detail = "Not a valid key."
+    default_code = "not_authenticated"
 
 
 def _digest(secret: str) -> str:
@@ -131,15 +140,15 @@ def _authorise(request: Request, scope: str) -> ExchangeKey:
     caller's tenant_context for the key's district."""
     header = request.headers.get("Authorization", "")
     if not header.startswith("Key "):
-        raise AuthenticationFailed('Send the key as "Authorization: Key <key>".')
+        raise KeyRefused('Send the key as "Authorization: Key <key>".')
     code, _, secret = header[4:].strip().partition(".")
     key = ExchangeKey.objects.filter(prefix=secret[:12]).first() if secret else None
     if key is None or not hmac.compare_digest(key.digest, _digest(secret)):
-        raise AuthenticationFailed("Not a valid key.")
+        raise KeyRefused("Not a valid key.")
     if key.district.code.lower() != code.lower():
-        raise AuthenticationFailed("Not a valid key.")
+        raise KeyRefused("Not a valid key.")
     if key.revoked_at is not None:
-        raise AuthenticationFailed("This key has been revoked.")
+        raise KeyRefused("This key has been revoked.")
     if scope not in key.scopes:
         raise PermissionDenied(f"This key may not read {scope}.")
     ExchangeKey.objects.filter(pk=key.pk).update(last_used_at=timezone.now(), uses=F("uses") + 1)
@@ -318,7 +327,7 @@ class ExchangeView(APIView):
         code = header[4:].strip().partition(".")[0] if header.startswith("Key ") else ""
         district = District.objects.filter(code__iexact=code, is_active=True).first()
         if district is None:
-            raise AuthenticationFailed("Not a valid key.")
+            raise KeyRefused("Not a valid key.")
         with tenant_context(district.pk):
             _authorise(request, dataset)
             since = _since(request)

@@ -8,6 +8,7 @@ import {
   type BasemapConfig,
   type BoundaryReport,
   type CoordinateSystem,
+  type GeoJSONGeometry,
   type Layer,
 } from "@spatial/map-core";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -15,6 +16,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { ErrorMessage } from "../components/ErrorMessage";
 import { Icon, type IconName } from "../components/Icon";
+import { OsmPanel } from "../components/workspace/OsmPanel";
 import { MapView, type Measurement, type Tool } from "../components/map/MapView";
 import { useLoad } from "../components/useLoad";
 import { AttributeTable, IdentifyPanel } from "../components/workspace/AttributeTable";
@@ -102,6 +104,9 @@ export function ProjectWorkspace() {
 
   const boundaryLoad = useLoad(() => api.boundaryReport(id), [api, id, districtId]);
   const [boundary, setBoundary] = useState<BoundaryReport | null>(null);
+  const [view, setView] = useState<[number, number, number, number] | null>(null);
+  const [drawingArea, setDrawingArea] = useState(false);
+  const [osmArea, setOsmArea] = useState<GeoJSONGeometry | null>(null);
   const [drawingBoundary, setDrawingBoundary] = useState(false);
   useEffect(() => {
     if (boundaryLoad.data) setBoundary(boundaryLoad.data);
@@ -308,6 +313,7 @@ export function ProjectWorkspace() {
             drawing={drawingBoundary}
             onDraw={() => {
               editing.setSettings(null);
+              setDrawingArea(false);
               setDrawingBoundary(!drawingBoundary);
             }}
             onChanged={(report) => {
@@ -326,6 +332,24 @@ export function ProjectWorkspace() {
           onOpacity={setBasemapOpacity}
           onZoomToImage={imageBounds ? () => setZoomTo({ extent: imageBounds, seq: Date.now() }) : null}
         />
+        {can("data.import") && (
+          <OsmPanel
+            projectId={id}
+            hasBoundary={Boolean(boundary?.exists)}
+            view={view}
+            drawn={osmArea}
+            drawing={drawingArea}
+            onDraw={() => {
+              editing.setSettings(null);
+              setDrawingBoundary(false);
+              setDrawingArea(!drawingArea);
+            }}
+            onDone={() => {
+              layersLoad.reload();
+              setDataVersion((v) => v + 1);
+            }}
+          />
+        )}
         <LayerTree
           layers={layers}
           selectedLayerId={selectedLayerId}
@@ -387,8 +411,14 @@ export function ProjectWorkspace() {
           edit={editing.settings}
           editCallbacks={editing.callbacks}
           onEditAvailability={editing.setAvailable}
+          onView={setView}
           onBoundaryDrawn={
-            drawingBoundary
+            drawingArea
+              ? (geometry) => {
+                  setDrawingArea(false);
+                  setOsmArea(geometry);
+                }
+              : drawingBoundary
               ? (geometry) => {
                   setDrawingBoundary(false);
                   void run(async () => {

@@ -125,6 +125,41 @@ describe("layer tree", () => {
   });
 });
 
+describe("features from the map", () => {
+  it("brings in OpenStreetMap features inside the planning area and shows what came", async () => {
+    const queued = { id: 77, status: "queued", report: {}, live_progress: null, error: "" };
+    const done = {
+      ...queued,
+      status: "done",
+      report: { layers: [], osm: { found: { streets: 12, buildings: 40 }, already_in_project: { streets: 0, buildings: 3 }, layers: { streets: 8, buildings: 9 } } },
+    };
+    const api = backend({
+      "GET /api/projects/5/boundary/": () => ({ body: { exists: true, feature: 3, status: "draft" } }),
+      "POST /api/transfer/jobs/openstreetmap/": () => ({ status: 201, body: queued }),
+      "GET /api/transfer/jobs/77/": () => ({ body: done }),
+    });
+    renderApp(api.fetch, { tokens: signedIn, route: "/projects/5" });
+    const panel = await screen.findByRole("form", { name: "Features from the map" });
+    await waitFor(() => expect(within(panel).getByRole("radio", { name: "The planning area" })).toBeChecked());
+    await userEvent.click(within(panel).getByRole("checkbox", { name: "Rivers, streams and drains" }));
+    await userEvent.click(within(panel).getByRole("button", { name: "Bring in features" }));
+    await waitFor(() => expect(api.calls.some((c) => c.method === "POST")).toBe(true));
+    expect(api.calls.find((c) => c.method === "POST")!.body).toEqual({ project: 5, kinds: ["streets", "buildings", "waterways"], use_boundary: true });
+    const result = await within(panel).findByText(/Brought in:/, undefined, { timeout: 6000 });
+    expect(result.closest("div")).toHaveTextContent("Streets and roads: 12 new");
+    expect(result.closest("div")).toHaveTextContent("Buildings: 40 new, 3 already in the project");
+    // The layers are loaded again, to show the new ones.
+    expect(api.calls.filter((c) => c.method === "GET" && c.path.startsWith("/api/layers/?")).length).toBeGreaterThan(1);
+  });
+
+  it("can't start without an area: no planning area, and the map hasn't reported what's on screen", async () => {
+    renderApp(backend().fetch, { tokens: signedIn, route: "/projects/5" });
+    const panel = await screen.findByRole("form", { name: "Features from the map" });
+    expect(within(panel).getByRole("radio", { name: /The planning area/ })).toBeDisabled();
+    expect(within(panel).getByRole("button", { name: "Bring in features" })).toBeDisabled();
+  });
+});
+
 describe("attribute table", () => {
   async function openTable(api: ReturnType<typeof backend>) {
     renderApp(api.fetch, { tokens: signedIn, route: "/projects/5" });

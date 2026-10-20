@@ -40,6 +40,7 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 </ul><p class="part">Building the plan&#x27;s data</p><ul>
 <li><a href="#import-export">Importing and exporting data</a></li>
 <li><a href="#editing-and-boundaries">Editing features and making the planning area</a></li>
+<li><a href="#features-from-the-map">Features from the map (OpenStreetMap)</a></li>
 <li><a href="#imagery">Drone and satellite imagery</a></li>
 <li><a href="#readiness-checklist">The readiness checklist</a></li>
 <li><a href="#plan-sheets">Plan sheets</a></li>
@@ -231,6 +232,45 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <li>Planners mark a valid boundary as agreed.</li>
 <li>Only district administrators approve it, or reopen an approved one.</li>
 <li>While a boundary is agreed or approved it can't be changed, not even through the Planning area layer, until it's moved back to draft.</li>
+</ul>
+<h2 id="features-from-the-map">Features from the map (OpenStreetMap)</h2>
+<p><em>Planners and district administrators (anyone who may import data).</em></p>
+<p>A basemap is a picture: you can't select or name what is on it. This tool brings in the <strong>streets, buildings, rivers, land use and places</strong> that OpenStreetMap records inside an area, as ordinary layers of your project. You can then edit them, correct them and name them like any other layer.</p>
+<p>Open a project; the panel <strong>Features from the map</strong> is in the left-hand column, under the basemap.</p>
+<h3>1. Mark the area</h3>
+<ul>
+<li><strong>The planning area:</strong> the project's boundary (see Editing features and making the planning area).</li>
+<li><strong>What's on screen now:</strong> zoom and pan the map to the area first.</li>
+<li><strong>An area I draw on the map:</strong> press <strong>Draw the area</strong>, click its corners on the map, and double-click to finish.</li>
+</ul>
+<p>Bring in up to <strong>60 km²</strong> at a time: a town or a few communities. For a whole district, do it in parts; nothing is brought in twice.</p>
+<h3>2. Choose what to bring in</h3>
+<table><thead><tr><th>Choice</th><th>Layer made</th><th>Fields</th></tr></thead><tbody>
+<tr><td>Streets and roads</td><td>Streets (OpenStreetMap), domain D</td><td>name, road class, surface, lanes, one-way, reference</td></tr>
+<tr><td>Buildings</td><td>Buildings (OpenStreetMap), domain C</td><td>name, building type, storeys, house number, street</td></tr>
+<tr><td>Rivers, streams and drains</td><td>Waterways (OpenStreetMap), domain F</td><td>name, kind, width</td></tr>
+<tr><td>Land use, parks and open spaces</td><td>Land use (OpenStreetMap), domain B</td><td>name, land use, leisure, natural</td></tr>
+<tr><td>Schools, clinics, markets and other places</td><td>Places (OpenStreetMap), domain E</td><td>name, amenity, shop</td></tr>
+</tbody></table>
+<p>Every feature also keeps its <strong>OpenStreetMap id</strong>.</p>
+<h3>3. Bring in features</h3>
+<p>It runs in the background: OpenStreetMap can take a minute to answer. When it is done the panel says how many of each kind came in, and the new layers appear in the layer list.</p>
+<ul>
+<li>Streets, rivers and land use are <strong>cut at the edge of the area</strong>; buildings and places are kept whole.</li>
+<li>The layers are in the <strong>project's coordinate system</strong>.</li>
+<li>Run it again (on a bigger area, or later when OpenStreetMap has more) and only what is <strong>new</strong> is added: features already in the project are left as they are, with your corrections.</li>
+</ul>
+<h3>Then: edit and name</h3>
+<ul>
+<li>Select a layer to see its <strong>attribute table</strong>: type a street's name in the <em>name</em> column.</li>
+<li>Use the editing tools (<strong>Edit vertices</strong>, <strong>Split</strong>, <strong>Merge</strong>, <strong>Delete</strong>) to correct lines and shapes against the imagery.</li>
+<li>To number the properties along the streets, set <strong>Streets (OpenStreetMap)</strong> as the project's streets and <strong>Buildings (OpenStreetMap)</strong> as its properties (Relationships, Layers), then use Street addressing.</li>
+</ul>
+<h3>Good to know</h3>
+<ul>
+<li>OpenStreetMap is mapped by volunteers. In many Ghanaian towns the main roads are complete but side streets, names and buildings are partial. <strong>Check it on the ground or against your drone imagery before relying on it.</strong></li>
+<li>The data is © OpenStreetMap contributors, under the Open Database Licence: credit OpenStreetMap on plans that use it.</li>
+<li>Satellite or Google imagery can't be turned into lines this way: only OpenStreetMap's own data can be brought in.</li>
 </ul>
 <h2 id="imagery">Drone and satellite imagery</h2>
 <p><em>Physical planners and district administrators.</em></p>

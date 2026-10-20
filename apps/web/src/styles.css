@@ -479,6 +479,16 @@ a.stat:hover { text-decoration: none; border-color: #a7d8bd; box-shadow: var(--s
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2);
 }
 .edit-panel { flex-direction: row; flex-wrap: wrap; align-items: center; }
+.osm-panel {
+  display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; margin-bottom: 0.6rem;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2);
+}
+.osm-panel h2 { display: flex; gap: 0.35rem; align-items: center; margin: 0; }
+.osm-panel p { margin: 0; }
+.osm-panel fieldset { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.5rem 0.65rem; background: var(--surface); }
+.osm-panel .inline-form { margin: 0.2rem 0 0; }
+.osm-panel button[type="submit"] { align-self: flex-start; }
+.osm-result ul { margin: 0.3rem 0; padding-left: 1.1rem; }
 
 /* The map and its controls */
 .map { position: absolute; inset: 0; }

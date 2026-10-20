@@ -67,6 +67,8 @@ export interface MapViewProps {
   onEditAvailability?(available: boolean): void;
   /** Told why "My location" couldn't find the device (null: cleared). */
   onLocateProblem?(message: string | null): void;
+  /** Told the visible extent (Web Mercator: minx, miny, maxx, maxy) whenever the map stops moving. */
+  onView?(extent: [number, number, number, number]): void;
   /** When set, the map draws one polygon (the planning area) and hands it over. */
   onBoundaryDrawn?: ((geometry: import("@spatial/map-core").GeoJSONGeometry) => void) | null;
 }
@@ -109,6 +111,10 @@ export function MapView(props: MapViewProps) {
         return false;
       });
       latest.current.onSelect(hit);
+    });
+    olMap.on("moveend", () => {
+      const [minx, miny, maxx, maxy] = olMap.getView().calculateExtent(olMap.getSize());
+      latest.current.onView?.([minx!, miny!, maxx!, maxy!]);
     });
     olMap.on("pointermove", (event) => {
       latest.current.onPointer([event.coordinate[0]!, event.coordinate[1]!]);

@@ -26,6 +26,7 @@ CHAPTERS = [
     ("basemaps.md", "Getting started"),
     ("import-export.md", "Building the plan's data"),
     ("editing-and-boundaries.md", "Building the plan's data"),
+    ("features-from-the-map.md", "Building the plan's data"),
     ("imagery.md", "Building the plan's data"),
     ("readiness-checklist.md", "Building the plan's data"),
     ("plan-sheets.md", "Building the plan's data"),

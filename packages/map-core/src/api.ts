@@ -460,6 +460,9 @@ export function createApiClient(options: ApiClientOptions = {}) {
     startExport: (data: { project: number; layer_ids: number[]; format: ExportFormat; crs?: string | null; feature_ids?: number[] }) =>
       request<DataJob>("POST", "/api/transfer/jobs/exports/", data),
     getJob: (id: number) => request<DataJob>("GET", `/api/transfer/jobs/${id}/`),
+    /** Brings OpenStreetMap features inside an area into the project, as layers (a background job). */
+    openStreetMap: (data: { project: number; kinds: string[]; use_boundary?: boolean; area?: GeoJSONGeometry; area_crs?: string }) =>
+      request<DataJob>("POST", "/api/transfer/jobs/openstreetmap/", data),
     listJobs: (projectId: number) => request<Page<DataJob>>("GET", `/api/transfer/jobs/${query({ project: projectId })}`),
     /** The finished export as a file (downloads are district data, so authenticated). */
     async downloadExport(job: Pick<DataJob, "id" | "result_name">): Promise<Blob> {

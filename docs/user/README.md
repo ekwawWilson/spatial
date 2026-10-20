@@ -11,6 +11,7 @@ Written for physical planners, district administrators and field officers. Secti
 - [Drone and satellite imagery](imagery.md)
 - [Importing and exporting data](import-export.md)
 - [Editing features and making the planning area](editing-and-boundaries.md)
+- [Features from the map (OpenStreetMap)](features-from-the-map.md)
 - [The readiness checklist](readiness-checklist.md)
 - [Plan sheets](plan-sheets.md)
 - [Making a local plan, and consulting the public](local-plan.md)

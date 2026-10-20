@@ -570,3 +570,119 @@ def test_the_land_use_and_habitation_certificates(world, admin, api, members_a, 
     assert certificate.status_code == 200 and certificate.content.startswith(b"%PDF")
     assert admin.post(url("habitation", issued), {}, format="json").status_code == 400  # once
     assert planner.get(url("habitation-certificate", no_site)).status_code == 404
+
+
+def test_reviews_appeals_and_renewals(world, admin, api, members_a, district_a):
+    """r.62 (review, Form 53), r.63 (appeal, Form 54), and renewing an issued permit."""
+    planner = world.client
+
+    def decided(parcel, decision, **extra):
+        app = receive(planner, world, parcel=parcel).json()
+        planner.post(url("acknowledge", app), {}, format="json")
+        planner.post(url("inspect", app), {"summary": "Seen."}, format="json")
+        planner.post(url("report", app), {"recommendation": decision}, format="json")
+        return admin.post(url("decide", app), {"decision": decision, **extra}, format="json").json()
+
+    open_app = receive(planner, world, parcel="P-003").json()
+    assert (
+        planner.post(
+            url("challenge", open_app),
+            {"kind": "review", "body": "assembly", "grounds": "?"},
+            format="json",
+        ).status_code
+        == 400
+    )  # nothing decided yet
+
+    refused = decided("P-001", "refuse", reasons="In the road reservation.")
+    # An appeal follows a review; each goes to its own body.
+    assert (
+        planner.post(
+            url("challenge", refused),
+            {"kind": "appeal", "body": "rcc", "grounds": "Survey error."},
+            format="json",
+        ).status_code
+        == 400
+    )
+    assert (
+        planner.post(
+            url("challenge", refused),
+            {"kind": "review", "body": "rcc", "grounds": "Survey error."},
+            format="json",
+        ).status_code
+        == 400
+    )
+    reviewed = planner.post(
+        url("challenge", refused),
+        {"kind": "review", "body": "assembly", "grounds": "The reservation was moved in 2019."},
+        format="json",
+    )
+    assert reviewed.status_code == 200, reviewed.content
+    [review] = reviewed.json()["challenges"]
+    assert (review["form"], review["rule"], review["body_label"], review["lodged_on"]) == (
+        "53",
+        "r.62",
+        "The District Assembly",
+        str(TODAY),
+    )
+    assert review["clock"] == {
+        "decide_by": str(TODAY + timedelta(days=21)),
+        "overdue": False,
+        "late": False,
+        "lodge_by": str(TODAY + timedelta(days=30)),
+        "lodged_late": False,
+    }
+    assert reviewed.json()["events"][-1]["kind"] == "review"
+
+    # Decided by the Assembly; then an appeal to the Regional Coordinating Council.
+    assert (
+        planner.post(
+            url("decide-challenge", refused),
+            {"challenge": review["id"], "outcome": "upheld"},
+            format="json",
+        ).status_code
+        == 403
+    )
+    upheld = admin.post(
+        url("decide-challenge", refused),
+        {"challenge": review["id"], "outcome": "upheld", "decision": "The reservation stands."},
+        format="json",
+    ).json()
+    assert (upheld["challenges"][0]["outcome_label"], upheld["challenges"][0]["decided_on"]) == (
+        "Decision upheld",
+        str(TODAY),
+    )
+    assert (
+        admin.post(
+            url("decide-challenge", refused),
+            {"challenge": review["id"], "outcome": "varied"},
+            format="json",
+        ).status_code
+        == 400
+    )  # decided once
+    appealed = planner.post(
+        url("challenge", refused),
+        {"kind": "appeal", "body": "rcc", "grounds": "As before."},
+        format="json",
+    ).json()
+    assert [(c["kind"], c["form"], c["body_label"]) for c in appealed["challenges"]] == [
+        ("review", "53", "The District Assembly"),
+        ("appeal", "54", "The Regional Coordinating Council"),
+    ]
+
+    # Renewal: only an issued permit, for five more years from its expiry.
+    granted = decided("P-002", "grant")
+    assert admin.post(url("renew", granted), {}, format="json").status_code == 400
+    planner.post(
+        url("fees", granted), {"stage": "permit", "amount": "850", "receipt": "R1"}, format="json"
+    )
+    issued = admin.post(url("issue", granted), {}, format="json").json()
+    first_expiry = date.fromisoformat(issued["expires_on"])
+    assert planner.post(url("renew", issued), {}, format="json").status_code == 403
+    renewed = admin.post(
+        url("renew", issued), {"note": "Roofing not finished."}, format="json"
+    ).json()
+    assert renewed["expires_on"] == str(first_expiry.replace(year=first_expiry.year + 5))
+    assert (renewed["events"][-1]["kind"], renewed["events"][-1]["note"]) == (
+        "renewed",
+        "Roofing not finished.",
+    )

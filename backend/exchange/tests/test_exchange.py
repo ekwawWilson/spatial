@@ -258,9 +258,8 @@ def test_a_national_body_reads_with_a_key(
         assert (
             AuditLog.objects.filter(table_name="exchange_exchangekey", action="UPDATE").count() >= 5
         )
-        assert "digest" not in str(
-            AuditLog.objects.filter(table_name="exchange_exchangekey").first().after
-        )
+        made_entry = AuditLog.objects.filter(table_name="exchange_exchangekey").first()
+        assert made_entry is not None and "digest" not in str(made_entry.after)
     assert admin.get(keys).json()["keys"][0]["uses"] == 7
     revoked = admin.post(
         reverse("exchange-key-revoke", args=[made.json()["id"]]), {}, format="json"

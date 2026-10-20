@@ -182,6 +182,17 @@ PERMIT_VALID_YEARS = (
 HABITATION_DAYS = 14  # r.45(18): after the inspection of the completed development
 APPEAL_WITHIN_DAYS = 30  # Act 925 s.172(2): to lodge
 APPEAL_DECISION_DAYS = 21  # Act 925 s.168(8), r.62(3): to decide
+# r.62-63: a review (Form 53) goes to the body that decided; an appeal against
+# the Assembly (Form 54) to the Regional Coordinating Council, and against the
+# Council to the Authority. Each is decided and served within 21 days.
+CHALLENGE_BODIES = {
+    "review": (("assembly", "The District Assembly"),),
+    "appeal": (
+        ("rcc", "The Regional Coordinating Council"),
+        ("luspa", "The Land Use and Spatial Planning Authority"),
+    ),
+}
+CHALLENGE_FORMS = {"review": ("53", "r.62"), "appeal": ("54", "r.63")}
 
 # r.44(7)(f): what the site inspection ascertains.
 INSPECTION_POINTS: tuple[tuple[str, str], ...] = (

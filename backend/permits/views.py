@@ -27,7 +27,7 @@ from crs.services import transform_geojson
 from projects.models import Feature, PlanProject
 
 from . import checks, documents, registry, services
-from .models import Application, Comment, Document, Fee, Inspection
+from .models import Application, Challenge, Comment, Document, Fee, Inspection
 
 MAX_DOCUMENT_BYTES = 50 * 1024 * 1024
 Status = Application.Status
@@ -138,6 +138,25 @@ def application_json(application: Application, request: Request, *, full: bool) 
             "permit_receipt": application.permit_receipt,
             "permit_paid_on": _day(application.permit_paid_on),
             "verify_url": documents.verify_url(application) if application.token else None,
+            "challenges": [
+                {
+                    "id": c.pk,
+                    "kind": c.kind,
+                    "kind_label": c.get_kind_display(),
+                    "form": registry.CHALLENGE_FORMS[c.kind][0],
+                    "rule": registry.CHALLENGE_FORMS[c.kind][1],
+                    "body": c.body,
+                    "body_label": dict(registry.CHALLENGE_BODIES[c.kind]).get(c.body, c.body),
+                    "lodged_on": _day(c.lodged_on),
+                    "grounds": c.grounds,
+                    "decided_on": _day(c.decided_on),
+                    "outcome": c.outcome,
+                    "outcome_label": c.get_outcome_display() if c.outcome else "",
+                    "decision": c.decision,
+                    "clock": services.challenge_clock(c),
+                }
+                for c in application.challenges.all()
+            ],
             "events": [
                 {
                     "kind": e.kind,
@@ -282,6 +301,22 @@ class NoteSerializer(serializers.Serializer[Any]):
     note = serializers.CharField(required=False, allow_blank=True)
 
 
+class LodgeSerializer(DatedSerializer):
+    kind = serializers.ChoiceField(choices=Challenge.Kind.choices)
+    body = serializers.CharField(max_length=8)
+    grounds = serializers.CharField()
+
+
+class ChallengeDecisionSerializer(DatedSerializer):
+    challenge = serializers.IntegerField()
+    outcome = serializers.ChoiceField(choices=Challenge.Outcome.choices)
+    decision = serializers.CharField(required=False, allow_blank=True)
+
+
+class RenewSerializer(DatedSerializer):
+    note = serializers.CharField(required=False, allow_blank=True)
+
+
 @extend_schema(parameters=[DISTRICT_HEADER])
 class ApplicationViewSet(viewsets.GenericViewSet[Application]):
     """Planning and development permit applications (L.I. 2384 r.43-46): from
@@ -303,6 +338,8 @@ class ApplicationViewSet(viewsets.GenericViewSet[Application]):
         "inspect": "permit.inspect",
         "decide": "permit.decide",
         "issue": "permit.decide",
+        "decide_challenge": "permit.decide",
+        "renew": "permit.decide",
     }
 
     def get_permissions(self) -> list[BasePermission]:
@@ -605,6 +642,55 @@ class ApplicationViewSet(viewsets.GenericViewSet[Application]):
         application, values = self._step(request, DatedSerializer)
         try:
             services.certify_habitation(application, self._on(values), request_user(request))
+        except DjangoValidationError as exc:
+            raise _drf(exc) from exc
+        return self._answer(application)
+
+    @extend_schema(request=LodgeSerializer, responses=OpenApiTypes.OBJECT)
+    @action(detail=True, methods=["post"])
+    def challenge(self, request: Request, pk: str | None = None) -> Response:
+        """r.62-63: a request for review (Form 53) or an appeal (Form 54) against the decision."""
+        application, values = self._step(request, LodgeSerializer)
+        try:
+            services.lodge(
+                application,
+                values["kind"],
+                values["body"],
+                self._on(values),
+                values["grounds"],
+                request_user(request),
+            )
+        except DjangoValidationError as exc:
+            raise _drf(exc) from exc
+        return self._answer(application)
+
+    @extend_schema(request=ChallengeDecisionSerializer, responses=OpenApiTypes.OBJECT)
+    @action(detail=True, methods=["post"], url_path="decide-challenge")
+    def decide_challenge(self, request: Request, pk: str | None = None) -> Response:
+        """The decision on a review or appeal, served within 21 days (r.62(3), r.63(8))."""
+        application, values = self._step(request, ChallengeDecisionSerializer)
+        challenge = get_object_or_404(Challenge, pk=values["challenge"], application=application)
+        try:
+            services.decide_challenge(
+                challenge,
+                self._on(values),
+                values["outcome"],
+                values.get("decision", ""),
+                request_user(request),
+            )
+        except DjangoValidationError as exc:
+            raise _drf(exc) from exc
+        return self._answer(application)
+
+    @extend_schema(request=RenewSerializer, responses=OpenApiTypes.OBJECT)
+    @action(detail=True, methods=["post"])
+    def renew(self, request: Request, pk: str | None = None) -> Response:
+        """Renews an issued permit for another five years."""
+        application, values = self._step(request, RenewSerializer)
+        try:
+            services.renew(
+                application, self._on(values), request_user(request), values.get("note", "")
+            )
         except DjangoValidationError as exc:
             raise _drf(exc) from exc
         return self._answer(application)

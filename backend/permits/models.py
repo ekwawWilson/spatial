@@ -230,3 +230,41 @@ class Event(models.Model):
 
     def __str__(self) -> str:
         return f"{self.kind} on {self.on}"
+
+
+class Challenge(models.Model):
+    """A request for review (r.62, Form 53) or an appeal (r.63, Form 54)
+    against a decision on an application, and how it ended."""
+
+    class Kind(models.TextChoices):
+        REVIEW = "review", "Request for review"
+        APPEAL = "appeal", "Appeal"
+
+    class Outcome(models.TextChoices):
+        UPHELD = "upheld", "Decision upheld"
+        VARIED = "varied", "Decision varied"
+        OVERTURNED = "overturned", "Decision overturned"
+        WITHDRAWN = "withdrawn", "Withdrawn"
+
+    district = models.ForeignKey("core.District", on_delete=models.CASCADE, related_name="+")
+    application = models.ForeignKey(
+        Application, on_delete=models.CASCADE, related_name="challenges"
+    )
+    kind = models.CharField(max_length=6, choices=Kind.choices)
+    # Who hears it: the Assembly (review), the Council or the Authority (appeal).
+    body = models.CharField(max_length=8)
+    lodged_on = models.DateField()
+    grounds = models.TextField()
+    decided_on = models.DateField(null=True, blank=True)
+    outcome = models.CharField(max_length=10, choices=Outcome.choices, blank=True)
+    decision = models.TextField(blank=True)
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["lodged_on", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.kind} of {self.application_id}"

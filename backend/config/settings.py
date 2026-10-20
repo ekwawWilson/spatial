@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "planmaking",
     "revenue",
     "exchange",
+    "committees",
     "reports",
 ]
 

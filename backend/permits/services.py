@@ -16,7 +16,7 @@ from projects.models import Feature, Layer, PlanProject
 from relations.models import LayerRole
 
 from . import registry
-from .models import Application, Counter, Event, Inspection
+from .models import Application, Challenge, Counter, Event, Inspection
 
 Status = Application.Status
 OPEN = (Status.RECEIVED, Status.REVIEW, Status.REPORTED, Status.DEFERRED, Status.GRANTED)
@@ -399,3 +399,95 @@ def withdraw(application: Application, note: str, user: User) -> None:
     application.save(update_fields=["status", "updated_at"])
     event(application, "withdrawn", date.today(), user, note)
     sync_site(application, user)
+
+
+# --- Reviews, appeals and renewals ---------------------------------------------------------------
+
+DECIDED = (Status.GRANTED, Status.ISSUED, Status.REFUSED)
+
+
+def challenge_clock(challenge: Challenge, today: date | None = None) -> dict[str, Any]:
+    """When the decision on a review or appeal is due (r.62(3), r.63(8)), and
+    whether it was lodged within the Act's time (s.172(2))."""
+    today = today or date.today()
+    due = challenge.lodged_on + timedelta(days=registry.APPEAL_DECISION_DAYS)
+    decided = challenge.application.decided_on
+    lodge_by = decided + timedelta(days=registry.APPEAL_WITHIN_DAYS) if decided else None
+    return {
+        "decide_by": due.isoformat(),
+        "overdue": challenge.decided_on is None and today > due,
+        "late": bool(challenge.decided_on and challenge.decided_on > due),
+        "lodge_by": lodge_by.isoformat() if lodge_by else None,
+        "lodged_late": bool(lodge_by and challenge.lodged_on > lodge_by),
+    }
+
+
+def lodge(
+    application: Application, kind: str, body: str, on: date, grounds: str, user: User
+) -> Challenge:
+    if application.status not in DECIDED or application.decided_on is None:
+        raise ValidationError("Only a decision can be reviewed or appealed.")
+    bodies = dict(registry.CHALLENGE_BODIES.get(kind, ()))
+    if body not in bodies:
+        raise ValidationError({"body": [f"One of: {', '.join(bodies) or 'review, appeal'}."]})
+    if kind == "appeal" and not application.challenges.filter(kind="review").exists():
+        raise ValidationError(
+            "An appeal follows a review: record the request for review to the Assembly first."
+        )
+    _not_before(on, application.decided_on, "the decision")
+    challenge = Challenge.objects.create(
+        district_id=application.district_id,
+        application=application,
+        kind=kind,
+        body=body,
+        lodged_on=on,
+        grounds=grounds,
+        recorded_by=user,
+    )
+    form, rule = registry.CHALLENGE_FORMS[kind]
+    event(application, kind, on, user, f"Form {form} ({rule}) to {bodies[body]}")
+    return challenge
+
+
+def decide_challenge(
+    challenge: Challenge, on: date, outcome: str, decision: str, user: User
+) -> None:
+    if challenge.decided_on is not None:
+        raise ValidationError("It has already been decided.")
+    if outcome not in Challenge.Outcome.values:
+        raise ValidationError({"outcome": ["Not an outcome."]})
+    _not_before(on, challenge.lodged_on, "its lodging")
+    challenge.decided_on = on
+    challenge.outcome = outcome
+    challenge.decision = decision
+    challenge.save(update_fields=["decided_on", "outcome", "decision"])
+    event(
+        challenge.application,
+        f"{challenge.kind}_decided",
+        on,
+        user,
+        Challenge.Outcome(outcome).label,
+    )
+
+
+def renew(application: Application, on: date, user: User, note: str = "") -> None:
+    """A permit not completed in time is renewed by the Spatial Planning
+    Committee (Schedule, the development permit's note 2): valid for another
+    five years from its expiry, or from the renewal if it had already lapsed."""
+    _need(application, Status.ISSUED, doing="Renewing the permit")
+    assert application.expires_on is not None
+    start = max(application.expires_on, on)
+    try:
+        application.expires_on = start.replace(year=start.year + registry.PERMIT_VALID_YEARS)
+    except ValueError:  # 29 February
+        application.expires_on = start.replace(
+            year=start.year + registry.PERMIT_VALID_YEARS, day=28
+        )
+    application.save(update_fields=["expires_on", "updated_at"])
+    event(
+        application,
+        "renewed",
+        on,
+        user,
+        note or f"Valid until {application.expires_on.isoformat()}",
+    )

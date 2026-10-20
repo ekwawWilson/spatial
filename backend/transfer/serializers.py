@@ -55,6 +55,15 @@ class ImportPlanSerializer(serializers.Serializer[None]):
     layers = serializers.ListField(child=serializers.DictField(), min_length=1)
 
 
+class OpenStreetMapSerializer(serializers.Serializer[None]):
+    project = serializers.IntegerField()
+    kinds = serializers.ListField(child=serializers.CharField(max_length=20), min_length=1)
+    # The area: the project's planning area, or a polygon (in area_crs).
+    use_boundary = serializers.BooleanField(default=False)
+    area = serializers.DictField(required=False, allow_null=True)
+    area_crs = serializers.CharField(required=False, default="EPSG:4326")
+
+
 class ExportSerializer(serializers.Serializer[None]):
     project = serializers.IntegerField()
     layer_ids = serializers.ListField(child=serializers.IntegerField(), min_length=1)

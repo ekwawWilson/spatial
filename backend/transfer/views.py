@@ -1,8 +1,9 @@
+import json
 from pathlib import Path
 from typing import Any
 
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import QuerySet
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
@@ -18,13 +19,21 @@ from rest_framework.response import Response
 from core.permissions import district_permission, request_user, require_district_id
 from core.schema import DISTRICT_HEADER
 from core.throttling import UploadThrottle
+from crs.models import CoordinateSystem
+from crs.services import transform_geojson
 from projects.models import PlanProject
 
-from . import gdal_io
+from . import gdal_io, osm
 from .models import DataJob
 from .safety import MAX_UPLOAD_BYTES
-from .serializers import DataJobSerializer, ExportSerializer, ImportPlanSerializer, UploadSerializer
-from .tasks import job_dir, run_job, source_file
+from .serializers import (
+    DataJobSerializer,
+    ExportSerializer,
+    ImportPlanSerializer,
+    OpenStreetMapSerializer,
+    UploadSerializer,
+)
+from .tasks import job_dir, run_job, run_osm, source_file
 
 
 def _project(request: Request, project_id: int) -> PlanProject:
@@ -111,6 +120,63 @@ class DataJobViewSet(
         if project and project.isdigit():
             qs = qs.filter(project_id=int(project))
         return qs
+
+    @extend_schema(request=OpenStreetMapSerializer, responses={201: DataJobSerializer})
+    @action(detail=False, methods=["post"], url_path="openstreetmap")
+    def openstreetmap(self, request: Request) -> Response:
+        """Brings the streets, buildings and other features OpenStreetMap
+        has inside an area into the project, as layers to edit and name.
+        Runs in the background: follow the job."""
+        data = OpenStreetMapSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        values = data.validated_data
+        project = _project(request, values["project"])
+        unknown = [k for k in values["kinds"] if k not in osm.KIND_BY_CODE]
+        if unknown:
+            raise serializers.ValidationError({"kinds": f"Unknown: {', '.join(unknown)}."})
+        if values["use_boundary"]:
+            if project.boundary_feature_id is None:
+                raise serializers.ValidationError(
+                    {"area": "The project has no planning area yet: draw one, or mark an area."}
+                )
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT ST_AsGeoJSON(geom_4326) FROM projects_feature WHERE id = %s",
+                    [project.boundary_feature_id],
+                )
+                row = cursor.fetchone()
+            if not row or not row[0]:
+                raise serializers.ValidationError({"area": "The planning area has no shape."})
+            area: dict[str, Any] = json.loads(row[0])
+        else:
+            area = values.get("area") or {}
+            source = CoordinateSystem.objects.filter(code=values["area_crs"].upper()).first()
+            target = CoordinateSystem.objects.filter(code="EPSG:4326").first()
+            if source is None or target is None:
+                raise serializers.ValidationError({"area_crs": "Not a known coordinate system."})
+            if source.pk != target.pk:
+                try:
+                    area, _ = transform_geojson(area, source, target)
+                except Exception as exc:  # noqa: BLE001 - a malformed polygon
+                    raise serializers.ValidationError({"area": "Not a polygon."}) from exc
+        try:
+            km2 = osm.check_area(area)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.message_dict) from exc
+        job = DataJob.objects.create(
+            kind=DataJob.Kind.IMPORT,
+            district_id=project.district_id,
+            project=project,
+            status=DataJob.Status.QUEUED,
+            file_format="gpkg",
+            original_name="openstreetmap.gpkg",
+            plan={"osm": {"kinds": values["kinds"], "area": area, "area_km2": round(km2, 2)}},
+            created_by=request_user(request),
+        )
+        district_id = job.district_id
+        user_id = request_user(request).pk
+        transaction.on_commit(lambda: run_osm.delay(job.pk, district_id, user_id))
+        return Response(DataJobSerializer(job).data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
         request={"multipart/form-data": UploadSerializer}, responses={201: DataJobSerializer}

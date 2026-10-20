@@ -173,6 +173,17 @@ SIMPLE_JWT = {
 
 # Links in password-reset and invitation emails point at the web app.
 WEB_APP_URL = env("WEB_APP_URL", default="http://localhost:5173").rstrip("/")
+
+# OpenStreetMap features (transfer/osm.py): Overpass servers, tried in turn.
+# Their usage policy asks every client to say who it is.
+OSM_OVERPASS_URLS: list[str] = env.list(
+    "OSM_OVERPASS_URLS",
+    default=[
+        "https://overpass-api.de/api/interpreter",
+        "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    ],
+)
+OSM_USER_AGENT = env("OSM_USER_AGENT", default=f"SpatialPlanningPlatform/1.0 (+{WEB_APP_URL})")
 # Outgoing email, set the same way as the DVLA system: SMTP_HOST, SMTP_PORT
 # (465: SSL, the Gmail default; 587: STARTTLS), SMTP_USER, SMTP_PASS (for Gmail,
 # an app password) and SMTP_FROM ('"Name" <address>'). Without SMTP_HOST,

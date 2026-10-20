@@ -24,6 +24,7 @@ Written for physical planners, district administrators and field officers. Secti
 - [Enforcement](enforcement.md)
 - [Property rates and betterment](property-rates-and-betterment.md)
 - [Statutory deadlines](statutory-deadlines.md)
+- [Returns and data exchange](returns-and-data-exchange.md)
 - [Project files (.spp)](project-files.md)
 - [The field app (Android)](field-app.md)
 - [Field data in the office: sync, conflicts and ground-truthing](field-sync.md)

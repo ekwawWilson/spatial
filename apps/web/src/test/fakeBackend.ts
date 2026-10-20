@@ -67,6 +67,7 @@ export function makeMe(overrides: Partial<Me> = {}): Me {
           "dataroom.answer",
           "revenue.view",
           "revenue.manage",
+          "exchange.manage",
           "sync.resolve",
         ],
       },

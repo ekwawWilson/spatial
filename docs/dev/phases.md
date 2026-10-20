@@ -39,6 +39,7 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 19 | Plan preparation and consultation; plan sheets | **complete** (2026-10-12): gate passed in CI and deployed (`fc79118`); what is left is listed in the phase's notes |
 | 20 | Street naming and property addressing | codes and numbers **complete** (2026-10-12, `ffa5a8d`); street naming as a workflow is not built |
 | 21 | Property register, revenue link and betterment | in progress on `main` |
+| 22 | Reports and national links | in progress on `main` (the statutory deadlines page was built early) |
 
 ## Open items carried forward
 - **Phase 3:** Martin (vector tiles) connects as the app role, so row-level security hides tenant tables from it until tile requests carry a district context (e.g. per-district function sources, or tiles served through the API). Design this in Phase 3; don't grant Martin BYPASSRLS.
@@ -251,4 +252,12 @@ Built from the published law and standards. What needs the Assembly's own docume
 - Permissions: `revenue.view` (every role), `revenue.manage` (district administrators and planners).
 - Gate: `revenue/tests/test_revenue.py`: every row of a sample revenue file matches one property or is reported; the never-billed list is exactly the property with no bill; the bettered properties are exactly those within reach.
 - **Not done:** business operating permits; online and mobile money payment (through the revenue system or a payment provider); a direct API link to dLRev (needs its interface from the Assembly); arrears and penalties across years.
+
+## Phase 22 notes (returns and national links)
+- `reports/returns.py`: the district's return for a quarter, a year or two dates, counted from the records of every other app (permits, land applications, enforcement, plan-making, the data room, rates). JSON, CSV and PDF at `GET /api/reports/returns/?period=2026-Q3`. Figures only, never names. Open to `reports.view`.
+- App `exchange`: `ExchangeKey` (a district's key for a national body: name, what it may read, a SHA-256 of the secret, uses, last used, revoked). Keys are `<district code>.<secret>`: the code picks the district (whose row-level security then scopes the lookup), the secret is checked against the hash. Shown once when made.
+- `GET /api/exchange/v1/<permits|plans|zoning|enforcement|returns>/` with `Authorization: Key …`: GeoJSON in WGS 84 (returns: JSON), `?since=` for changes, at most 5,000 features a call. Each read updates the key, so the audit log records who read when; the hash is kept out of the audit log.
+- Permission `exchange.manage` (district administrators).
+- Gate: `exchange/tests/test_exchange.py`: a seeded quarter counted exactly, no names in the return or the exchange; scopes, wrong keys, another district's code and revoked keys all refused.
+- **Not done:** pushing records to a national system (needs that system's interface); returns in LUSPA's own template, when it publishes one.
 

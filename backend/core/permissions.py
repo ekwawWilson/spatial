@@ -57,6 +57,8 @@ PERMISSIONS: dict[str, frozenset[Role]] = {
     # The property register, rates and betterment (revenue app).
     "revenue.view": ALL_ROLES,
     "revenue.manage": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
+    # Keys for national bodies to read the district's records (exchange app).
+    "exchange.manage": frozenset({Role.DISTRICT_ADMIN}),
     # Restricted (personal) attribute values: see projects/privacy.py.
     "data.sensitive": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
 }

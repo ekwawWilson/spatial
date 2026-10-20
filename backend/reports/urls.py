@@ -7,4 +7,5 @@ urlpatterns = [
     path(
         "reports/compliance/pdf/", views.CompliancePdfView.as_view(), name="reports-compliance-pdf"
     ),
+    path("reports/returns/", views.ReturnView.as_view(), name="reports-return"),
 ]

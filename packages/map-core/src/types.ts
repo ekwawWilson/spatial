@@ -45,6 +45,7 @@ export type Permission =
   | "dataroom.answer"
   | "revenue.view"
   | "revenue.manage"
+  | "exchange.manage"
   | "data.sensitive";
 
 export interface DistrictBrief {
@@ -1734,4 +1735,50 @@ export interface BettermentScheme {
   };
   charges?: BettermentCharge[];
   found?: { found: number; added: number };
+}
+
+// --- Returns and national data exchange (Phase 22) ------------------------------------------
+
+export interface DistrictReturn {
+  district: { code: string; name: string };
+  period: { label: string; from: string; to: string };
+  permits: {
+    received: number;
+    received_by_kind: { development: number; planning: number };
+    received_by_category: { category: string; count: number }[];
+    decided: number;
+    granted: number;
+    refused: number;
+    issued: number;
+    decided_within_limit_pct: number | null;
+    average_days_to_decision: number | null;
+    limit_days: number;
+  };
+  land: { kind: string; received: number; approved: number; refused: number }[];
+  enforcement: {
+    cases_opened: number;
+    opened_by_contravention: { contravention: string; count: number }[];
+    notices_served: number;
+    notices_by_kind: { notice: string; form: string; count: number }[];
+    cases_closed: number;
+    closed_by_outcome: { rectified: number; enforced: number; dropped: number };
+    cost_recovered: string;
+  };
+  plans: { commenced: string[]; drafts_on_display: string[]; approved: string[]; consultations_held: number; comments_received: number };
+  data_room: { requests_received: number; answered: number; answered_within_limit_pct: number | null };
+  revenue: { bills_issued: number; billed: string; paid_on_bills_with_payments: string; betterment_schemes_completed: number };
+}
+
+export interface ExchangeKey {
+  id: number;
+  name: string;
+  prefix: string;
+  scopes: string[];
+  created_at: string;
+  created_by: string | null;
+  last_used_at: string | null;
+  uses: number;
+  revoked_at: string | null;
+  /** Only when just made: the whole key, shown once. */
+  key?: string;
 }

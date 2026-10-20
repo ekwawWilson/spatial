@@ -463,6 +463,12 @@ class SchemeViewSet(viewsets.GenericViewSet[BettermentScheme]):
         data = SchemeWriteSerializer(data=request.data, partial=True)
         data.is_valid(raise_exception=True)
         values = data.validated_data
+        basis = values.get("basis", scheme.basis)
+        amount = values.get("amount", scheme.amount)
+        if basis == BettermentScheme.Basis.RATE and amount > 1:
+            raise serializers.ValidationError(
+                {"amount": "A share of the increase, e.g. 0.25 for a quarter."}
+            )
         for name in ("name", "works", "reach_m", "completed_on", "basis", "amount"):
             if name in values:
                 setattr(scheme, name, values[name])

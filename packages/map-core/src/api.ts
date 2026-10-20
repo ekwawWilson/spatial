@@ -79,6 +79,8 @@ import type {
   RegisterImport,
   RegisterProperty,
   RegisterSummary,
+  DistrictReturn,
+  ExchangeKey,
   NewCase,
   DataRoomSettings,
   InformationRequest,
@@ -774,6 +776,13 @@ export function createApiClient(options: ApiClientOptions = {}) {
     updateCharge: (id: number, data: Partial<{ increase: string | null; served_on: string | null; paid: string; paid_on: string | null }>) =>
       request<BettermentCharge>("PATCH", `/api/revenue/betterment-charges/${id}/`, data),
     chargePaper: (id: number, kind: "assessment" | "certificate") => blob(`/api/revenue/betterment-charges/${id}/paper/${query({ kind })}`),
+
+    // --- Returns and national data exchange ------------------------------------------------
+    districtReturn: (period: string) => request<DistrictReturn>("GET", `/api/reports/returns/${query({ period })}`),
+    districtReturnFile: (period: string, type: "csv" | "pdf") => blob(`/api/reports/returns/${query({ period, type })}`),
+    listExchangeKeys: () => request<{ keys: ExchangeKey[]; scopes: Record<string, string> }>("GET", "/api/exchange/keys/"),
+    createExchangeKey: (data: { name: string; scopes: string[] }) => request<ExchangeKey>("POST", "/api/exchange/keys/", data),
+    revokeExchangeKey: (id: number) => request<ExchangeKey>("POST", `/api/exchange/keys/${id}/revoke/`, {}),
 
     // --- Street addressing -----------------------------------------------------------------
     /** Proposes street codes and property numbers; changes nothing. */

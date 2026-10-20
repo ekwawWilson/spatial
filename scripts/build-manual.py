@@ -40,6 +40,7 @@ CHAPTERS = [
     ("enforcement.md", "Development control"),
     ("property-rates-and-betterment.md", "Development control"),
     ("statutory-deadlines.md", "Development control"),
+    ("returns-and-data-exchange.md", "Development control"),
     ("field-app.md", "Working in the field"),
     ("field-sync.md", "Working in the field"),
     ("project-files.md", "Keeping work safe"),

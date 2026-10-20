@@ -17,6 +17,7 @@ import { CasePage, EnforcementPage } from "./pages/EnforcementPage";
 import { LandApplicationPage, LandApplicationsPage } from "./pages/LandApplicationsPage";
 import { LocalPlanPage } from "./pages/LocalPlanPage";
 import { RatesPage } from "./pages/RatesPage";
+import { ReturnsPage } from "./pages/ReturnsPage";
 import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPages";
 import { HomePage } from "./pages/HomePage";
 import { ImageryPage } from "./pages/ImageryPage";
@@ -191,6 +192,14 @@ export function App() {
           element={
             <RequirePermission permission="project.view">
               <ConflictsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="returns"
+          element={
+            <RequirePermission permission="reports.view">
+              <ReturnsPage />
             </RequirePermission>
           }
         />

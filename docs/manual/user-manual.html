@@ -55,6 +55,7 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <li><a href="#enforcement">Enforcement</a></li>
 <li><a href="#property-rates-and-betterment">Property rates and betterment</a></li>
 <li><a href="#statutory-deadlines">Statutory deadlines</a></li>
+<li><a href="#returns-and-data-exchange">Returns and data exchange</a></li>
 </ul><p class="part">Working in the field</p><ul>
 <li><a href="#field-app">The field app (Android)</a></li>
 <li><a href="#field-sync">Field data in the office: sync, conflicts and ground-truthing</a></li>
@@ -866,6 +867,37 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 </ul>
 <p>The figures are counted each time the page opens. They are only as complete as the records: an application kept on paper and never entered is not counted.</p>
 <p>No personal information appears on this page, so every member of the district can see it.</p>
+<h2 id="returns-and-data-exchange">Returns and data exchange</h2>
+<p><em>Everyone can see the return. Only district administrators issue and revoke keys.</em></p>
+<p>Choose <strong>Returns and data exchange</strong> in the left menu.</p>
+<h3>The return</h3>
+<p>What the district's planning authority did in a <strong>quarter</strong> or a <strong>year</strong>, counted from the platform's records, for the Land Use and Spatial Planning Authority (LUSPA), the Regional Coordinating Council and the Assembly's own performance assessment:</p>
+<ul>
+<li><strong>Permits:</strong> applications received (development and planning), decided, granted, refused, certificates issued, the share decided within the 30 days, and the average days to a decision.</li>
+<li><strong>Re-zoning, change of use, subdivision and consolidation:</strong> received, approved, refused.</li>
+<li><strong>Enforcement:</strong> cases opened (by contravention), notices served (by form), cases closed (by outcome), cost recovered.</li>
+<li><strong>Local plans:</strong> commenced, draft on display, approved; consultations held and comments received.</li>
+<li><strong>Public Data Room:</strong> requests for information received, and the share answered within 5 days.</li>
+<li><strong>Rates and betterment:</strong> bills issued and the amount billed; betterment schemes completed.</li>
+</ul>
+<p>Pick the period, then <strong>Download as PDF</strong> to file it, or <strong>as CSV</strong> to put it in a spreadsheet. It carries no names, only figures.</p>
+<h3>Data exchange with national bodies</h3>
+<p>A <strong>key</strong> lets a national body read the district's records directly from the platform, instead of waiting for files:</p>
+<table><thead><tr><th>May read</th><th>What they get</th></tr></thead><tbody>
+<tr><td>Permits</td><td>each permit decided: number, kind, use, storeys, status, dates, and the site on the map</td></tr>
+<tr><td>Plans</td><td>each local plan approved: name, locality, approval date, the planning area</td></tr>
+<tr><td>Zoning</td><td>each zone drawn on the map, with its national code</td></tr>
+<tr><td>Enforcement</td><td>each notice served: notice, form, contravention, dates, place</td></tr>
+<tr><td>Returns</td><td>the return for any quarter or year</td></tr>
+</tbody></table>
+<p>Map data comes as <strong>GeoJSON in WGS 84</strong>, which QGIS, ArcGIS and every web map read directly. <strong>No names or contacts ever leave.</strong></p>
+<h4>Issuing a key</h4>
+<ol>
+<li>Under <strong>Issue a key</strong>, say who it is for (for example <em>LUSPA, Accra</em>) and tick what it may read.</li>
+<li><strong>Issue the key.</strong> The key appears <strong>once</strong>: copy it and send it to them securely (not by plain email or WhatsApp).</li>
+<li>They read with the key in a header, for example: ``` GET https://&lt;your site&gt;/api/exchange/v1/permits/?since=2026-07-01 Authorization: Key SMA.xxxxxxxx… ``` <code>since</code> returns only what was decided, approved or served since that date. The return takes <code>?period=2026-Q3</code> or <code>?period=2026</code>.</li>
+</ol>
+<p>Every read is counted (<em>Last used</em>) and recorded in the audit log. <strong>Revoke</strong> a key the moment it is no longer needed, or if it may have leaked; it stops working at once.</p>
 <h2 id="field-app">The field app (Android)</h2>
 <p><em>Field officers, planners and district administrators.</em></p>
 <p>The field app lets you take a project out of the office, see its layers with no connection, and record new features with the phone's GPS, a form and photos.</p>

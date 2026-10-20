@@ -2,9 +2,11 @@ import io
 from typing import Any
 from xml.sax.saxutils import escape
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import serializers
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -14,7 +16,7 @@ from core.models import District
 from core.permissions import district_permission, require_district_id
 from core.schema import DISTRICT_HEADER
 
-from . import services
+from . import returns, services
 
 
 def _perms() -> list[BasePermission]:
@@ -192,3 +194,99 @@ class CompliancePdfView(APIView):
             f'attachment; filename="statutory-deadlines-{district.code}-{data["as_of"]}.pdf"'
         )
         return response
+
+
+def return_pdf(district: District, data: dict[str, Any]) -> bytes:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.units import mm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=18 * mm,
+        rightMargin=18 * mm,
+        topMargin=16 * mm,
+        bottomMargin=16 * mm,
+    )
+    styles = getSampleStyleSheet()
+    body = styles["BodyText"]
+    lines = returns.rows(data)
+    table = Table(
+        [
+            ["Section", "Measure", "Value"],
+            *[[Paragraph(escape(c), body) for c in line] for line in lines],
+        ],
+        colWidths=[42 * mm, 92 * mm, 40 * mm],
+        repeatRows=1,
+    )
+    table.setStyle(
+        TableStyle(
+            [
+                ("GRID", (0, 0), (-1, -1), 0.3, colors.lightgrey),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]
+        )
+    )
+    doc.build(
+        [
+            Paragraph(escape(district.name), styles["Title"]),
+            Paragraph("Return of the District Planning Authority", styles["Heading2"]),
+            Paragraph(
+                escape(
+                    f"{data['period']['label']}"
+                    f" ({data['period']['from']} to {data['period']['to']})."
+                    " Counted from the platform's records; no personal data."
+                ),
+                body,
+            ),
+            Spacer(1, 4 * mm),
+            table,
+        ]
+    )
+    return buffer.getvalue()
+
+
+RETURN_PARAMETERS = [
+    OpenApiParameter("period", str, description="A year (2026) or a quarter (2026-Q3)"),
+    OpenApiParameter("from", str, description="Or a first day, YYYY-MM-DD"),
+    OpenApiParameter("to", str, description="and a last day"),
+    OpenApiParameter("type", str, description="csv or pdf (default: JSON)"),
+]
+
+
+@extend_schema(parameters=[DISTRICT_HEADER, *RETURN_PARAMETERS], responses=OpenApiTypes.OBJECT)
+class ReturnView(APIView):
+    """The district's return for a quarter or a year: permits, re-zoning and
+    subdivision, enforcement, plans and consultation, the Public Data Room,
+    rates and betterment. As JSON, a CSV, or a PDF to file."""
+
+    def get_permissions(self) -> list[BasePermission]:
+        return _perms()
+
+    def get(self, request: Request) -> Response | HttpResponse:
+        district_id = require_district_id(request)
+        params = request.query_params
+        try:
+            first, last, label = returns.period(
+                params.get("period"), params.get("from"), params.get("to")
+            )
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"period": exc.messages}) from exc
+        data = returns.build(district_id, first, last, label)
+        district = District.objects.get(pk=district_id)
+        name = f"return-{district.code}-{first.isoformat()}-{last.isoformat()}"
+        kind = params.get("type")
+        if kind == "csv":
+            response = HttpResponse(returns.to_csv(data).encode("utf-8"), content_type="text/csv")
+            response["Content-Disposition"] = f'attachment; filename="{name}.csv"'
+            return response
+        if kind == "pdf":
+            response = HttpResponse(return_pdf(district, data), content_type="application/pdf")
+            response["Content-Disposition"] = f'attachment; filename="{name}.pdf"'
+            return response
+        return Response({"district": {"code": district.code, "name": district.name}, **data})

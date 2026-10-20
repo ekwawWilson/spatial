@@ -114,6 +114,11 @@ export function Layout() {
             Statutory deadlines
           </Item>
         )}
+        {can("reports.view") && (
+          <Item to="/returns" icon="file">
+            Returns and data exchange
+          </Item>
+        )}
         {can("dataroom.view") && (
           <Item to="/data-room" icon="globe">
             Public Data Room

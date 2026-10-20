@@ -68,7 +68,9 @@ export function ProjectsPage() {
               <td>{p.community}</td>
               <td>{p.crs_detail.code}</td>
               <td>{p.layer_count}</td>
-              <td>{p.status}</td>
+              <td>
+                <span className={`pill ${p.status === "active" ? "ok" : p.status === "archived" ? "" : "info"}`}>{p.status}</span>
+              </td>
             </tr>
           ))}
         </tbody>

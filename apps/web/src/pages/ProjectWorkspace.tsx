@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { ErrorMessage } from "../components/ErrorMessage";
+import { Icon, type IconName } from "../components/Icon";
 import { MapView, type Measurement, type Tool } from "../components/map/MapView";
 import { useLoad } from "../components/useLoad";
 import { AttributeTable, IdentifyPanel } from "../components/workspace/AttributeTable";
@@ -229,67 +230,74 @@ export function ProjectWorkspace() {
   return (
     <div className="workspace">
       <header className="workspace-header">
-        <Link to="/projects">Projects</Link>
+        <Link to="/projects" className="crumb">
+          <Icon name="chevronLeft" size={16} />
+          Projects
+        </Link>
         <h1>{project.data?.name ?? "…"}</h1>
-        <span className="muted">
+        <span className="meta">
           {project.data?.community} · {project.data?.crs_detail.code} {project.data?.crs_detail.name}
+          {project.data?.status && <span className="pill">{project.data.status}</span>}
         </span>
         <span className="spacer" />
-        <Link to={`/projects/${id}/plan`}>Local plan</Link>
-        <Link to={`/projects/${id}/checklist`}>Readiness checklist</Link>
-        <Link to={`/projects/${id}/imagery`}>Imagery</Link>
-        <Link to={`/projects/${id}/relations`}>Relationships</Link>
-        <Link to={`/projects/${id}/zoning`}>Zoning</Link>
-        <Link to={`/projects/${id}/permits`}>Permits</Link>
-        <Link to={`/projects/${id}/land`}>Re-zoning and subdivision</Link>
-        <Link to={`/projects/${id}/enforcement`}>Enforcement</Link>
-        <Link to={`/projects/${id}/addressing`}>Addressing</Link>
-        <Link to={`/projects/${id}/sheet`}>Plan sheet</Link>
-        <Link to={`/projects/${id}/conflicts`}>
-          Field conflicts{conflicts.data?.length ? ` (${conflicts.data.length})` : ""}
-        </Link>
-        {can("data.import") && (
-          <button type="button" className="secondary" onClick={() => setDialog({ kind: "import" })}>
-            Import data
-          </button>
-        )}
-        {can("data.export") && (
-          <button type="button" className="secondary" onClick={() => setDialog({ kind: "export" })} disabled={layers.length === 0}>
-            Export
-          </button>
-        )}
-        {can("data.export") && (
-          <button
-            type="button"
-            className="secondary"
-            disabled={savingFile}
-            title="The whole project in one protected file that only this platform can open"
-            onClick={async () => {
-              setSavingFile(true);
-              await run(async () => {
-                const { blob, name } = await api.saveProjectFile(id);
-                saveBlob(blob, name);
-              });
-              setSavingFile(false);
-            }}
-          >
-            {savingFile ? "Saving…" : "Save as .spp"}
-          </button>
-        )}
-        <div className="tools" role="toolbar" aria-label="Map tools">
-          {(
-            [
-              ["identify", "Identify"],
-              ["measure-length", "Measure distance"],
-              ["measure-area", "Measure area"],
-            ] as [Tool, string][]
-          ).map(([value, label]) => (
-            <button key={value} type="button" aria-pressed={tool === value} className={tool === value ? "" : "secondary"} onClick={() => setTool(value)}>
-              {label}
+        <div className="workspace-actions">
+          {can("data.import") && (
+            <button type="button" className="secondary" onClick={() => setDialog({ kind: "import" })}>
+              <Icon name="upload" size={16} />
+              Import data
             </button>
-          ))}
+          )}
+          {can("data.export") && (
+            <button type="button" className="secondary" onClick={() => setDialog({ kind: "export" })} disabled={layers.length === 0}>
+              <Icon name="download" size={16} />
+              Export
+            </button>
+          )}
+          {can("data.export") && (
+            <button
+              type="button"
+              disabled={savingFile}
+              title="The whole project in one protected file that only this platform can open"
+              onClick={async () => {
+                setSavingFile(true);
+                await run(async () => {
+                  const { blob, name } = await api.saveProjectFile(id);
+                  saveBlob(blob, name);
+                });
+                setSavingFile(false);
+              }}
+            >
+              <Icon name="save" size={16} />
+              {savingFile ? "Saving…" : "Save as .spp"}
+            </button>
+          )}
         </div>
       </header>
+      <nav className="module-nav" aria-label="Project">
+        {(
+          [
+            ["plan", "Local plan", "file"],
+            ["checklist", "Readiness checklist", "check"],
+            ["imagery", "Imagery", "image"],
+            ["relations", "Relationships", "link"],
+            ["zoning", "Zoning", "zone"],
+            ["permits", "Permits", "stamp"],
+            ["land", "Re-zoning and subdivision", "split"],
+            ["enforcement", "Enforcement", "alert"],
+            ["addressing", "Addressing", "pin"],
+            ["sheet", "Plan sheet", "printer"],
+          ] as [string, string, IconName][]
+        ).map(([path, label, icon]) => (
+          <Link key={path} to={`/projects/${id}/${path}`}>
+            <Icon name={icon} size={16} />
+            {label}
+          </Link>
+        ))}
+        <Link to={`/projects/${id}/conflicts`}>
+          <Icon name="sync" size={16} />
+          Field conflicts{conflicts.data?.length ? <span className="count"> ({conflicts.data.length})</span> : ""}
+        </Link>
+      </nav>
       <ErrorMessage error={error ?? layersLoad.error} />
       <aside className="workspace-side">
         {project.data && (
@@ -345,6 +353,20 @@ export function ProjectWorkspace() {
         />
       </aside>
       <main className="workspace-map">
+        <div className="tools" role="toolbar" aria-label="Map tools">
+          {(
+            [
+              ["identify", "Identify", "cursor"],
+              ["measure-length", "Measure distance", "ruler"],
+              ["measure-area", "Measure area", "area"],
+            ] as [Tool, string, IconName][]
+          ).map(([value, label, icon]) => (
+            <button key={value} type="button" aria-pressed={tool === value} className={tool === value ? "" : "secondary"} onClick={() => setTool(value)}>
+              <Icon name={icon} size={16} />
+              {label}
+            </button>
+          ))}
+        </div>
         <MapView
           api={api}
           layers={layers}

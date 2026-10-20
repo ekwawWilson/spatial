@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { Layout } from "./components/Layout";
+import { PublicFrame } from "./components/PublicFrame";
 import { RequireAuth, RequirePermission, RequireSystemAdmin } from "./components/guards";
 import { AccountPage } from "./pages/AccountPage";
 import { AddressingPage } from "./pages/AddressingPage";
@@ -40,9 +41,11 @@ export function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/status" element={<StatusPage />} />
-      <Route path="/verify/:token" element={<VerifyPage />} />
-      <Route path="/public" element={<PublicRoomsPage />} />
-      <Route path="/public/:code" element={<PublicRoomPage />} />
+      <Route element={<PublicFrame />}>
+        <Route path="/verify/:token" element={<VerifyPage />} />
+        <Route path="/public" element={<PublicRoomsPage />} />
+        <Route path="/public/:code" element={<PublicRoomPage />} />
+      </Route>
       <Route
         element={
           <RequireAuth>

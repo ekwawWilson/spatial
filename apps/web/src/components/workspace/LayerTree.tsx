@@ -1,5 +1,5 @@
 import { DOMAIN_LABELS, type Domain, type GeometryType, type Layer } from "@spatial/map-core";
-import { useState, type FormEvent } from "react";
+import { useState, type CSSProperties, type FormEvent } from "react";
 
 const GEOMETRY_LABELS: Record<GeometryType, string> = { point: "Points", line: "Lines", polygon: "Polygons" };
 
@@ -18,6 +18,12 @@ export interface LayerTreeProps {
 }
 
 /** Layers grouped by data domain (A–J), drawn top first as on the map. */
+/** The layer's colour as the map draws it; a categorised layer shows its first category. */
+function swatchStyle(layer: Layer): CSSProperties {
+  const symbol = layer.style.kind === "single" ? layer.style : (layer.style.categories[0] ?? layer.style.default);
+  return { background: layer.geometry_type === "line" ? symbol.stroke : symbol.fill, borderColor: symbol.stroke };
+}
+
 export function LayerTree(props: LayerTreeProps) {
   const groups = new Map<Domain, Layer[]>();
   for (const layer of props.layers) groups.set(layer.domain, [...(groups.get(layer.domain) ?? []), layer]);
@@ -43,6 +49,11 @@ export function LayerTree(props: LayerTreeProps) {
                     />
                   </label>
                   <button type="button" className="link layer-name" onClick={() => props.onSelect(layer.id)}>
+                    <span
+                      className={`swatch ${layer.geometry_type}`}
+                      aria-hidden="true"
+                      style={swatchStyle(layer)}
+                    />
                     {layer.name}
                   </button>
                   <span className="muted small">

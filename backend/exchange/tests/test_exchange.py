@@ -260,7 +260,9 @@ def test_a_national_body_reads_with_a_key(
         )
         made_entry = AuditLog.objects.filter(table_name="exchange_exchangekey").first()
         assert made_entry is not None and "digest" not in str(made_entry.after)
-    assert admin.get(keys).json()["keys"][0]["uses"] == 7
+    assert (
+        admin.get(keys).json()["keys"][0]["uses"] == 5
+    )  # the five reads allowed; refusals are not reads
     revoked = admin.post(
         reverse("exchange-key-revoke", args=[made.json()["id"]]), {}, format="json"
     )

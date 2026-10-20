@@ -141,7 +141,7 @@ main() {
     step "Nightly backups"
     cat > /etc/cron.d/spatial-backup <<EOF
 # The platform's database and files, every night at 02:30; 14 days are kept.
-30 2 * * * root cd $DIR && KEEP_DAYS=14 scripts/backup.sh $DIR/backups >> /var/log/spatial-backup.log 2>&1
+30 2 * * * root cd $DIR && KEEP_DAYS=5 scripts/backup.sh $DIR/backups >> /var/log/spatial-backup.log 2>&1
 EOF
     echo "  02:30 every night into $DIR/backups (copy them off the server too)"
   fi

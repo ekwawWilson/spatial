@@ -35,7 +35,7 @@ It:
 2. turns on the firewall: only SSH (22), HTTP (80) and HTTPS (443) are open;
 3. puts the platform in `/opt/spatial` and makes `/opt/spatial/.env` with random secrets;
 4. builds and starts everything, with Caddy in front getting the HTTPS certificate from Let's Encrypt (the first build takes 10-20 minutes);
-5. sets a backup for 02:30 every night into `/opt/spatial/backups`, keeping 14 days;
+5. sets a backup for 02:30 every night into `/opt/spatial/backups`, keeping 5 days (each holds every uploaded file, so a small disk fills fast: copy them off the server);
 6. checks the site answers over HTTPS.
 
 ## 4. First steps

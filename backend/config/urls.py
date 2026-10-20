@@ -20,6 +20,7 @@ urlpatterns = [
     path("api/", include("enforcement.urls")),
     path("api/", include("landchange.urls")),
     path("api/", include("planmaking.urls")),
+    path("api/", include("revenue.urls")),
     path("api/", include("reports.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="api-docs"),

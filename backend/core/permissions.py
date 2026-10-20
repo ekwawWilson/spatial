@@ -54,6 +54,9 @@ PERMISSIONS: dict[str, frozenset[Role]] = {
     "dataroom.view": ALL_ROLES,
     "dataroom.manage": frozenset({Role.DISTRICT_ADMIN}),
     "dataroom.answer": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
+    # The property register, rates and betterment (revenue app).
+    "revenue.view": ALL_ROLES,
+    "revenue.manage": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
     # Restricted (personal) attribute values: see projects/privacy.py.
     "data.sensitive": frozenset({Role.DISTRICT_ADMIN, Role.PLANNER}),
 }

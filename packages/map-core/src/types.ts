@@ -43,6 +43,8 @@ export type Permission =
   | "dataroom.view"
   | "dataroom.manage"
   | "dataroom.answer"
+  | "revenue.view"
+  | "revenue.manage"
   | "data.sensitive";
 
 export interface DistrictBrief {

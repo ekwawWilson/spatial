@@ -49,6 +49,8 @@ A person can hold a different role in each district they belong to. System admin
 | `dataroom.view` | district_admin, planner, field_officer, viewer |
 | `dataroom.manage` | district_admin |
 | `dataroom.answer` | district_admin, planner |
+| `revenue.view` | district_admin, planner, field_officer, viewer |
+| `revenue.manage` | district_admin, planner |
 | `data.sensitive` | district_admin, planner |
 
 ## System administrator only

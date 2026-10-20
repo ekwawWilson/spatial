@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "enforcement",
     "landchange",
     "planmaking",
+    "revenue",
     "reports",
 ]
 

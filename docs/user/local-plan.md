@@ -43,3 +43,28 @@ Each comment shows whether it has been answered. Record the Committee's response
 
 ## What the public sees
 For a published project, once the notice of commencement or of the draft is recorded: the plan's name and locality, where it has got to, the last day for comments, the minutes put on display, and, once approved, the date of approval.
+
+## Facilities against the planning standards
+The Revised Zoning Guidelines and Planning Standards (LUSPA, 2025) give, for each kind of facility, how many people one serves and, for schools and water, how far a home may be from the nearest. The section **Facilities against the planning standards** checks the planning area against them, for what a local plan specifies under r.24(1)(b).
+
+1. Say which layer holds the facilities, and its **type** field, under Relationships, Layers (role *Infrastructure and facilities*). The *Places (OpenStreetMap)* layer works too, with *amenity* as the type field.
+2. Give the **population** of the planning area, or let it come from a population layer, or from the number of buildings (five people each by default).
+
+For each facility the table shows the standard, how many are needed, how many are on the map, how many buildings are beyond the walking distance, and whether the area falls short:
+
+| Facility | Standard (section) |
+| --- | --- |
+| Primary school | 1 per 5,000 people, within 2.5 km (3.1.1.2(b)) |
+| Junior High School | 1 per 10,000, within 3.2 km (3.1.1.2(c)) |
+| Nursery or kindergarten | within 1.25 km (3.1.1.2(a)) |
+| Senior High or Technical School | 1 per 20,000 (3.2) |
+| CHPS compound; health centre or clinic; polyclinic; district hospital | 1 per 5,000; 15,000; 50,000; 200,000 (5.9) |
+| Local market; neighbourhood shopping centre | 1 per 30,000; 15,000 (6.5) |
+| Local sports field | 1 per 5,000, 1 acre per 1,000 people (7.1.1.2) |
+| Park or public garden | 1.2 acres per 1,000 people (7.1.2.1) |
+| Borehole; public standpipe | 1 per 300; 1 per 100, within 400 m (13.3) |
+| Waste collection point | 1 per 1,000, within 500 m (13.2.3.1) |
+| Fire station or post | 1 per 35,000 (14.3.2) |
+
+Facilities are recognised by words in their type (*school*, *JHS*, *CHPS*, *clinic*, *market*, *borehole*…). Those not recognised are listed so their type can be corrected.
+

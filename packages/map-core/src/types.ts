@@ -1845,3 +1845,27 @@ export interface Meeting extends MeetingSummary {
   agenda: AgendaItem[];
   notes: string;
 }
+
+/** A planning area's facilities against the national planning standards (LUSPA 2025). */
+export interface FacilityCheck {
+  population: { value: number | null; source: string; estimate?: boolean };
+  facilities_layer: { id: number; name: string; type_field: string } | null;
+  homes?: number;
+  results: {
+    code: string;
+    label: string;
+    section: string;
+    per: number | null;
+    have: number;
+    need: number | null;
+    short: number | null;
+    walk_m: number | null;
+    /** Buildings farther than the walking distance from the nearest one. */
+    beyond: number | null;
+    acres_need: number | null;
+    acres_have: number | null;
+    status: "met" | "short" | "unknown";
+  }[];
+  unclassified: { type: string; count: number }[];
+  source: string;
+}

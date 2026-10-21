@@ -435,6 +435,27 @@ pre { padding: .6rem .8rem; overflow-x: auto; white-space: pre-wrap; }
 <p>Each comment shows whether it has been answered. Record the Committee's response to each; the page counts those still unanswered. Names and contact details are shown only to those who may see personal data, and are never public.</p>
 <h3>What the public sees</h3>
 <p>For a published project, once the notice of commencement or of the draft is recorded: the plan's name and locality, where it has got to, the last day for comments, the minutes put on display, and, once approved, the date of approval.</p>
+<h3>Facilities against the planning standards</h3>
+<p>The Revised Zoning Guidelines and Planning Standards (LUSPA, 2025) give, for each kind of facility, how many people one serves and, for schools and water, how far a home may be from the nearest. The section <strong>Facilities against the planning standards</strong> checks the planning area against them, for what a local plan specifies under r.24(1)(b).</p>
+<ol>
+<li>Say which layer holds the facilities, and its <strong>type</strong> field, under Relationships, Layers (role <em>Infrastructure and facilities</em>). The <em>Places (OpenStreetMap)</em> layer works too, with <em>amenity</em> as the type field.</li>
+<li>Give the <strong>population</strong> of the planning area, or let it come from a population layer, or from the number of buildings (five people each by default).</li>
+</ol>
+<p>For each facility the table shows the standard, how many are needed, how many are on the map, how many buildings are beyond the walking distance, and whether the area falls short:</p>
+<table><thead><tr><th>Facility</th><th>Standard (section)</th></tr></thead><tbody>
+<tr><td>Primary school</td><td>1 per 5,000 people, within 2.5 km (3.1.1.2(b))</td></tr>
+<tr><td>Junior High School</td><td>1 per 10,000, within 3.2 km (3.1.1.2(c))</td></tr>
+<tr><td>Nursery or kindergarten</td><td>within 1.25 km (3.1.1.2(a))</td></tr>
+<tr><td>Senior High or Technical School</td><td>1 per 20,000 (3.2)</td></tr>
+<tr><td>CHPS compound; health centre or clinic; polyclinic; district hospital</td><td>1 per 5,000; 15,000; 50,000; 200,000 (5.9)</td></tr>
+<tr><td>Local market; neighbourhood shopping centre</td><td>1 per 30,000; 15,000 (6.5)</td></tr>
+<tr><td>Local sports field</td><td>1 per 5,000, 1 acre per 1,000 people (7.1.1.2)</td></tr>
+<tr><td>Park or public garden</td><td>1.2 acres per 1,000 people (7.1.2.1)</td></tr>
+<tr><td>Borehole; public standpipe</td><td>1 per 300; 1 per 100, within 400 m (13.3)</td></tr>
+<tr><td>Waste collection point</td><td>1 per 1,000, within 500 m (13.2.3.1)</td></tr>
+<tr><td>Fire station or post</td><td>1 per 35,000 (14.3.2)</td></tr>
+</tbody></table>
+<p>Facilities are recognised by words in their type (<em>school</em>, <em>JHS</em>, <em>CHPS</em>, <em>clinic</em>, <em>market</em>, <em>borehole</em>…). Those not recognised are listed so their type can be corrected.</p>
 <h2 id="relationships">Relationships between features</h2>
 <p><em>Physical planners and district administrators; everyone in the district can view them.</em></p>
 <p>The platform works out how the features of a project relate to one another, so you can ask questions like "which properties flood?", "which buildings are too close to their boundary?" and "which communities have no school nearby?". Open <strong>Relationships</strong> at the top of the project.</p>

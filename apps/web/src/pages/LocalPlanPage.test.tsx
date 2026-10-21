@@ -122,6 +122,30 @@ describe("making a local plan", () => {
     expect(screen.queryByRole("button", { name: "Done today: Local plan approved" })).not.toBeInTheDocument();
   });
 
+  it("checks the facilities against the planning standards for a population", async () => {
+    const check = {
+      population: { value: 30, source: "estimated: 6 buildings × 5 people", estimate: true },
+      facilities_layer: { id: 9, name: "Facilities", type_field: "type" },
+      homes: 6,
+      results: [
+        { code: "primary", label: "Primary school", section: "3.1.1.2(b)", per: 5000, have: 1, need: 3, short: 2, walk_m: 2500, beyond: 0, acres_need: null, acres_have: null, status: "short" },
+        { code: "park", label: "Park or public garden", section: "7.1.2.1", per: null, have: 0, need: null, short: null, walk_m: null, beyond: null, acres_need: 14.4, acres_have: 0, status: "short" },
+      ],
+      unclassified: [{ type: "Mosque", count: 1 }],
+      source: "Revised Zoning Guidelines and Planning Standards (LUSPA, 2025)",
+    };
+    const api = backend(process(), { "GET /api/projects/5/facility-check/": () => ({ body: check }) });
+    renderApp(api.fetch, { tokens: signedIn, route: "/projects/5/plan" });
+    const section = await screen.findByRole("region", { name: "Facilities against the standards" });
+    const table = await within(section).findByRole("table", { name: "Facilities" });
+    expect(within(table).getByText("Primary school").closest("tr")).toHaveTextContent("1 per 5,000 people; within 2.5 km310 of 6 buildings2 short");
+    expect(within(table).getByText("Park or public garden").closest("tr")).toHaveTextContent("14.4 acres0 (0 acres)");
+    expect(section).toHaveTextContent("Not matched to a standard (check their type): Mosque (1).");
+    await userEvent.type(within(section).getByLabelText("Population of the planning area"), "12000");
+    await userEvent.click(within(section).getByRole("button", { name: "Check" }));
+    await waitFor(() => expect(api.calls.some((c) => c.path === "/api/projects/5/facility-check/?population=12000")).toBe(true));
+  });
+
   it("lets anyone read a plan's consultations and comment on its draft in the Public Data Room", async () => {
     const room: PublicRoom = { code: "SMA", assembly: "Sample Municipal Assembly", welcome: "", contact: "", answer_within_days: 5, fees: [], documents: [], zoning_schemes: [] };
     const plan: PublicPlan = {

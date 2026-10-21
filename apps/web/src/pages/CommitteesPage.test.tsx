@@ -55,7 +55,7 @@ describe("committees", () => {
     renderApp(api.fetch, { tokens: signedIn, route: "/committees" });
     const table = await screen.findByRole("table", { name: "Meetings" });
     expect(within(table).getByRole("link", { name: "Technical Sub-Committee, 2026-10-30" }).closest("tr")).toHaveTextContent("0 of 1 consideredServe by 2026-10-271 of 1");
-    expect(screen.getByRole("region", { name: "Members" })).toHaveTextContent("Kofi Boateng (Head of the Physical Planning Department)");
+    expect(await screen.findByRole("region", { name: "Members" })).toHaveTextContent("Kofi Boateng (Head of the Physical Planning Department)");
     const form = screen.getByRole("form", { name: "New meeting" });
     await userEvent.type(within(form).getByLabelText("Date"), "2026-10-30");
     await userEvent.click(within(form).getByRole("button", { name: "Plan the meeting" }));

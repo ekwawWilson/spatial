@@ -87,6 +87,7 @@ import type {
   Committees,
   Meeting,
   MeetingSummary,
+  FacilityCheck,
   NewCase,
   DataRoomSettings,
   InformationRequest,
@@ -726,6 +727,8 @@ export function createApiClient(options: ApiClientOptions = {}) {
     publicLandApplications: (code: string) => open<{ results: PublicLandApplication[] }>(`/api/public/rooms/${encodeURIComponent(code)}/land-applications/`),
 
     // --- Making a local plan, and its consultation -----------------------------------------
+    facilityCheck: (projectId: number, options: { population?: number; per_building?: number } = {}) =>
+      request<FacilityCheck>("GET", `/api/projects/${projectId}/facility-check/${query(options)}`),
     getPlanProcess: (projectId: number) => request<PlanProcess>("GET", `/api/projects/${projectId}/plan/`),
     updatePlanProcess: (projectId: number, data: PlanSettings) => request<PlanProcess>("PATCH", `/api/projects/${projectId}/plan/`, data),
     planStep: (projectId: number, data: { step: string; on?: string; note?: string }) => request<PlanProcess>("POST", `/api/projects/${projectId}/plan/step/`, data),

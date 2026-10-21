@@ -15,6 +15,84 @@ function when(clock: PlanClock): string {
 
 const BLANK: NewConsultation = { stage: "before", held_on: "", venue: "", groups: "", attendance: null, issues: "", outcome: "" };
 
+/** The planning area's facilities against the national planning standards, for its population. */
+function Facilities({ projectId }: { projectId: number }) {
+  const { api, districtId } = useSession();
+  const [population, setPopulation] = useState("");
+  const [asked, setAsked] = useState<number | undefined>(undefined);
+  const check = useLoad(() => api.facilityCheck(projectId, asked === undefined ? {} : { population: asked }), [api, projectId, districtId, asked]);
+  const data = check.data;
+  return (
+    <section aria-label="Facilities against the standards" className="card wide">
+      <h2>Facilities against the planning standards</h2>
+      <p className="muted small">
+        What a local plan specifies includes the basic social services the area needs (r.24(1)(b)). The national standards give one facility
+        for so many people, and for schools and water a farthest walk from home.
+      </p>
+      <ErrorMessage error={check.error} />
+      <form
+        className="inline-form"
+        aria-label="Population"
+        onSubmit={(e: FormEvent) => {
+          e.preventDefault();
+          setAsked(population === "" ? undefined : Number(population));
+        }}
+      >
+        <label>
+          Population of the planning area
+          <input aria-label="Population of the planning area" inputMode="numeric" placeholder={data?.population.value ? String(data.population.value) : ""} value={population} onChange={(e) => setPopulation(e.target.value)} />
+        </label>
+        <button type="submit" className="secondary">
+          Check
+        </button>
+      </form>
+      {data && (
+        <p className="small">
+          {data.population.value === null ? "Population unknown: give it above." : `${data.population.value.toLocaleString()} people (${data.population.source}).`}{" "}
+          {data.facilities_layer ? `Facilities from the "${data.facilities_layer.name}" layer.` : "Say which layer holds the facilities (Relationships, Layers): until then nothing is counted."}
+        </p>
+      )}
+      {data && data.results.length > 0 && (
+        <table className="data" aria-label="Facilities">
+          <thead>
+            <tr>
+              <th>Facility</th>
+              <th>Standard</th>
+              <th>Needed</th>
+              <th>On the map</th>
+              <th>Beyond walking distance</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {data.results.map((r) => (
+              <tr key={r.code}>
+                <td>
+                  {r.label}
+                  <div className="muted small">§{r.section}</div>
+                </td>
+                <td className="small">
+                  {[r.per && `1 per ${r.per.toLocaleString()} people`, r.walk_m && `within ${r.walk_m >= 1000 ? `${r.walk_m / 1000} km` : `${r.walk_m} m`}`, r.acres_need !== null && `${r.acres_need} acres`].filter(Boolean).join("; ") || "—"}
+                </td>
+                <td>{r.need ?? (r.acres_need !== null ? `${r.acres_need} acres` : "—")}</td>
+                <td>{r.acres_have !== null ? `${r.have} (${r.acres_have} acres)` : r.have}</td>
+                <td>{r.beyond === null ? "—" : data.homes ? `${r.beyond} of ${data.homes} buildings` : r.beyond}</td>
+                <td>
+                  <span className={`pill ${r.status === "short" ? "warn" : r.status === "met" ? "ok" : ""}`}>{r.status === "short" ? (r.short ? `${r.short} short` : "Short") : r.status === "met" ? "Met" : "—"}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {data && data.unclassified.length > 0 && (
+        <p className="muted small">Not matched to a standard (check their type): {data.unclassified.map((u) => `${u.type} (${u.count})`).join(", ")}.</p>
+      )}
+      {data && <p className="muted small">{data.source}.</p>}
+    </section>
+  );
+}
+
 /** The making of a project's local plan: its steps and dates, what it covers, the consultations and the comments. */
 export function LocalPlanPage() {
   const { projectId } = useParams();
@@ -232,6 +310,8 @@ export function LocalPlanPage() {
               </div>
             )}
           </form>
+
+          <Facilities projectId={id} />
 
           <section aria-label="Consultations" className="card wide">
             <h2>Consultations</h2>

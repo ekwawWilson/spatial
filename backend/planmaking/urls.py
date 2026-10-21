@@ -12,6 +12,11 @@ urlpatterns = [
     ),
     path("projects/<int:project_id>/plan/paper/", views.PlanPaperView.as_view(), name="plan-paper"),
     path(
+        "projects/<int:project_id>/facility-check/",
+        views.FacilityCheckView.as_view(),
+        name="facility-check",
+    ),
+    path(
         "projects/<int:project_id>/plan/consultations/",
         views.ConsultationsView.as_view(),
         name="plan-consultations",

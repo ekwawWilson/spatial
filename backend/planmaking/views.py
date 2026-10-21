@@ -16,7 +16,7 @@ from core.permissions import district_permission, has_permission, request_user, 
 from core.schema import DISTRICT_HEADER
 from projects.models import PlanProject
 
-from . import documents, registry, services
+from . import documents, facilities, registry, services
 from .models import Consultation, PlanComment, PlanProcess
 
 HIDDEN = "restricted"
@@ -379,3 +379,36 @@ class PlanCommentReplyView(APIView):
         comment.responded_on = date.today()
         comment.save(update_fields=["response", "responded_on"])
         return Response(process_json(services.process_of(comment.project), request))
+
+
+@extend_schema(
+    parameters=[
+        DISTRICT_HEADER,
+        OpenApiParameter("population", float, description="The population, if known"),
+        OpenApiParameter("per_building", float, description="People per building, for an estimate"),
+    ],
+    responses=OpenApiTypes.OBJECT,
+)
+class FacilityCheckView(APIView):
+    """The planning area's facilities against the national planning
+    standards for its population: how many of each are needed and mapped,
+    and how many buildings are beyond the walking distance (r.24(1)(b))."""
+
+    def get_permissions(self) -> list[BasePermission]:
+        return _perms("project.view")
+
+    def get(self, request: Request, project_id: int) -> Response:
+        project = _project(request, project_id)
+        values: dict[str, float | None] = {}
+        for name in ("population", "per_building"):
+            text = request.query_params.get(name)
+            number: float | None = None
+            if text not in (None, ""):
+                try:
+                    number = float(str(text))
+                except ValueError as exc:
+                    raise serializers.ValidationError({name: "A number."}) from exc
+                if number < 0:
+                    raise serializers.ValidationError({name: "Not negative."})
+            values[name] = number
+        return Response(facilities.check(project, values["population"], values["per_building"]))

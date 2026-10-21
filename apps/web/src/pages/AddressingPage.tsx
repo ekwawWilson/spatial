@@ -1,11 +1,180 @@
-import type { AddressingMethod, AddressingOptions } from "@spatial/map-core";
-import { useState } from "react";
+import type { AddressingMethod, AddressingOptions, MapFeature, StreetName } from "@spatial/map-core";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { ErrorMessage } from "../components/ErrorMessage";
 import { useLoad } from "../components/useLoad";
 import { saveBlob } from "../components/workspace/ExportDialog";
 import { useSession } from "../session";
+
+const NEXT: Record<StreetName["status"], string> = {
+  proposed: "Consult the community",
+  consulted: "For the Spatial Planning Committee",
+  approved: "Approved",
+  refused: "Refused",
+};
+
+/** Street names from proposal to signs: consulted, approved by the Committee, written to the map, published, signed (r.28). */
+function StreetNames({ projectId }: { projectId: number }) {
+  const { api, can, districtId } = useSession();
+  const list = useLoad(() => api.listStreetNames(projectId), [api, projectId, districtId]);
+  const streets = useLoad(async () => {
+    const roles = await api.getLayerRoles(projectId);
+    const role = roles.roles.find((r) => r.role === "streets" && r.layer !== null);
+    if (!role || role.layer === null) return null;
+    const field = String(role.config.name_field ?? "name");
+    const page = await api.listFeatures(role.layer, { limit: 2000 });
+    return page.features.map((f: MapFeature) => ({ id: f.id, name: String(f.properties[field] ?? "") }));
+  }, [api, projectId, districtId]);
+  const [items, setItems] = useState<StreetName[]>([]);
+  const [values, setValues] = useState({ street: "", name: "", basis: "", proposed_by: "" });
+  const [notes, setNotes] = useState<Record<number, string>>({});
+  const [error, setError] = useState<unknown>(null);
+  const [note, setNote] = useState<string | null>(null);
+  useEffect(() => setItems(list.data?.results ?? []), [list.data]);
+
+  const act = async (action: () => Promise<StreetName>, done: string) => {
+    setError(null);
+    setNote(null);
+    try {
+      const next = await action();
+      setItems(items.map((i) => (i.id === next.id ? next : i)));
+      setNote(done);
+      return next;
+    } catch (err) {
+      setError(err);
+      return null;
+    }
+  };
+
+  async function propose(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+    setNote(null);
+    try {
+      const made = await api.proposeStreetName({ project: projectId, street: Number(values.street), name: values.name, basis: values.basis, proposed_by: values.proposed_by });
+      setItems([made, ...items]);
+      setValues({ street: "", name: "", basis: "", proposed_by: "" });
+      setNote(made.clashes?.length ? `Proposed. Note: ${made.name} is ${made.clashes.join("; ")}.` : "Proposed. Next: consult the community.");
+    } catch (err) {
+      setError(err);
+    }
+  }
+
+  return (
+    <section aria-label="Street names" className="card wide">
+      <h2>Street names</h2>
+      <p className="muted small">
+        A name is proposed, the community consulted, then the Spatial Planning Committee approves it (it appears on the Committee's agenda). On
+        approval it is written to the street on the map; then record when it was published and when the signs went up. Names must be unique in
+        the district. (L.I. 2384 r.28 applies the National Street Naming and Property Numbering Operational Manual.)
+      </p>
+      <ErrorMessage error={error ?? list.error} />
+      {note && <p role="status">{note}</p>}
+      {items.length > 0 && (
+        <table className="data" aria-label="Names">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Street now</th>
+              <th>Where it is</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.id}>
+                <td>
+                  <strong>{item.name}</strong>
+                  {item.basis && <div className="muted small">{item.basis}</div>}
+                </td>
+                <td className="small">{item.previous_name || streets.data?.find((s) => s.id === item.street)?.name || "—"}</td>
+                <td className="small">
+                  <span className={`pill ${item.status === "approved" ? "ok" : item.status === "refused" ? "bad" : "warn"}`}>{NEXT[item.status]}</span>
+                  <div className="muted">
+                    Proposed {item.proposed_on}
+                    {item.consulted_on && `; consulted ${item.consulted_on}`}
+                    {item.decided_on && `; decided ${item.decided_on}`}
+                    {item.published_on && `; published ${item.published_on}`}
+                    {item.signs_on && `; signs ${item.signs_on}`}
+                  </div>
+                </td>
+                <td className="actions">
+                  {item.status === "proposed" && can("relations.edit") && (
+                    <span className="inline-form">
+                      <input aria-label={`Consultation on ${item.name}`} placeholder="Where and with whom" value={notes[item.id] ?? ""} onChange={(e) => setNotes({ ...notes, [item.id]: e.target.value })} />
+                      <button type="button" className="secondary" onClick={() => void act(() => api.consultStreetName(item.id, notes[item.id] ?? ""), "Consultation recorded.")}>
+                        Consulted
+                      </button>
+                    </span>
+                  )}
+                  {item.status === "consulted" && can("permit.decide") && (
+                    <span className="inline-form">
+                      <button type="button" onClick={() => void act(() => api.decideStreetName(item.id, true), `${item.name} approved and written to the map.`)}>
+                        Approve
+                      </button>
+                      <button type="button" className="danger" onClick={() => void act(() => api.decideStreetName(item.id, false), "Refused.")}>
+                        Refuse
+                      </button>
+                    </span>
+                  )}
+                  {item.status === "approved" && can("relations.edit") && (
+                    <span className="inline-form">
+                      {!item.published_on && (
+                        <button type="button" className="link" onClick={() => void act(() => api.markStreetName(item.id, "published"), "Publication recorded.")}>
+                          Published today
+                        </button>
+                      )}
+                      {!item.signs_on && (
+                        <button type="button" className="link" onClick={() => void act(() => api.markStreetName(item.id, "signs"), "Signs recorded.")}>
+                          Signs up today
+                        </button>
+                      )}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {can("relations.edit") && (
+        <form className="stack" aria-label="Propose a street name" onSubmit={propose}>
+          <h3>Propose a name</h3>
+          {streets.data === null && !streets.loading && <p className="muted small">Say which layer holds the streets first (Relationships, Layers).</p>}
+          <div className="inline-form">
+            <label>
+              Street
+              <select required aria-label="Street" value={values.street} onChange={(e) => setValues({ ...values, street: e.target.value })}>
+                <option value="">Choose…</option>
+                {streets.data?.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name || `Unnamed street #${s.id}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Proposed name
+              <input required aria-label="Proposed name" value={values.name} onChange={(e) => setValues({ ...values, name: e.target.value })} />
+            </label>
+            <label>
+              Proposed by
+              <input aria-label="Proposed by" value={values.proposed_by} onChange={(e) => setValues({ ...values, proposed_by: e.target.value })} />
+            </label>
+          </div>
+          <label>
+            Why this name
+            <input aria-label="Why this name" placeholder="A person, an event, a landmark, a local name" value={values.basis} onChange={(e) => setValues({ ...values, basis: e.target.value })} />
+          </label>
+          <div className="inline-form">
+            <button type="submit">Propose</button>
+          </div>
+        </form>
+      )}
+    </section>
+  );
+}
 
 /** Street codes and property numbers for a project: proposed first, written to the map when applied. */
 export function AddressingPage() {
@@ -156,6 +325,7 @@ export function AddressingPage() {
           {data.numbered > data.rows.length && <p className="muted small">Showing the first {data.rows.length}; the schedule has all {data.numbered}.</p>}
         </>
       )}
+      <StreetNames projectId={id} />
     </section>
   );
 }

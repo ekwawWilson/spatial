@@ -88,6 +88,7 @@ import type {
   Meeting,
   MeetingSummary,
   FacilityCheck,
+  StreetName,
   NewCase,
   DataRoomSettings,
   InformationRequest,
@@ -797,6 +798,14 @@ export function createApiClient(options: ApiClientOptions = {}) {
     listExchangeKeys: () => request<{ keys: ExchangeKey[]; scopes: Record<string, string> }>("GET", "/api/exchange/keys/"),
     createExchangeKey: (data: { name: string; scopes: string[] }) => request<ExchangeKey>("POST", "/api/exchange/keys/", data),
     revokeExchangeKey: (id: number) => request<ExchangeKey>("POST", `/api/exchange/keys/${id}/revoke/`, {}),
+
+    // --- Street names ----------------------------------------------------------------------
+    listStreetNames: (projectId: number) => request<{ results: StreetName[] }>("GET", `/api/street-names/${query({ project: projectId })}`),
+    proposeStreetName: (data: { project: number; street: number; name: string; basis?: string; proposed_by?: string }) =>
+      request<StreetName>("POST", "/api/street-names/", data),
+    consultStreetName: (id: number, note: string) => request<StreetName>("POST", `/api/street-names/${id}/consult/`, { note }),
+    decideStreetName: (id: number, approve: boolean, note = "") => request<StreetName>("POST", `/api/street-names/${id}/decide/`, { approve, note }),
+    markStreetName: (id: number, step: "published" | "signs") => request<StreetName>("POST", `/api/street-names/${id}/mark/`, { step }),
 
     // --- Planning committees ---------------------------------------------------------------
     listCommittees: () => request<Committees>("GET", "/api/committees/"),

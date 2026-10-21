@@ -13,6 +13,7 @@ from landchange.models import Application as LandApplication
 from permits import registry as permit_registry
 from permits.models import Application
 from planmaking.models import PlanProcess
+from relations.models import StreetName
 
 from . import registry
 from .models import Committee, Meeting
@@ -95,6 +96,19 @@ def waiting(meeting_committee: Committee) -> list[dict[str, Any]]:
                         "title": f"Local plan: {process.project.name}",
                     }
                 )
+    if meeting_committee.kind == "dspc":
+        # Street names consulted on, for the Committee to approve (r.28).
+        for street_name in StreetName.objects.filter(
+            district_id=meeting_committee.district_id, status=StreetName.Status.CONSULTED
+        ).select_related("project"):
+            items.append(
+                {
+                    "type": "street",
+                    "ref": street_name.pk,
+                    "project": street_name.project_id,
+                    "title": f"Street name: {street_name.name} ({street_name.project.community or street_name.project.name})",
+                }
+            )
     for land in lands:
         kind = land_registry.KIND_BY_CODE[land.kind].label
         items.append(
@@ -134,9 +148,11 @@ def check_agenda(agenda: Any, current: list[dict[str, Any]]) -> list[dict[str, A
         kind = str(item.get("type") or "other")
         out.append(
             {
-                "type": kind if kind in ("permit", "land", "plan") else "other",
-                "ref": item.get("ref") if kind in ("permit", "land", "plan") else None,
-                "project": item.get("project") if kind in ("permit", "land", "plan") else None,
+                "type": kind if kind in ("permit", "land", "plan", "street") else "other",
+                "ref": item.get("ref") if kind in ("permit", "land", "plan", "street") else None,
+                "project": item.get("project")
+                if kind in ("permit", "land", "plan", "street")
+                else None,
                 "title": str(item["title"]).strip()[:300],
                 "outcome": outcome,
                 "minute": str(item.get("minute") or "")[:5000],

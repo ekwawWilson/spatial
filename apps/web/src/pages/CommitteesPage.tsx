@@ -217,7 +217,9 @@ export function MeetingPage() {
           ? `/projects/${item.project}/land/${item.ref}`
           : item.type === "plan"
             ? `/projects/${item.project}/plan`
-            : null;
+            : item.type === "street"
+              ? `/projects/${item.project}/addressing`
+              : null;
 
   return (
     <section className="page">

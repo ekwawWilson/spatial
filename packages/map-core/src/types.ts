@@ -1818,7 +1818,7 @@ export interface Committees {
 }
 
 export interface AgendaItem {
-  type: "permit" | "land" | "plan" | "other";
+  type: "permit" | "land" | "plan" | "street" | "other";
   ref: number | null;
   /** The project an application or plan belongs to. */
   project: number | null;
@@ -1868,4 +1868,26 @@ export interface FacilityCheck {
   }[];
   unclassified: { type: string; count: number }[];
   source: string;
+}
+
+/** A street name from proposal to signs (L.I. 2384 r.28). */
+export interface StreetName {
+  id: number;
+  project: number;
+  street: number | null;
+  name: string;
+  basis: string;
+  proposed_by: string;
+  proposed_on: string;
+  consulted_on: string | null;
+  consultation: string;
+  decided_on: string | null;
+  decision_note: string;
+  published_on: string | null;
+  signs_on: string | null;
+  previous_name: string;
+  status: "proposed" | "consulted" | "approved" | "refused";
+  status_label: string;
+  clashes?: string[];
+  written_to_map?: boolean;
 }

@@ -1,12 +1,13 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from . import views
+from . import naming_views, views
 
 router = DefaultRouter()
 router.register("relationships", views.RelationshipViewSet, basename="relationship")
 router.register("standards", views.StandardViewSet, basename="standard")
 router.register("zoning-schemes", views.ZoningSchemeViewSet, basename="zoning-scheme")
+router.register("street-names", naming_views.StreetNameViewSet, basename="street-name")
 
 urlpatterns = [
     path("relations/registry/", views.RegistryView.as_view(), name="relations-registry"),

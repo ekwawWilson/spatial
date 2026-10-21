@@ -43,3 +43,12 @@ A street with a code keeps it. A street without one is given the next free code:
 **Apply to the map** writes each street's code, and each property's number and street name, into the layers' own fields (`street_code` on streets; `house_no` and `street` on properties, added if the layers do not have them). Only values that differ are written, and every change is in the audit log with who made it.
 
 Applying twice changes nothing the second time. Changing the method later and applying again **renumbers** the properties: once number plates are up, treat the method as fixed.
+
+## Street names
+Under **Street names** on the Addressing page a name goes from proposal to signs:
+1. **Propose** a name for a street, with why (a person, an event, a landmark, a local name) and who proposed it. If the name is already used in the district, you are told.
+2. **Consulted:** record where and with whom the community was consulted.
+3. **Approve** or **Refuse** (district administrators, for the Spatial Planning Committee; consulted names appear on its next meeting's agenda). An approved name is written to the street on the map, keeping its old name on record. A name already used in the district is not approved.
+4. Record when the name was **published** and when the **signs** went up.
+
+L.I. 2384 r.28 applies the National Street Naming and Property Numbering Operational Manual. These steps follow what Assemblies do under it; if your Assembly's manual sets other steps, they can be matched.

@@ -61,3 +61,33 @@ describe("street addressing", () => {
     expect(screen.queryByRole("button", { name: "Apply to the map" })).not.toBeInTheDocument();
   });
 });
+
+describe("street names", () => {
+  it("takes a name from proposal through consultation to approval", async () => {
+    const proposed = { id: 3, project: 5, street: 41, name: "Yaa Asantewaa Avenue", basis: "", proposed_by: "", proposed_on: "2026-10-21", consulted_on: null, consultation: "", decided_on: null, decision_note: "", published_on: null, signs_on: null, previous_name: "", status: "proposed" as const, status_label: "Proposed", clashes: [] };
+    const consulted = { ...proposed, status: "consulted" as const, consulted_on: "2026-10-21" };
+    const approved = { ...consulted, status: "approved" as const, decided_on: "2026-10-21", previous_name: "Market Road" };
+    const api = fakeBackend({
+      "GET /api/auth/me/": () => ({ body: makeMe() }),
+      "GET /api/projects/5/addressing/": () => ({ body: proposal }),
+      "GET /api/street-names/": () => ({ body: { results: [] } }),
+      "GET /api/projects/5/layer-roles/": () => ({ body: { roles: [{ role: "streets", layer: 8, config: {}, suggested: null }] } }),
+      "GET /api/layers/8/features/": () => ({ body: { type: "FeatureCollection", features: [{ type: "Feature", id: 41, geometry: null, properties: { name: "Market Road" } }], next_offset: null } }),
+      "POST /api/street-names/": () => ({ status: 201, body: proposed }),
+      "POST /api/street-names/3/consult/": () => ({ body: consulted }),
+      "POST /api/street-names/3/decide/": () => ({ body: approved }),
+    });
+    renderApp(api.fetch, { tokens: signedIn, route: "/projects/5/addressing" });
+    const form = await screen.findByRole("form", { name: "Propose a street name" });
+    await waitFor(() => expect(within(form).getByRole("option", { name: "Market Road" })).toBeInTheDocument());
+    await userEvent.selectOptions(within(form).getByLabelText("Street"), "41");
+    await userEvent.type(within(form).getByLabelText("Proposed name"), "Yaa Asantewaa Avenue");
+    await userEvent.click(within(form).getByRole("button", { name: "Propose" }));
+    const names = await screen.findByRole("table", { name: "Names" });
+    expect(api.calls.find((c) => c.path === "/api/street-names/" && c.method === "POST")!.body).toEqual({ project: 5, street: 41, name: "Yaa Asantewaa Avenue", basis: "", proposed_by: "" });
+    await userEvent.click(within(names).getByRole("button", { name: "Consulted" }));
+    await userEvent.click(await within(names).findByRole("button", { name: "Approve" }));
+    expect(await screen.findByText("Yaa Asantewaa Avenue approved and written to the map.")).toBeInTheDocument();
+    expect(within(names).getByText("Market Road")).toBeInTheDocument(); // its old name
+  });
+});

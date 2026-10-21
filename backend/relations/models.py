@@ -185,3 +185,48 @@ class Run(models.Model):
 
     def __str__(self) -> str:
         return f"Run {self.pk} of project {self.project_id}"
+
+
+class StreetName(models.Model):
+    """A name proposed for a street, and its way to the street signs:
+    community consultation, the Spatial Planning Committee's approval,
+    publication, signs put up (L.I. 2384 r.28: the national street naming
+    manual)."""
+
+    class Status(models.TextChoices):
+        PROPOSED = "proposed", "Proposed"
+        CONSULTED = "consulted", "Consulted on"
+        APPROVED = "approved", "Approved"
+        REFUSED = "refused", "Refused"
+
+    district = models.ForeignKey("core.District", on_delete=models.CASCADE, related_name="+")
+    project = models.ForeignKey(
+        "projects.PlanProject", on_delete=models.CASCADE, related_name="street_names"
+    )
+    street = models.ForeignKey(
+        "projects.Feature", null=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    name = models.CharField(max_length=120)
+    # Why this name: a person, a historical event, a landmark, a local name.
+    basis = models.TextField(blank=True)
+    proposed_by = models.CharField(max_length=200, blank=True)
+    proposed_on = models.DateField()
+    consulted_on = models.DateField(null=True, blank=True)
+    consultation = models.TextField(blank=True)
+    decided_on = models.DateField(null=True, blank=True)
+    decision_note = models.TextField(blank=True)
+    published_on = models.DateField(null=True, blank=True)
+    signs_on = models.DateField(null=True, blank=True)
+    # The street's name before this one was applied.
+    previous_name = models.CharField(max_length=200, blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PROPOSED)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-proposed_on", "-id"]
+
+    def __str__(self) -> str:
+        return self.name

@@ -1,11 +1,11 @@
 // What to send to the server, and what each reply means for the device.
 // Pure decisions, so they can be tested without a phone or a server.
 
-import type { LocalFeature, LocalTask, SyncChange, SyncResult } from "../types";
+import type { LocalFeature, LocalInspection, LocalTask, SyncChange, SyncResult } from "../types";
 
 /** The changes to push: new captures, edits to server features, finished
  * tasks. Features waiting on a conflict are not sent again. */
-export function buildChanges(features: LocalFeature[], tasks: LocalTask[]): SyncChange[] {
+export function buildChanges(features: LocalFeature[], tasks: LocalTask[], inspections: LocalInspection[] = []): SyncChange[] {
   const changes: SyncChange[] = [];
   for (const feature of features) {
     if (!feature.changeId || (feature.state !== "new" && feature.state !== "edited")) continue;
@@ -43,6 +43,12 @@ export function buildChanges(features: LocalFeature[], tasks: LocalTask[]): Sync
     if (!task.pending || !task.changeId || !task.outcome) continue;
     changes.push({ change_id: task.changeId, op: "task", task: { id: task.id, outcome: task.outcome, notes: task.notes } });
   }
+  for (const item of inspections) {
+    if (!item.pending || !item.changeId || !item.inspectedOn) continue;
+    // Only the points answered.
+    const findings = Object.fromEntries(Object.entries(item.findings).filter(([, v]) => v.trim()));
+    changes.push({ change_id: item.changeId, op: "inspection", inspection: { permit: item.permit, on: item.inspectedOn, findings, summary: item.summary } });
+  }
   return changes;
 }
 
@@ -75,6 +81,13 @@ export function taskAction(task: LocalTask, result: SyncResult): TaskAction {
   return { kind: "rejected", id: task.id, message: (result.errors ?? ["The server refused this result."]).join(" ") };
 }
 
+export type InspectionAction = { kind: "sent"; permit: number } | { kind: "refused"; permit: number; message: string };
+
+export function inspectionAction(item: LocalInspection, result: SyncResult): InspectionAction {
+  if (result.status === "applied") return { kind: "sent", permit: item.permit };
+  return { kind: "refused", permit: item.permit, message: (result.errors ?? ["The office refused this inspection."]).join(" ") };
+}
+
 /** The byte ranges still to upload for a photo, from where the server has got to. */
 export function chunkRanges(size: number, received: number, chunkSize: number): [number, number][] {
   const ranges: [number, number][] = [];
@@ -100,6 +113,7 @@ export interface SyncSummary {
   received: number;
   removed: number;
   tasks: number;
+  inspections?: number;
 }
 
 export function describe(summary: SyncSummary): string {
@@ -112,5 +126,6 @@ export function describe(summary: SyncSummary): string {
   parts.push(`${summary.received} update(s) from the office`);
   if (summary.removed) parts.push(`${summary.removed} removed`);
   if (summary.tasks) parts.push(`${summary.tasks} feature(s) to check`);
+  if (summary.inspections) parts.push(`${summary.inspections} site inspection(s) to do`);
   return parts.join(" · ");
 }

@@ -1,5 +1,5 @@
-import type { LocalFeature, LocalTask } from "../src/types";
-import { buildChanges, chunkRanges, describe as describeSync, featureAction, serverMayReplace, taskAction } from "../src/utils/syncPlan";
+import type { LocalFeature, LocalInspection, LocalTask } from "../src/types";
+import { buildChanges, chunkRanges, describe as describeSync, featureAction, inspectionAction, serverMayReplace, taskAction } from "../src/utils/syncPlan";
 
 function feature(extra: Partial<LocalFeature> = {}): LocalFeature {
   return {
@@ -121,3 +121,49 @@ describe("updates from the office", () => {
     );
   });
 });
+
+function inspection(extra: Partial<LocalInspection> = {}): LocalInspection {
+  return {
+    permit: 12,
+    projectId: 5,
+    number: "SMA/DP/2026/0012",
+    title: "Erection of a building or structure: Residential",
+    storeys: 2,
+    centre: [-0.42, 5.53],
+    dueOn: "2026-11-01",
+    points: [
+      { code: "started", label: "Whether development has started" },
+      { code: "size", label: "The plot size" },
+    ],
+    findings: { started: "No", size: "  " },
+    summary: "Setbacks can be met.",
+    inspectedOn: "2026-10-21",
+    pending: true,
+    changeId: "c-1",
+    syncError: null,
+    ...extra,
+  };
+}
+
+describe("site inspections from the field", () => {
+  it("are sent after features and tasks, with only the points answered", () => {
+    const changes = buildChanges([], [], [inspection(), inspection({ permit: 13, pending: false, changeId: null })]);
+    expect(changes).toEqual([
+      { change_id: "c-1", op: "inspection", inspection: { permit: 12, on: "2026-10-21", findings: { started: "No" }, summary: "Setbacks can be met." } },
+    ]);
+  });
+
+  it("leave the device once the office has them; a refusal is kept with its reason", () => {
+    expect(inspectionAction(inspection(), { change_id: "c-1", status: "applied" })).toEqual({ kind: "sent", permit: 12 });
+    expect(inspectionAction(inspection(), { change_id: "c-1", status: "rejected", errors: ["inspection: Your role may not record site inspections."] })).toEqual({
+      kind: "refused",
+      permit: 12,
+      message: "inspection: Your role may not record site inspections.",
+    });
+  });
+
+  it("are counted in the sync summary", () => {
+    expect(describeSync({ sent: 1, conflicts: 0, rejected: 0, photos: 0, photosWaiting: 0, received: 2, removed: 0, tasks: 0, inspections: 3 })).toContain("3 site inspection(s) to do");
+  });
+});
+

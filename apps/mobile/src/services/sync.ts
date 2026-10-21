@@ -7,7 +7,7 @@ import { bytesToHex } from "@noble/hashes/utils.js";
 import { File } from "expo-file-system";
 
 import type { LocalPhoto } from "../types";
-import { buildChanges, chunkRanges, featureAction, taskAction, type SyncSummary } from "../utils/syncPlan";
+import { buildChanges, chunkRanges, featureAction, inspectionAction, taskAction, type SyncSummary } from "../utils/syncPlan";
 import type { Api } from "./api";
 import * as store from "./db";
 
@@ -57,10 +57,12 @@ export async function syncProject(api: Api, projectId: number, onStep?: (text: s
   onStep?.("Sending captures…");
   const features = await store.listUnsent(projectId);
   const tasks = await store.pendingTasks(projectId);
-  const changes = buildChanges(features, tasks);
-  const byChange = new Map<string, { feature?: (typeof features)[number]; task?: (typeof tasks)[number] }>();
+  const inspections = await store.pendingInspections(projectId);
+  const changes = buildChanges(features, tasks, inspections);
+  const byChange = new Map<string, { feature?: (typeof features)[number]; task?: (typeof tasks)[number]; inspection?: (typeof inspections)[number] }>();
   for (const feature of features) if (feature.changeId) byChange.set(feature.changeId, { feature });
   for (const task of tasks) if (task.changeId) byChange.set(task.changeId, { task });
+  for (const inspection of inspections) if (inspection.changeId) byChange.set(inspection.changeId, { inspection });
   for (let start = 0; start < changes.length; start += PUSH_BATCH) {
     const { results } = await api.push(device, changes.slice(start, start + PUSH_BATCH));
     for (const result of results) {
@@ -77,6 +79,15 @@ export async function syncProject(api: Api, projectId: number, onStep?: (text: s
           summary.conflicts += 1;
         } else {
           await store.markRejected(action.uuid, action.message);
+          summary.rejected += 1;
+        }
+      } else if (target?.inspection) {
+        const action = inspectionAction(target.inspection, result);
+        if (action.kind === "sent") {
+          await store.markInspectionSent(action.permit);
+          summary.sent += 1;
+        } else {
+          await store.markInspectionRefused(action.permit, action.message);
           summary.rejected += 1;
         }
       } else if (target?.task) {
@@ -112,5 +123,6 @@ export async function syncProject(api: Api, projectId: number, onStep?: (text: s
   summary.received = applied.received;
   summary.removed = applied.removed;
   summary.tasks = await store.countOpenTasks(projectId);
+  summary.inspections = (await store.listInspections(projectId)).filter((i) => !i.pending).length;
   return summary;
 }

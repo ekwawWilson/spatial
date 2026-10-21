@@ -1,3 +1,4 @@
+# ruff: noqa: E501 - long calls read better unbroken
 """Applying what devices send, and working out what to send back.
 
 Rules:
@@ -21,10 +22,14 @@ from django.db.models import Q
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from core.models import User
+from core.models import Membership, User
+from core.permissions import PERMISSIONS
 from crs.models import CoordinateSystem
 from crs.services import transform_geojson
 from field.services import DECIMALS
+from permits import registry as permit_registry
+from permits import services as permit_services
+from permits.models import Application
 from projects import geometry as geo
 from projects import privacy
 from projects import schema as schema_rules
@@ -191,6 +196,75 @@ def _task(change: dict[str, Any], district_id: int, user: User) -> dict[str, Any
     return {"status": "applied", "task": task.pk, "feature": _feature_result(task.feature)}
 
 
+def _inspection(change: dict[str, Any], district_id: int, user: User) -> dict[str, Any]:
+    """A permit site inspection done in the field (r.44(7)(f)), recorded as
+    if in the office: only by someone whose role may inspect."""
+    payload = change.get("inspection") or {}
+    allowed = (
+        user.is_system_admin
+        or Membership.objects.filter(
+            user=user,
+            district_id=district_id,
+            is_active=True,
+            role__in=PERMISSIONS["permit.inspect"],
+        ).exists()
+    )
+    if not allowed:
+        raise ValidationError({"inspection": ["Your role may not record site inspections."]})
+    permit_id = payload.get("permit")
+    application = (
+        Application.objects.filter(pk=permit_id, district_id=district_id).first()
+        if isinstance(permit_id, int)
+        else None
+    )
+    if application is None:
+        raise ValidationError({"inspection": ["This application no longer exists."]})
+    on_text = str(payload.get("on") or "")
+    try:
+        on = datetime.fromisoformat(on_text).date() if on_text else timezone.localdate()
+    except ValueError as exc:
+        raise ValidationError({"inspection": ["The date is not a date."]}) from exc
+    findings = payload.get("findings") or {}
+    if not isinstance(findings, dict):
+        raise ValidationError({"inspection": ["Findings must be an object."]})
+    inspection = permit_services.inspect(
+        application,
+        on,
+        {str(k): str(v) for k, v in findings.items()},
+        str(payload.get("summary") or ""),
+        user,
+    )
+    return {"status": "applied", "inspection": inspection.pk, "permit": application.pk}
+
+
+def inspection_json(application: Application) -> dict[str, Any]:
+    """An application waiting for its site inspection, for the field."""
+    centre = None
+    if application.site_id is not None:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT ST_X(ST_Centroid(geom_4326)), ST_Y(ST_Centroid(geom_4326))"
+                " FROM projects_feature WHERE id = %s AND geom_4326 IS NOT NULL",
+                [application.site_id],
+            )
+            row = cursor.fetchone()
+        if row is not None and row[0] is not None:
+            centre = [round(float(row[0]), 7), round(float(row[1]), 7)]
+    due = next((c for c in permit_services.clocks(application) if c["code"] == "inspect"), None)
+    category = permit_registry.CATEGORY_BY_CODE.get(application.category)
+    return {
+        "permit": application.pk,
+        "number": application.number,
+        "purpose": "application",
+        "title": f"{category.label if category else application.category}: {application.proposed_use or 'use not stated'}",
+        "storeys": application.proposed_floors,
+        "site_uuid": str(application.site.uuid) if application.site else None,
+        "centre": centre,
+        "due_on": due["due_on"] if due else None,
+        "points": [{"code": c, "label": label} for c, label in permit_registry.INSPECTION_POINTS],
+    }
+
+
 def complete_task(task: FieldTask, outcome: str, notes: str, user: User) -> None:
     """Records what the officer found. Confirmed and corrected features become
     verified; a feature that wasn't found is left as it is, for the office."""
@@ -229,8 +303,10 @@ def apply_change(change: Any, district_id: int, device_id: str, user: User) -> d
                 result = _update(change, district_id, device_id, user)
             elif op == "task":
                 result = _task(change, district_id, user)
+            elif op == "inspection":
+                result = _inspection(change, district_id, user)
             else:
-                raise ValidationError({"op": ["must be create, update or task"]})
+                raise ValidationError({"op": ["must be create, update, task or inspection"]})
             result["change_id"] = str(change_id)
             AppliedChange.objects.create(
                 district_id=district_id,
@@ -349,6 +425,15 @@ def pull(project: PlanProject, layer_ids: list[int], since: datetime | None) -> 
         "features": features,
         "deleted": deleted,
         "tasks": [task_json(task) for task in tasks],
+        # Applications waiting for their site inspection (r.44(7)), every pull.
+        "inspections": [
+            inspection_json(a)
+            for a in Application.objects.filter(
+                project=project, status__in=(Application.Status.REVIEW, Application.Status.DEFERRED)
+            )
+            .select_related("site")
+            .order_by("received_on", "id")[:200]
+        ],
     }
 
 

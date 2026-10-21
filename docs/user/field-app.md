@@ -74,3 +74,13 @@ Your answers go to the office at the next sync. Features you confirm or correct 
 
 ## Positions and coordinates
 The app shows positions in the project's coordinate system (for example Ghana National Grid). These are for you to read in the field. The official coordinates are worked out on the server from the GPS position when captures are sent.
+
+## Site inspections
+Permit applications waiting for their site inspection (acknowledged, with the Technical Sub-Committee) come to the phone at every sync, under **To check on the ground**, with their due date (r.44(7)).
+
+1. **Directions to the site** opens the phone's maps app at the plot.
+2. **Inspect the site** shows the points the Regulations list: whether development has started, the plot size, the access, and the rest. Answer those that apply and write a summary and recommendation.
+3. **Save the inspection.** It is sent at the next sync and recorded on the application as if entered in the office, with your name and the day you saved it. **Change** reopens it until it is sent.
+
+Only field officers, planners and district administrators may record inspections; anyone else's is refused, and the reason is shown on the card.
+

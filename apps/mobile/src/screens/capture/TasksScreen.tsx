@@ -4,10 +4,11 @@ import React, { useCallback, useState } from "react";
 import { FlatList, Text, View } from "react-native";
 import { Button } from "react-native-paper";
 
+import { InspectionCard } from "../../components/InspectionCard";
 import { Notice, styles } from "../../components/ui";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
-import { completeTask, getFeature, listLayers, listTasks, reopenTask } from "../../services/db";
-import type { LocalFeature, LocalLayer, LocalTask } from "../../types";
+import { completeTask, getFeature, listInspections, listLayers, listTasks, reopenTask } from "../../services/db";
+import type { LocalFeature, LocalInspection, LocalLayer, LocalTask } from "../../types";
 import { labelOf } from "../../utils/forms";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Tasks">;
@@ -19,11 +20,13 @@ const OUTCOME_TEXT = { confirmed: "Confirmed as recorded", corrected: "Corrected
 export default function TasksScreen({ navigation, route }: Props) {
   const { projectId } = route.params;
   const [rows, setRows] = useState<Row[]>([]);
+  const [inspections, setInspections] = useState<LocalInspection[]>([]);
 
   const reload = useCallback(async () => {
     const layers = new Map((await listLayers(projectId)).map((l) => [l.id, l]));
     const tasks = await listTasks(projectId);
     setRows(await Promise.all(tasks.map(async (t) => ({ ...t, feature: await getFeature(t.featureUuid), layer: layers.get(t.layerId) }))));
+    setInspections(await listInspections(projectId));
   }, [projectId]);
 
   useFocusEffect(
@@ -44,11 +47,18 @@ export default function TasksScreen({ navigation, route }: Props) {
       data={rows}
       keyExtractor={(row) => String(row.id)}
       ListHeaderComponent={
-        <Notice>
-          Go to each feature and compare it with what is recorded. Your answers are sent to the office at the next sync.
-        </Notice>
+        <View>
+          <Notice>
+            Go to each site or feature and compare it with what is recorded. Your answers are sent to the office at the next sync.
+          </Notice>
+          {inspections.map((item) => (
+            <InspectionCard key={item.permit} item={item} onChanged={() => void reload()} />
+          ))}
+        </View>
       }
-      ListEmptyComponent={<Text style={[styles.muted, { marginTop: 12 }]}>Nothing to check. New tasks arrive when you sync.</Text>}
+      ListEmptyComponent={
+        inspections.length ? null : <Text style={[styles.muted, { marginTop: 12 }]}>Nothing to check. New tasks and inspections arrive when you sync.</Text>
+      }
       renderItem={({ item }) => (
         <View style={styles.card}>
           <Text style={styles.title}>

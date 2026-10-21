@@ -246,7 +246,8 @@ export type SyncChange =
       properties: Record<string, unknown>;
       capture: Record<string, unknown>;
     }
-  | { change_id: string; op: "task"; task: { id: number; outcome: TaskOutcome; notes: string } };
+  | { change_id: string; op: "task"; task: { id: number; outcome: TaskOutcome; notes: string } }
+  | { change_id: string; op: "inspection"; inspection: { permit: number; on: string; findings: Record<string, string>; summary: string } };
 
 export interface SyncResult {
   change_id: string | null;
@@ -266,6 +267,41 @@ export interface PullResponse {
   features: (PackageFeature & { layer: number })[];
   deleted: string[];
   tasks: { id: number; feature_uuid: string; layer: number; status: "open" | "done"; outcome: TaskOutcome | ""; item: string }[];
+  /** Applications waiting for their site inspection (servers before this field send none). */
+  inspections?: PulledInspection[];
+}
+
+export interface PulledInspection {
+  permit: number;
+  number: string;
+  purpose: "application";
+  title: string;
+  storeys: number | null;
+  site_uuid: string | null;
+  /** The site's centre, longitude and latitude. */
+  centre: [number, number] | null;
+  due_on: string | null;
+  points: { code: string; label: string }[];
+}
+
+/** A permit site inspection on this device (r.44(7)(f)). */
+export interface LocalInspection {
+  permit: number;
+  projectId: number;
+  number: string;
+  title: string;
+  storeys: number | null;
+  centre: [number, number] | null;
+  dueOn: string | null;
+  points: { code: string; label: string }[];
+  /** Done here: what was found, and when. */
+  findings: Record<string, string>;
+  summary: string;
+  inspectedOn: string | null;
+  /** Done on this device, not yet sent. */
+  pending: boolean;
+  changeId: string | null;
+  syncError: string | null;
 }
 
 export interface RemotePhoto {

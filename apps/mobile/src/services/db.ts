@@ -11,6 +11,7 @@ import type {
   FieldPackage,
   Geometry,
   LocalFeature,
+  LocalInspection,
   LocalLayer,
   LocalPhoto,
   LocalProject,
@@ -109,6 +110,24 @@ const MIGRATIONS: string[] = [
      change_id TEXT
    );
    CREATE INDEX IF NOT EXISTS tasks_project ON tasks (project_id, status);`,
+  // Version 3: permit site inspections done in the field.
+  `CREATE TABLE IF NOT EXISTS inspections (
+     permit INTEGER PRIMARY KEY NOT NULL,
+     project_id INTEGER NOT NULL,
+     number TEXT NOT NULL,
+     title TEXT NOT NULL DEFAULT '',
+     storeys INTEGER,
+     centre_json TEXT,
+     due_on TEXT,
+     points_json TEXT NOT NULL DEFAULT '[]',
+     findings_json TEXT NOT NULL DEFAULT '{}',
+     summary TEXT NOT NULL DEFAULT '',
+     inspected_on TEXT,
+     pending INTEGER NOT NULL DEFAULT 0,
+     change_id TEXT,
+     sync_error TEXT
+   );
+   CREATE INDEX IF NOT EXISTS inspections_project ON inspections (project_id);`,
 ];
 
 export function db(): Promise<SQLite.SQLiteDatabase> {
@@ -597,6 +616,22 @@ export async function applyPull(projectId: number, pulled: PullResponse): Promis
       const result = await txn.runAsync("DELETE FROM features WHERE uuid = ? AND state IN ('synced', 'conflict')", [uuid]);
       removed += result.changes;
     }
+    if (pulled.inspections) {
+      // The server's list is the whole list: what is no longer waiting goes, unless it was done here and not yet sent.
+      const keep = pulled.inspections.map((i) => i.permit);
+      await txn.runAsync(
+        `DELETE FROM inspections WHERE project_id = ? AND pending = 0${keep.length ? ` AND permit NOT IN (${keep.map(() => "?").join(", ")})` : ""}`,
+        [projectId, ...keep],
+      );
+      for (const item of pulled.inspections) {
+        await txn.runAsync(
+          `INSERT INTO inspections (permit, project_id, number, title, storeys, centre_json, due_on, points_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(permit) DO UPDATE SET number = excluded.number, title = excluded.title, storeys = excluded.storeys,
+             centre_json = excluded.centre_json, due_on = excluded.due_on, points_json = excluded.points_json WHERE inspections.pending = 0`,
+          [item.permit, projectId, item.number, item.title, item.storeys, item.centre ? JSON.stringify(item.centre) : null, item.due_on, JSON.stringify(item.points)],
+        );
+      }
+    }
     for (const task of pulled.tasks) {
       // A result recorded here and not yet sent stays as it is.
       await txn.runAsync(
@@ -667,3 +702,73 @@ export async function reopenTask(id: number): Promise<void> {
 export async function markTaskSent(id: number): Promise<void> {
   await (await db()).runAsync("UPDATE tasks SET pending = 0, change_id = NULL WHERE id = ?", [id]);
 }
+
+// --- Permit site inspections ----------------------------------------------------------------------
+
+interface InspectionRow {
+  permit: number;
+  project_id: number;
+  number: string;
+  title: string;
+  storeys: number | null;
+  centre_json: string | null;
+  due_on: string | null;
+  points_json: string;
+  findings_json: string;
+  summary: string;
+  inspected_on: string | null;
+  pending: number;
+  change_id: string | null;
+  sync_error: string | null;
+}
+
+function toInspection(row: InspectionRow): LocalInspection {
+  return {
+    permit: row.permit,
+    projectId: row.project_id,
+    number: row.number,
+    title: row.title,
+    storeys: row.storeys,
+    centre: row.centre_json ? (JSON.parse(row.centre_json) as [number, number]) : null,
+    dueOn: row.due_on,
+    points: JSON.parse(row.points_json) as LocalInspection["points"],
+    findings: JSON.parse(row.findings_json) as Record<string, string>,
+    summary: row.summary,
+    inspectedOn: row.inspected_on,
+    pending: row.pending === 1,
+    changeId: row.change_id,
+    syncError: row.sync_error,
+  };
+}
+
+export async function listInspections(projectId: number): Promise<LocalInspection[]> {
+  const rows = await (await db()).getAllAsync<InspectionRow>("SELECT * FROM inspections WHERE project_id = ? ORDER BY pending, due_on, permit", [projectId]);
+  return rows.map(toInspection);
+}
+
+export async function pendingInspections(projectId: number): Promise<LocalInspection[]> {
+  const rows = await (await db()).getAllAsync<InspectionRow>("SELECT * FROM inspections WHERE project_id = ? AND pending = 1 ORDER BY permit", [projectId]);
+  return rows.map(toInspection);
+}
+
+/** Records what the site inspection found; sent at the next sync. */
+export async function completeInspection(permit: number, findings: Record<string, string>, summary: string, on: string): Promise<void> {
+  await (await db()).runAsync(
+    "UPDATE inspections SET findings_json = ?, summary = ?, inspected_on = ?, pending = 1, change_id = ?, sync_error = NULL WHERE permit = ?",
+    [JSON.stringify(findings), summary, on, Crypto.randomUUID(), permit],
+  );
+}
+
+export async function reopenInspection(permit: number): Promise<void> {
+  await (await db()).runAsync("UPDATE inspections SET pending = 0, change_id = NULL WHERE permit = ? AND pending = 1", [permit]);
+}
+
+/** The office has it: it leaves the device. */
+export async function markInspectionSent(permit: number): Promise<void> {
+  await (await db()).runAsync("DELETE FROM inspections WHERE permit = ?", [permit]);
+}
+
+export async function markInspectionRefused(permit: number, message: string): Promise<void> {
+  await (await db()).runAsync("UPDATE inspections SET pending = 0, change_id = NULL, sync_error = ? WHERE permit = ?", [message, permit]);
+}
+

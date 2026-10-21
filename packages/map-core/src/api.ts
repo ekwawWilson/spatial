@@ -724,6 +724,8 @@ export function createApiClient(options: ApiClientOptions = {}) {
     /** Writes an approved re-zoning to the map: the new zone on each parcel. */
     landApply: (id: number) =>
       request<{ written: { parcels_changed: number; field: string; zoning_layer: boolean }; application: LandApplication }>("POST", `/api/land/applications/${id}/apply/`),
+    /** Draws an approved subdivision's plots, or a consolidation's joined parcel, in the "Approved subdivisions" layer. */
+    drawLand: (id: number) => request<{ layer: number; plots: { id: number; area_m2: number }[] }>("POST", `/api/land/applications/${id}/draw/`),
     landPaper: (id: number, kind: string) => blob(`/api/land/applications/${id}/paper/${query({ kind })}`),
     publicLandApplications: (code: string) => open<{ results: PublicLandApplication[] }>(`/api/public/rooms/${encodeURIComponent(code)}/land-applications/`),
 

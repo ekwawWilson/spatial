@@ -476,3 +476,42 @@ def test_a_subdivision_and_what_the_public_sees(world, admin):
     assert AuditLog.objects.filter(
         table_name="landchange_application", row_id=str(app["id"]), action="UPDATE"
     ).exists()
+
+
+def test_an_approved_subdivision_is_drawn_and_a_consolidation_joined(world, admin):
+    """P-003 (30 x 30 m) into three plots of equal area; P-004 and P-005 into one."""
+    world.set_roles()
+    planner = world.client
+    app = receive(world, "subdivision", ["P-003"], lots=3, received_on=days(-30)).json()
+    assert do(planner, "draw", app, expect=(400,))  # not approved yet
+    do(planner, "step", app, {"step": "acknowledge", "on": days(-28)})
+    do(planner, "step", app, {"step": "advertise", "on": days(-25)})
+    app = do(admin, "decide", app, {"approve": True})
+    drawn = do(planner, "draw", app)
+    areas = [p["area_m2"] for p in drawn["plots"]]
+    assert len(areas) == 3 and sum(areas) == pytest.approx(900, rel=0.01)
+    assert max(areas) - min(areas) < 1.0  # equal, within a square metre
+    features = world.client.get(reverse("layer-features", args=[drawn["layer"]])).json()["features"]
+    assert sorted(f["properties"]["plot_no"] for f in features) == [
+        f"{app['number'].split('/')[-1]}-{n}" for n in (1, 2, 3)
+    ]
+    assert {f["properties"]["parent"] for f in features} == {"P-003"}
+    # Drawn again: replaced, not added to.
+    assert len(do(planner, "draw", app)["plots"]) == 3
+    assert (
+        len(world.client.get(reverse("layer-features", args=[drawn["layer"]])).json()["features"])
+        == 3
+    )
+    # The cadastral parcel is untouched.
+    assert "P-003" in world.features("parcels", "parcel_id")
+
+    joined = receive(world, "consolidation", ["P-004", "P-005"], received_on=days(-30)).json()
+    do(planner, "step", joined, {"step": "acknowledge", "on": days(-28)})
+    do(planner, "step", joined, {"step": "advertise", "on": days(-25)})
+    joined = do(admin, "decide", joined, {"approve": True})
+    one = do(planner, "draw", joined)
+    assert len(one["plots"]) == 1 and one["plots"][0]["area_m2"] == pytest.approx(1800, rel=0.01)
+    rezoning = receive(
+        world, "rezoning", ["P-006"], proposed_zone="Co A", ground="structure_plan"
+    ).json()
+    assert do(planner, "draw", rezoning, expect=(400,))

@@ -64,7 +64,7 @@ Record **Approve** with any conditions, or **Refuse** with the reasons. Download
 
 When a **re-zoning is approved**, choose **Write (the zone) to the map**: each parcel's zone changes to the new one, as one recorded change per parcel, so the permit checks and the zoning register use it from then on. If the project draws its zones as a separate zoning layer, redraw the zone there too.
 
-An approved subdivision or consolidation is drawn with the map's own split and merge tools; download the **Notice to the Lands Commission** to serve on its local office.
+When a **subdivision or consolidation is approved**, choose **Draw the plots on the map**: a subdivision's parcel is cut into the approved number of plots of **equal area**, across its long side so each keeps a share of the frontage; a consolidation's parcels are joined into one. They go into the layer *Approved subdivisions*, leaving the parcels layer as it is: adjust the lines there with the editing tools if the approved layout differs, and copy the plots into the parcels once the Lands Commission has endorsed them (r.54(13)). Download the **Notice to the Lands Commission** to serve on its local office.
 
 ## What the public sees
 Once an application is displayed or advertised, and the project is published in the [Public Data Room](public-data-room.md), it is listed there with what is asked for, the last day for comments, and the decision. Applicants' contact details and commenters' names are not shown.

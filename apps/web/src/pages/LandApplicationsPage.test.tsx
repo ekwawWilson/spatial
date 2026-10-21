@@ -188,6 +188,16 @@ describe("re-zoning, change of use and subdivision", () => {
     expect(screen.getByRole("region", { name: "On the map" })).toHaveTextContent("was written to the parcels on 2026-10-11");
   });
 
+  it("draws an approved subdivision's plots on the map", async () => {
+    const sub = full({ kind: "subdivision", kind_label: "Subdivision of land", status: "approved", status_label: "Approved", lots: 3, abutting: [], papers: [] });
+    const api = backend(sub, { "POST /api/land/applications/1/draw/": () => ({ body: { layer: 30, plots: [{ id: 1, area_m2: 300 }, { id: 2, area_m2: 300 }, { id: 3, area_m2: 300 }] } }) });
+    renderApp(api.fetch, { tokens: signedIn, route: "/projects/5/land/1" });
+    const section = await screen.findByRole("region", { name: "Plots on the map" });
+    expect(section).toHaveTextContent("cut into 3 plots of equal area");
+    await userEvent.click(within(section).getByRole("button", { name: "Draw the plots on the map" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("3 plot(s) drawn: 300 m², 300 m², 300 m².");
+  });
+
   it("assesses a change of use against r.34, and keeps the decision from those who may not make it", async () => {
     const use = full({ kind: "change_of_use", kind_label: "Change of use", form: "", rule: "r.34; r.44(1)", abutting: [], papers: [], clocks: [clock("decide", "Decision", { rule: "r.44(10)", days: null })] });
     const api = backend(use, { "POST /api/land/applications/1/assess/": () => ({ body: { ...use, assessment: { traffic: { met: false, note: "" } } } }) });

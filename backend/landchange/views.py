@@ -18,7 +18,7 @@ from core.permissions import district_permission, has_permission, request_user, 
 from core.schema import DISTRICT_HEADER
 from projects.models import PlanProject
 
-from . import documents, registry, services
+from . import documents, drawing, registry, services
 from .models import Application, Comment
 
 HIDDEN = "restricted"
@@ -277,6 +277,7 @@ class LandApplicationViewSet(viewsets.GenericViewSet[Application]):
         "decide": "permit.decide",
         "defer": "permit.decide",
         "apply": "permit.decide",
+        "draw": "permit.process",
     }
 
     def get_permissions(self) -> list[BasePermission]:
@@ -499,6 +500,19 @@ class LandApplicationViewSet(viewsets.GenericViewSet[Application]):
         return Response(
             {"written": written, "application": application_json(application, request, full=True)}
         )
+
+    @extend_schema(request=None, responses=OpenApiTypes.OBJECT)
+    @action(detail=True, methods=["post"])
+    def draw(self, request: Request, pk: str | None = None) -> Response:
+        """Draws an approved subdivision (equal plots across the parcel's
+        long side) or consolidation (the parcels joined) in the layer
+        "Approved subdivisions"."""
+        application = self.get_object()
+        try:
+            drawn = drawing.draw(application, request_user(request))
+        except DjangoValidationError as exc:
+            raise _drf(exc) from exc
+        return Response(drawn)
 
     @extend_schema(
         parameters=[OpenApiParameter("kind", str, description="notice, abutting, decision, lands")],

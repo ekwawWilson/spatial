@@ -619,6 +619,35 @@ export function LandApplicationPage() {
             </form>
           )}
 
+          {(item.kind === "subdivision" || item.kind === "consolidation") && item.status === "approved" && (
+            <section aria-label="Plots on the map" className="card wide">
+              <h2>On the map</h2>
+              <p className="muted small">
+                {item.kind === "subdivision"
+                  ? `The parcel cut into ${item.lots ?? "the approved number of"} plots of equal area, across its long side.`
+                  : "The parcels joined into one."}{" "}
+                They are drawn in the layer "Approved subdivisions", so the parcels layer is not changed: adjust the lines there if the approved
+                layout differs, and copy the plots into the parcels once the Lands Commission has endorsed them.
+              </p>
+              {can("permit.process") && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setError(null);
+                    try {
+                      const drawn = await api.drawLand(item.id);
+                      setNote(`${drawn.plots.length} plot(s) drawn: ${drawn.plots.map((p) => `${p.area_m2.toLocaleString()} m²`).join(", ")}.`);
+                    } catch (err) {
+                      setError(err);
+                    }
+                  }}
+                >
+                  Draw the plots on the map
+                </button>
+              )}
+            </section>
+          )}
+
           {item.kind === "rezoning" && item.status === "approved" && (
             <section aria-label="On the map" className="card wide">
               <h2>On the map</h2>

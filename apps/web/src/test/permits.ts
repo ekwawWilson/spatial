@@ -28,6 +28,7 @@ export function summary(id: number, extra: Partial<PermitSummary> = {}): PermitS
     id,
     project: 5,
     number: `DA/DP/2026/000${id}`,
+    officer: null,
     kind: "development",
     category: "building",
     category_label: "Erection of a building or structure",

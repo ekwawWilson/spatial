@@ -20,6 +20,7 @@ from core.schema import DISTRICT_HEADER
 from imagery.models import Imagery
 from permits.models import Application
 from projects.models import Feature, PlanProject
+from work.people import officer_json
 
 from . import documents, registry, services
 from .models import Case, DetectionRun, Notice
@@ -78,6 +79,7 @@ def case_json(case: Case, request: Request, *, full: bool) -> dict[str, Any]:
         "status_label": case.get_status_display(),
         "feature": case.feature_id,
         "permit": case.permit_id,
+        "officer": officer_json(case.officer),
         "permit_number": case.permit.number if case.permit else None,
         "opened_on": _day(case.opened_on),
         "closed_on": _day(case.closed_on),
@@ -212,7 +214,7 @@ class CaseViewSet(viewsets.GenericViewSet[Case]):
 
     def get_queryset(self) -> QuerySet[Case]:
         return Case.objects.filter(district_id=require_district_id(self.request)).select_related(
-            "permit", "opened_by"
+            "permit", "opened_by", "officer"
         )
 
     def _answer(self, case: Case, code: int = status.HTTP_200_OK) -> Response:

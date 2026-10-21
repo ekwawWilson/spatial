@@ -17,6 +17,7 @@ from rest_framework.views import APIView
 from core.permissions import district_permission, has_permission, request_user, require_district_id
 from core.schema import DISTRICT_HEADER
 from projects.models import PlanProject
+from work.people import officer_json
 
 from . import documents, drawing, registry, services
 from .models import Application, Comment
@@ -69,6 +70,7 @@ def application_json(application: Application, request: Request, *, full: bool) 
         "decided_on": _day(application.decided_on),
         "comments_close_on": _day(services.comments_close(application)),
         "next_step": services.next_due(application, today),
+        "officer": officer_json(application.officer),
     }
     if not full:
         return out
@@ -286,7 +288,7 @@ class LandApplicationViewSet(viewsets.GenericViewSet[Application]):
     def get_queryset(self) -> QuerySet[Application]:
         return Application.objects.filter(
             district_id=require_district_id(self.request)
-        ).select_related("project", "project__district", "project__crs")
+        ).select_related("project", "project__district", "project__crs", "officer")
 
     def _answer(self, application: Application, code: int = status.HTTP_200_OK) -> Response:
         application.refresh_from_db()

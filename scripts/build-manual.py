@@ -21,6 +21,7 @@ OUT = ROOT / "docs" / "manual" / "user-manual.html"
 # Chapters in reading order: (file, part). Operations guides are for administrators.
 CHAPTERS = [
     ("signing-in.md", "Getting started"),
+    ("your-work.md", "Getting started"),
     ("projects-and-layers.md", "Getting started"),
     ("coordinate-systems.md", "Getting started"),
     ("basemaps.md", "Getting started"),

@@ -741,6 +741,22 @@ function toInspection(row: InspectionRow): LocalInspection {
   };
 }
 
+/** What a project has waiting on this device, for its card on the home screen. */
+export async function projectCounts(projectId: number): Promise<{ unsent: number; tasks: number; inspections: number; answered: number; lastSync: string | null }> {
+  const d = await db();
+  const one = async (sql: string) => (await d.getFirstAsync<{ n: number }>(sql, [projectId]))?.n ?? 0;
+  return {
+    unsent: await countUnsent(projectId),
+    tasks: await countOpenTasks(projectId),
+    inspections: await one("SELECT count(*) AS n FROM inspections WHERE project_id = ? AND inspected_on IS NULL AND pending = 0"),
+    // Checks and inspections done here, waiting for the next sync.
+    answered:
+      (await one("SELECT count(*) AS n FROM tasks WHERE project_id = ? AND pending = 1")) +
+      (await one("SELECT count(*) AS n FROM inspections WHERE project_id = ? AND pending = 1")),
+    lastSync: await getMeta(`last_pull.${projectId}`),
+  };
+}
+
 export async function listInspections(projectId: number): Promise<LocalInspection[]> {
   const rows = await (await db()).getAllAsync<InspectionRow>("SELECT * FROM inspections WHERE project_id = ? ORDER BY pending, due_on, permit", [projectId]);
   return rows.map(toInspection);

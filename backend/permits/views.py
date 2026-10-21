@@ -25,6 +25,7 @@ from core.throttling import UploadThrottle
 from crs.models import CoordinateSystem
 from crs.services import transform_geojson
 from projects.models import Feature, PlanProject
+from work.people import officer_json
 
 from . import checks, documents, registry, services
 from .models import Application, Challenge, Comment, Document, Fee, Inspection
@@ -76,6 +77,7 @@ def application_json(application: Application, request: Request, *, full: bool) 
         "habitation_on": _day(application.habitation_on),
         "next_due": due,
         "check_counts": (application.checks or {}).get("counts"),
+        "officer": officer_json(application.officer),
     }
     if not full:
         return out
@@ -350,7 +352,9 @@ class ApplicationViewSet(viewsets.GenericViewSet[Application]):
         return [*throttles, UploadThrottle()] if self.action == "documents" else throttles
 
     def get_queryset(self) -> QuerySet[Application]:
-        return Application.objects.filter(district_id=require_district_id(self.request))
+        return Application.objects.filter(
+            district_id=require_district_id(self.request)
+        ).select_related("officer")
 
     def _answer(self, application: Application, code: int = status.HTTP_200_OK) -> Response:
         application.refresh_from_db()

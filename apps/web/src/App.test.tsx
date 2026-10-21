@@ -66,7 +66,7 @@ describe("navigation follows the role in the active district", () => {
     renderApp(fakeBackend({ "GET /api/auth/me/": () => ({ body: makeMe() }) }).fetch, { tokens: signedIn });
     const nav = await screen.findByRole("navigation", { name: "Main" });
     await within(nav).findByRole("link", { name: "Members" });
-    await userEvent.selectOptions(screen.getByRole("combobox"), "Other District Assembly");
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "District" }), "Other District Assembly");
     await waitFor(() => expect(within(nav).queryByRole("link", { name: "Members" })).not.toBeInTheDocument());
     expect(localStorage.getItem("spatial.district.1")).toBe("20");
   });

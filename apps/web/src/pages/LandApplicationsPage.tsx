@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { ErrorMessage } from "../components/ErrorMessage";
+import { OfficerPicker } from "../components/OfficerPicker";
 import { useLoad } from "../components/useLoad";
 import { saveBlob } from "../components/workspace/ExportDialog";
 import { useSession } from "../session";
@@ -351,6 +352,10 @@ export function LandApplicationPage() {
             </dd>
             <dt>Received</dt>
             <dd>{item.received_on}</dd>
+            <dt>Officer</dt>
+            <dd>
+              <OfficerPicker key={item.id} kind="land" id={item.id} officer={item.officer} />
+            </dd>
             {item.comments_close_on && (
               <>
                 <dt>Public comments</dt>

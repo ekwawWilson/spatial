@@ -4,6 +4,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { useSession } from "../session";
 import { Icon, Logo, type IconName } from "./Icon";
+import { QuickSearch } from "./QuickSearch";
 
 const COLLAPSED_KEY = "spatial.nav.collapsed";
 
@@ -79,6 +80,7 @@ export function Layout() {
         ) : (
           <span className="topbar-note">No district access yet</span>
         )}
+        {districtId !== null && <QuickSearch />}
         <span className="spacer" />
         <NavLink to="/account" className="user-chip" title="Your account">
           <span className="avatar" aria-hidden="true">

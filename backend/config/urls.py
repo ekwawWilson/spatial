@@ -24,6 +24,7 @@ urlpatterns = [
     path("api/", include("exchange.urls")),
     path("api/", include("committees.urls")),
     path("api/", include("reports.urls")),
+    path("api/", include("work.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="api-docs"),
 ]

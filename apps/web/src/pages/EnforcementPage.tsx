@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { ErrorMessage } from "../components/ErrorMessage";
+import { OfficerPicker } from "../components/OfficerPicker";
 import { useLoad } from "../components/useLoad";
 import { saveBlob } from "../components/workspace/ExportDialog";
 import { useSession } from "../session";
@@ -341,6 +342,10 @@ export function CasePage() {
             <dt>Found</dt>
             <dd>
               {item.description || "—"} <span className="muted small">{item.origin_label}, {item.opened_on}</span>
+            </dd>
+            <dt>Officer</dt>
+            <dd>
+              <OfficerPicker key={item.id} kind="case" id={item.id} officer={item.officer} />
             </dd>
             {item.owner_name !== "restricted" && (
               <>

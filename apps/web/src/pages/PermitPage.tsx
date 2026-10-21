@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { ErrorMessage } from "../components/ErrorMessage";
+import { OfficerPicker } from "../components/OfficerPicker";
 import { useLoad } from "../components/useLoad";
 import { saveBlob } from "../components/workspace/ExportDialog";
 import { useSession } from "../session";
@@ -630,6 +631,10 @@ export function PermitPage() {
             </dd>
             <dt>Received</dt>
             <dd>{permit.received_on}</dd>
+            <dt>Officer</dt>
+            <dd>
+              <OfficerPicker key={permit.id} kind="permit" id={permit.id} officer={permit.officer} />
+            </dd>
             <dt>Site</dt>
             <dd>
               {permit.site ? <Link to={`/projects/${projectId}`}>On the project's map, in the permits layer</Link> : "Not on the map yet"}

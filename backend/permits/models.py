@@ -121,6 +121,10 @@ class Application(models.Model):
 
     # In the certificate's QR code: anyone holding it can check the permit.
     token = models.CharField(max_length=64, blank=True)
+    # The officer handling it (Phase 23): their work list shows it.
+    officer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+"
     )

@@ -43,7 +43,7 @@ test("viewer cannot reach administration pages", async ({ page }) => {
 
 test("each district admin only sees their own district", async ({ page }) => {
   await signIn(page, "oda.admin@example.test");
-  const switcher = page.getByRole("combobox");
+  const switcher = page.getByRole("combobox", { name: "District" });
   await expect(switcher.locator("option")).toHaveText(["Other District Assembly"]);
   await nav(page).getByRole("link", { name: "Members" }).click();
   await expect(page.getByRole("cell", { name: "oda.admin@example.test" })).toBeVisible();
@@ -52,7 +52,7 @@ test("each district admin only sees their own district", async ({ page }) => {
 
 test("system admin can switch to any district", async ({ page }) => {
   await signIn(page, "admin@example.test");
-  const switcher = page.getByRole("combobox");
+  const switcher = page.getByRole("combobox", { name: "District" });
   await expect(switcher.locator("option")).toHaveText(["Other District Assembly", "Sample Municipal Assembly"]);
   await expect(nav(page).getByRole("link", { name: "Users" })).toBeVisible();
 });

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { Icon, type IconName } from "../components/Icon";
 import { useLoad } from "../components/useLoad";
+import { SetupChecklist, WorkList } from "../components/WorkList";
 import { useSession } from "../session";
 
 function Stat(props: { to: string; icon: IconName; label: string; value: number | string | undefined; note: string; bad?: boolean }) {
@@ -38,6 +39,7 @@ export function HomePage() {
   // Figures for the district; a page that can't load one simply shows a dash.
   const projects = useLoad(() => (district && can("project.view") ? api.listProjects() : Promise.resolve(null)), [api, districtId]);
   const duties = useLoad(() => (district && can("reports.view") ? api.compliance() : Promise.resolve(null)), [api, districtId]);
+  const work = useLoad(() => (district ? api.work() : Promise.resolve(null)), [api, districtId]);
   const d = duties.data;
 
   return (
@@ -69,6 +71,8 @@ export function HomePage() {
 
       {district && (
         <>
+          {work.data?.setup && <SetupChecklist steps={work.data.setup} />}
+          {work.data && <WorkList key={districtId} work={work.data} me={me?.id} onChanged={work.reload} />}
           <div className="stat-grid">
             {can("project.view") && <Stat to="/projects" icon="map" label="Plan projects" value={projects.data?.count ?? projects.data?.results.length} note="in this district" />}
             {can("reports.view") && (

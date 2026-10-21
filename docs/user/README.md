@@ -3,6 +3,7 @@
 Written for physical planners, district administrators and field officers. Sections are added as each phase delivers user-facing features.
 
 - [Signing in and your account](signing-in.md)
+- [Your work, search and setting up](your-work.md)
 - [Managing district members (district administrators)](members.md)
 - [The audit log](audit-log.md)
 - [Coordinate systems](coordinate-systems.md)

@@ -59,6 +59,10 @@ import type {
   AddressProposal,
   AdoptReport,
   Compliance,
+  AssignableKind,
+  Officer,
+  SearchResult,
+  WorkList,
   CaseList,
   DetectionRun,
   EnforcementCase,
@@ -828,6 +832,14 @@ export function createApiClient(options: ApiClientOptions = {}) {
     /** Writes the proposal to the map. */
     applyAddresses: (projectId: number, options: AddressingOptions = {}) =>
       request<{ written: { streets: number; properties: number }; numbered: number }>("POST", `/api/projects/${projectId}/addressing/`, options),
+
+    // --- Everyday work ----------------------------------------------------------------------
+    work: (mine = false) => request<WorkList>("GET", `/api/work/${mine ? "?mine=1" : ""}`),
+    officers: () => request<Officer[]>("GET", "/api/work/officers/"),
+    /** Hands a record to an officer; null takes it back. */
+    assign: (kind: AssignableKind, id: number, officer: number | null) =>
+      request<{ kind: AssignableKind; id: number; officer: Officer | null }>("POST", "/api/work/assign/", { kind, id, officer }),
+    search: (q: string) => request<{ q: string; results: SearchResult[] }>("GET", `/api/search/${query({ q })}`),
 
     // --- The district's statutory deadlines -------------------------------------------------
     compliance: () => request<Compliance>("GET", "/api/reports/compliance/"),

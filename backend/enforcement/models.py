@@ -45,6 +45,10 @@ class Case(models.Model):
     # r.57(4): the cost of rectification, recovered from the person responsible.
     cost = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     cost_recovered = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    # The officer handling it (Phase 23): their work list shows it.
+    officer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
     opened_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+"
     )

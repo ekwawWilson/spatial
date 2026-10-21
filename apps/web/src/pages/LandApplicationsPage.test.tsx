@@ -39,6 +39,7 @@ function summary(id: number, extra: Partial<LandSummary> = {}): LandSummary {
     id,
     project: 5,
     number: `SMA/RZ/2026/000${id}`,
+    officer: null,
     kind: "rezoning",
     kind_label: "Re-zoning",
     applicant_name: "Ama Mensah",

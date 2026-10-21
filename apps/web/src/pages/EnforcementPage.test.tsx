@@ -30,6 +30,7 @@ function summary(id: number, extra: Partial<CaseSummary> = {}): CaseSummary {
     id,
     project: 5,
     number: `SMA/EN/2026/000${id}`,
+    officer: null,
     origin: "inspection",
     origin_label: "Found on inspection",
     contravention: "no_permit",

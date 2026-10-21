@@ -35,6 +35,7 @@ const PATHS = {
   compass: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-5.5-3.5-2 5-5 2 2-5 5-2Z",
   activity: "M3 12h4l3-8 4 16 3-8h4",
   plus: "M12 5v14M5 12h14",
+  search: "M21 21l-4.3-4.3M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z",
 } as const;
 
 export type IconName = keyof typeof PATHS;

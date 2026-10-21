@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "exchange",
     "committees",
     "reports",
+    "work",
 ]
 
 MIDDLEWARE = [

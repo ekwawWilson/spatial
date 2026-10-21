@@ -987,6 +987,8 @@ export interface PermitSummary {
   /** The first statutory step not done yet; null once the application is closed. */
   next_due: PermitClock | null;
   check_counts: Record<PermitCheck["outcome"], number> | null;
+  /** The officer handling it. */
+  officer: Officer | null;
 }
 
 export interface PermitRequirement {
@@ -1271,6 +1273,8 @@ export interface CaseSummary {
   feature: number | null;
   permit: number | null;
   permit_number: string | null;
+  /** The officer handling it. */
+  officer: Officer | null;
   opened_on: string;
   closed_on: string | null;
   next_action: { label: string; due_on: string | null; overdue: boolean } | null;
@@ -1457,6 +1461,8 @@ export interface LandSummary {
   /** The last day for the public's comments, once the application is on display. */
   comments_close_on: string | null;
   next_step: LandClock | null;
+  /** The officer handling it. */
+  officer: Officer | null;
 }
 
 export interface LandComment {
@@ -1890,4 +1896,64 @@ export interface StreetName {
   status_label: string;
   clashes?: string[];
   written_to_map?: boolean;
+}
+
+// --- Everyday work (Phase 23) ----------------------------------------------------------------
+
+/** A member of staff a record can be handed to. */
+export interface Officer {
+  id: number;
+  name: string;
+  role?: Role;
+}
+
+export type WorkKind = "permit" | "challenge" | "land" | "case" | "request" | "meeting" | "zoning";
+
+/** One thing to do next, from any module. */
+export interface WorkItem {
+  kind: WorkKind;
+  kind_label: string;
+  id: number;
+  project: number | null;
+  number: string;
+  title: string;
+  /** The applicant or owner, for roles that may see names. */
+  who: string | null;
+  step: string;
+  rule: string;
+  due_on: string | null;
+  /** Days until it is due; negative once late; null when the step has no date. */
+  days: number | null;
+  overdue: boolean;
+  officer: Officer | null;
+  /** Whether it can be handed to an officer. */
+  assignable: boolean;
+  /** Where to deal with it in the web app. */
+  link: string;
+}
+
+export interface SetupStep {
+  code: string;
+  label: string;
+  done: boolean;
+  link: string;
+  hint: string;
+}
+
+export interface WorkList {
+  counts: { overdue: number; this_week: number; mine: number; unassigned: number; all: number };
+  items: WorkItem[];
+  /** For district administrators: what the district still has to set up. */
+  setup: SetupStep[] | null;
+}
+
+export type AssignableKind = "permit" | "land" | "case";
+
+export interface SearchResult {
+  kind: "project" | "permit" | "land" | "case" | "request" | "property" | "street";
+  kind_label: string;
+  id: number;
+  title: string;
+  detail: string;
+  link: string;
 }

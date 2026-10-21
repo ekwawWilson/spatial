@@ -49,6 +49,10 @@ class Application(models.Model):
     reasons = models.TextField(blank=True)
     # Re-zoning: when the new zone was written to the parcels on the map.
     applied_on = models.DateField(null=True, blank=True)
+    # The officer handling it (Phase 23): their work list shows it.
+    officer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+"
     )

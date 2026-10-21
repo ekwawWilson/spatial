@@ -248,10 +248,10 @@ def items(
             clock = committees.notice_clock(m)
             name = committee_registry.COMMITTEES.get(m.committee.kind, m.committee.kind)
             if m.notice_served_on is None:
-                step = "Serve the notice of meeting (Form 5)"
-                due, overdue = str(clock["serve_by"]), bool(clock["overdue"])
+                todo = "Serve the notice of meeting (Form 5)"
+                when, late = str(clock["serve_by"]), bool(clock["overdue"])
             else:
-                step, due, overdue = "Meeting", m.held_on.isoformat(), False
+                todo, when, late = "Meeting", m.held_on.isoformat(), False
             out.append(
                 _item(
                     "meeting",
@@ -259,9 +259,9 @@ def items(
                     m.pk,
                     m.held_on.strftime("%d %b %Y"),
                     name,
-                    step,
-                    due,
-                    overdue,
+                    todo,
+                    when,
+                    late,
                     today,
                     f"/committees/{m.pk}",
                     rule="r.6(2)" if m.notice_served_on is None else "",

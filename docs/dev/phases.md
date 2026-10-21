@@ -38,8 +38,8 @@ Items 2–4 apply from Phase 1 onwards, once the tenancy and role framework exis
 | 18 | Re-zoning, change of use, subdivision and consolidation | **complete** (2026-10-12): gate passed in CI and deployed (`4024030`); what is left is listed in the phase's notes |
 | 19 | Plan preparation and consultation; plan sheets | **complete** (2026-10-12): gate passed in CI and deployed (`fc79118`); what is left is listed in the phase's notes |
 | 20 | Street naming and property addressing | codes and numbers **complete** (2026-10-12, `ffa5a8d`); street naming as a workflow is not built |
-| 21 | Property register, revenue link and betterment | in progress on `main` |
-| 22 | Reports and national links | in progress on `main` (the statutory deadlines page was built early) |
+| 21 | Property register, revenue link and betterment | **complete** (2026-10-21): gate passed in CI and deployed (`d4c8959`); what is left is in the phase's notes |
+| 22 | Reports and national links | **complete** (2026-10-21): gate passed in CI and deployed (`d4c8959`); what is left is in the phase's notes |
 
 ## Open items carried forward
 - **Phase 3:** Martin (vector tiles) connects as the app role, so row-level security hides tenant tables from it until tile requests carry a district context (e.g. per-district function sources, or tiles served through the API). Design this in Phase 3; don't grant Martin BYPASSRLS.

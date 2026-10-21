@@ -65,7 +65,7 @@ test("a re-zoning: the abutting land from the map, the display clock, and the de
   expect(received.status(), await received.text()).toBe(201);
   await page.waitForURL(/\/land\/\d+$/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText(/\/RZ\/\d{4}\/\d{4}/);
-  await expect(page.getByLabel("Application")).toContainText("the re-zoning of P-1 from Re A to Re B");
+  await expect(page.getByLabel("Application", { exact: true })).toContainText("the re-zoning of P-1 from Re A to Re B");
 
   // The owners to be given notice: the plot that touches, not the one across the road.
   const abutting = page.getByRole("region", { name: "Abutting land" });
@@ -78,7 +78,7 @@ test("a re-zoning: the abutting land from the map, the display clock, and the de
   await steps.getByRole("button", { name: /^Done today: Displayed/ }).click();
   await expect(page.getByRole("status")).toContainText("Step recorded.");
   await expect(steps.getByRole("row").filter({ hasText: "Displayed in the Public Data Room" })).toContainText(/Done \d{4}-\d{2}-\d{2}/);
-  await expect(page.getByLabel("Application")).toContainText("(r.33(7))");
+  await expect(page.getByLabel("Application", { exact: true })).toContainText("(r.33(7))");
 
   // An objection is recorded; approval must wait for the comment period, a refusal need not.
   const record = page.getByRole("form", { name: "Record a comment" });

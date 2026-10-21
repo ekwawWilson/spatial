@@ -163,8 +163,10 @@ def population(
             "SELECT properties FROM projects_feature WHERE layer_id = %s", [role.layer_id]
         ):
             value = procedures._obj(props).get(field)
+            if value in (None, ""):
+                continue
             try:
-                total += float(value)
+                total += float(str(value))
                 found = True
             except (TypeError, ValueError):
                 continue

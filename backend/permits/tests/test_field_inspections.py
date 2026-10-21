@@ -96,8 +96,13 @@ def test_a_site_inspection_from_the_field(world, api, members_a, district_a):
     )
     assert detail["inspections"][0]["inspected_by"] == members_a[Role.FIELD_OFFICER].email
 
-    # A viewer may sync but not inspect; an unknown application, an unknown point, a bad date are refused.
-    assert push(viewer, inspection_change(waiting["id"]))[0]["status"] == "rejected"
+    # A viewer can't sync at all; an unknown application, an unknown point, a bad date are refused.
+    refused = viewer.post(
+        reverse("sync-push"),
+        {"device_id": DEVICE, "changes": [inspection_change(waiting["id"])]},
+        format="json",
+    )
+    assert refused.status_code == 403
     assert push(officer, inspection_change(999_999))[0]["status"] == "rejected"
     assert (
         push(officer, inspection_change(waiting["id"], findings={"colour": "blue"}))[0]["status"]
